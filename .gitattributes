@@ -1,0 +1,24 @@
+# ATTRACT - normalizacion de line endings
+# Pegasus prefiere LF. Sin esto, git en Windows te mete CRLF y el parser sufre.
+
+* text=auto eol=lf
+
+*.pegasus.txt  text eol=lf
+*.qml          text eol=lf
+*.cfg          text eol=lf
+*.md           text eol=lf
+*.py           text eol=lf
+*.yml          text eol=lf
+*.json         text eol=lf
+
+*.bat          text eol=crlf
+
+*.zip   binary
+*.chd   binary
+*.7z    binary
+*.jpg   binary
+*.jpeg  binary
+*.png   binary
+*.mp4   binary
+*.ttf   binary
+*.otf   binary

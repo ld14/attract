@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:8px;}
+  @keyframes pgdrift{from{background-position:0 0;}to{background-position:0 240px;}}
+  @keyframes pgblink{0%,100%{opacity:1;}50%{opacity:.25;}}
+  @keyframes pgspin{to{transform:rotate(360deg);}}
+  @keyframes pgfade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  @keyframes pgpop{from{opacity:0;transform:scale(.94);}to{opacity:1;transform:none;}}
+</style>
+</helmet>
+<div style="position:relative;width:100%;height:100vh;min-height:360px;overflow:hidden;background:#04050a;font-family:'Sora',system-ui,sans-serif;color:#e9ebf2;-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;">
+  <div style="{{ stageStyle }}">
+  <div style="{{ accentVars }}">
+
+    <!-- AMBIENT BACKGROUND (per-game gameplay loop placeholder) -->
+    <div style="position:absolute;inset:0;background:radial-gradient(130% 100% at 72% 8%, var(--accent,#19e3e3) 0%, transparent 46%), linear-gradient(180deg,#0a0c12 0%,#07080c 100%);opacity:.55;"></div>
+    <div style="position:absolute;inset:0;background:repeating-linear-gradient(180deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 2px, transparent 2px, transparent 8px);mix-blend-mode:screen;opacity:.12;animation:pgdrift 7s linear infinite;"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(90deg, rgba(7,8,12,.92) 0%, rgba(7,8,12,.55) 42%, rgba(7,8,12,.2) 100%), linear-gradient(0deg, rgba(7,8,12,.96) 0%, transparent 45%);"></div>
+
+    <!-- =================== LIBRARY =================== -->
+    <sc-if value="{{ isLibrary }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;">
+        <!-- top bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:26px 48px 0;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="width:13px;height:13px;border-radius:3px;background:var(--accent,#19e3e3);box-shadow:0 0 14px var(--accent,#19e3e3);"></div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:.18em;font-size:15px;">SHINBOX <span style="color:#6a7081;font-weight:500;">ARCADE</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:26px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#7c8294;letter-spacing:.08em;">
+            <span style="color:var(--accent,#19e3e3);">TODOS</span><span>ARCADE</span><span>CONSOLA</span><span>FAVORITOS</span>
+            <span style="padding-left:10px;border-left:1px solid rgba(255,255,255,.12);">{{ clock }}</span>
+          </div>
+        </div>
+
+        <!-- hero -->
+        <div style="flex:1;display:flex;align-items:flex-end;padding:0 48px;min-height:0;">
+          <div style="max-width:680px;padding-bottom:24px;">
+            <div style="display:flex;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;color:var(--accent,#19e3e3);margin-bottom:18px;">
+              <span style="padding:4px 9px;border:1px solid var(--accent,#19e3e3);border-radius:4px;">{{ heroSystem }}</span>
+              <span style="color:#7c8294;">{{ heroYear }} · {{ heroGenre }}</span>
+            </div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(44px,6.4vw,104px);line-height:.92;letter-spacing:-.01em;text-shadow:0 8px 40px rgba(0,0,0,.5);">{{ heroTitle }}</div>
+            <div style="margin-top:20px;font-size:16px;line-height:1.55;color:#b9bdca;max-width:560px;text-wrap:pretty;">{{ heroSynopsis }}</div>
+            <div style="margin-top:26px;display:flex;align-items:center;gap:16px;">
+              <button onClick="{{ onLaunch }}" style="display:flex;align-items:center;gap:10px;padding:13px 24px;border:none;border-radius:8px;background:var(--accent,#19e3e3);color:#07080c;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:15px;letter-spacing:.04em;cursor:pointer;box-shadow:0 8px 28px var(--accent,#19e3e3);">▶ JUGAR</button>
+              <button onClick="{{ onOpenDetail }}" style="display:flex;align-items:center;gap:9px;padding:13px 22px;border:1px solid rgba(255,255,255,.22);border-radius:8px;background:rgba(255,255,255,.05);color:#e9ebf2;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:14px;letter-spacing:.04em;cursor:pointer;backdrop-filter:blur(8px);">▤ VER DETALLE</button>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6a7081;letter-spacing:.06em;white-space:nowrap;">{{ heroIndex }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- cover rail -->
+        <div style="padding:0 48px 58px;overflow:hidden;">
+          <div style="display:flex;gap:16px;align-items:flex-end;transition:transform .42s cubic-bezier(.2,.7,.2,1);{{ railStyle }}">
+            <sc-for list="{{ libGames }}" as="game" hint-placeholder-count="6">
+              <div onClick="{{ game.onClick }}" onMouseEnter="{{ game.onHover }}" style="{{ game.cardStyle }}">
+                <div style="position:absolute;inset:0;background:linear-gradient(180deg, transparent 30%, rgba(0,0,0,.78) 100%);"></div>
+                <div style="position:relative;display:flex;justify-content:space-between;align-items:flex-start;">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:rgba(255,255,255,.7);">{{ game.system }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.55);">{{ game.year }}</span>
+                </div>
+                <div style="position:relative;">
+                  <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:16px;line-height:1.02;text-transform:uppercase;text-shadow:0 2px 10px rgba(0,0,0,.6);">{{ game.title }}</div>
+                  <div style="margin-top:6px;display:flex;gap:5px;">
+                    <sc-for list="{{ game.dots }}" as="dot" hint-placeholder-count="2">
+                      <span style="{{ dot.style }}"></span>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- =================== DETAIL =================== -->
+    <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:26px 48px 0;">
+          <button onClick="{{ onBack }}" style="display:flex;align-items:center;gap:9px;padding:8px 14px 8px 11px;border:1px solid rgba(255,255,255,.16);border-radius:7px;background:rgba(255,255,255,.04);color:#c7cbd6;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;cursor:pointer;">◄ GALERÍA</button>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent,#19e3e3);letter-spacing:.12em;">{{ heroSystem }} · {{ heroYear }}</div>
+        </div>
+
+        <div style="flex:1;display:flex;gap:48px;padding:30px 48px 0;min-height:0;">
+          <!-- box art column -->
+          <div style="flex:none;width:280px;display:flex;flex-direction:column;gap:14px;">
+            <div style="{{ detailCoverStyle }}" onMouseEnter="{{ onVidEnter }}" onMouseLeave="{{ onVidLeave }}">
+              <sc-if value="{{ hasCoverVideo }}" hint-placeholder-val="{{ false }}">
+                <video src="{{ coverVideoUrl }}" autoplay muted loop playsinline ref="{{ setVideoRef }}" onClick="{{ onTogglePlay }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;cursor:pointer;background:#0a0b10;"></video>
+                <div style="position:absolute;inset:0;background:radial-gradient(130% 90% at 50% 28%, transparent 42%, rgba(0,0,0,.4) 100%);pointer-events:none;"></div>
+                <div style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:20px;background:rgba(8,10,14,.6);backdrop-filter:blur(4px);">
+                  <span style="width:6px;height:6px;border-radius:50%;background:#ff4d4d;animation:pgblink 1.6s ease-in-out infinite;"></span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;color:#e9ebf2;">GAMEPLAY</span>
+                </div>
+                <div style="{{ vidControlsStyle }}">
+                  <button onClick="{{ onTogglePlay }}" style="{{ vidBtnStyle }}">{{ vidPlayGlyph }}</button>
+                  <button onClick="{{ onVolDown }}" style="{{ vidBtnStyle }}">−</button>
+                  <div style="display:flex;gap:3px;align-items:center;">
+                    <sc-for list="{{ vidSegs }}" as="seg" hint-placeholder-count="5">
+                      <span style="{{ seg.style }}"></span>
+                    </sc-for>
+                  </div>
+                  <button onClick="{{ onVolUp }}" style="{{ vidBtnStyle }}">+</button>
+                  <button onClick="{{ onToggleMute }}" style="{{ vidMuteBtnStyle }}">
+                    <span style="position:relative;display:inline-block;width:15px;height:12px;">
+                      <span style="position:absolute;left:0;top:3px;width:5px;height:6px;background:currentColor;border-radius:1px;"></span>
+                      <span style="position:absolute;left:2px;top:0;width:0;height:0;border-style:solid;border-width:6px 7px 6px 0;border-color:transparent currentColor transparent transparent;"></span>
+                      <sc-if value="{{ vidMuted }}" hint-placeholder-val="{{ true }}">
+                        <span style="position:absolute;left:-2px;top:5px;width:19px;height:2px;background:#ff5a5a;border-radius:2px;transform:rotate(-32deg);"></span>
+                      </sc-if>
+                    </span>
+                  </button>
+                </div>
+              </sc-if>
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg, transparent 32%, rgba(0,0,0,.8) 100%);pointer-events:none;"></div>
+              <div style="position:relative;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:30px;line-height:.96;text-transform:uppercase;text-shadow:0 3px 14px rgba(0,0,0,.6);">{{ heroTitle }}</div>
+            </div>
+            <button onClick="{{ onLaunch }}" style="{{ playBtnStyle }}">▶ JUGAR</button>
+            <sc-if value="{{ hasMags }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:auto;padding-bottom:62px;">
+                <div style="{{ magLabelStyle }}">NOTAS EN REVISTAS</div>
+                <div style="{{ magViewportStyle }}">
+                  <sc-if value="{{ showMagArrows }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ onMagPrev }}" style="{{ magArrowPrevStyle }}">‹</button>
+                    <button onClick="{{ onMagNext }}" style="{{ magArrowNextStyle }}">›</button>
+                  </sc-if>
+                  <div style="{{ magTrackStyle }}">
+                  <sc-for list="{{ magCovers }}" as="mag" hint-placeholder-count="2">
+                    <div onClick="{{ mag.onClick }}" onMouseEnter="{{ mag.onHover }}" style="{{ mag.outerStyle }}">
+                      <sc-if value="{{ mag.hasImg }}" hint-placeholder-val="{{ false }}">
+                        <div style="{{ mag.imgBgStyle }}"></div>
+                      </sc-if>
+                      <sc-if value="{{ mag.noImg }}" hint-placeholder-val="{{ true }}">
+                      <div style="{{ mag.mastheadStyle }}">
+                        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;line-height:1;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ mag.name }}</div>
+                      </div>
+                      <div style="{{ mag.heroStyle }}">
+                        <div style="{{ mag.flashStyle }}">{{ mag.score }}</div>
+                        <div style="position:absolute;left:0;right:0;bottom:0;padding:18px 8px 7px;background:linear-gradient(0deg,rgba(20,14,8,.92),transparent);">
+                          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;line-height:.95;text-transform:uppercase;color:#fff;">{{ heroTitle }}</div>
+                          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(255,255,255,.7);margin-top:3px;">{{ mag.issue }}</div>
+                        </div>
+                      </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+                  <div style="display:flex;gap:5px;align-items:center;">
+                    <sc-for list="{{ magDots }}" as="dot" hint-placeholder-count="2">
+                      <span onClick="{{ dot.onClick }}" style="{{ dot.style }}"></span>
+                    </sc-for>
+                  </div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8a90a0;letter-spacing:.06em;">{{ magCounter }}</div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <!-- info column -->
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;position:relative;">
+            <div style="position:relative;">
+              <div style="min-width:0;max-width:600px;">
+                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(34px,4vw,60px);line-height:.96;letter-spacing:-.01em;">{{ heroTitle }}</div>
+                <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;">
+                  <sc-for list="{{ metaChips }}" as="chip" hint-placeholder-count="4">
+                    <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgba(255,255,255,.13);border-radius:20px;background:rgba(255,255,255,.04);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:#c2c6d2;white-space:nowrap;"><span style="color:#6a7081;">{{ chip.k }}</span>{{ chip.v }}</span>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="position:absolute;top:0;right:0;width:190px;display:flex;flex-direction:column;align-items:center;gap:11px;">
+                <div style="{{ boxartWrapStyle }}">
+                  <div style="{{ boxartStyle }}">
+                    <div style="position:absolute;inset:0;background:linear-gradient(180deg, transparent 50%, rgba(0,0,0,.45) 100%);"></div>
+                  </div>
+                  <div style="{{ mediaBadgeStyle }}">
+                    <sc-if value="{{ isFloppy }}" hint-placeholder-val="{{ true }}">
+                      <span style="position:relative;display:inline-block;width:13px;height:14px;border-radius:1px 3px 1px 1px;background:currentColor;">
+                        <span style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:4px 4px 0 0;border-color:#0e1016 transparent transparent transparent;"></span>
+                        <span style="position:absolute;top:1px;left:3px;width:5px;height:3px;background:#0e1016;"></span>
+                        <span style="position:absolute;bottom:0;left:2px;right:2px;height:6px;background:#0e1016;border-radius:1px;"></span>
+                        <span style="position:absolute;bottom:1px;left:3px;right:4px;height:1px;background:currentColor;"></span>
+                      </span>
+                    </sc-if>
+                    <sc-if value="{{ isCd }}" hint-placeholder-val="{{ false }}">
+                      <span style="width:14px;height:14px;border-radius:50%;background:currentColor;display:inline-flex;align-items:center;justify-content:center;">
+                        <span style="width:4px;height:4px;border-radius:50%;background:#0e1016;"></span>
+                      </span>
+                    </sc-if>
+                    <sc-if value="{{ isCartridge }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:relative;display:inline-block;width:12px;height:15px;border-radius:2px 2px 1px 1px;background:currentColor;">
+                        <span style="position:absolute;top:0;left:2px;right:2px;height:4px;background:#0e1016;border-radius:0 0 2px 2px;"></span>
+                        <span style="position:absolute;bottom:2px;left:2px;right:2px;height:5px;background:#0e1016;border-radius:1px;"></span>
+                      </span>
+                    </sc-if>
+                  </div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:#6a7081;">FORMATO</div>
+                  <div style="margin-top:4px;font-family:'Sora',sans-serif;font-weight:600;font-size:13px;color:#e9ebf2;">{{ mediaLabel }}</div>
+                </div>
+                <sc-if value="{{ hasReview }}" hint-placeholder-val="{{ false }}">
+                  <div style="width:100%;margin-top:3px;position:relative;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent,#19e3e3) 30%, rgba(255,255,255,.08));border-radius:11px;background:linear-gradient(180deg, color-mix(in srgb,var(--accent,#19e3e3) 9%, #0c0f17) 0%, #090b11 70%);box-shadow:0 12px 30px rgba(0,0,0,.45);">
+                    <div style="position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0px,rgba(0,0,0,.16) 1px,transparent 1px,transparent 3px);opacity:.35;mix-blend-mode:multiply;"></div>
+                    <span style="position:absolute;top:-1px;left:-1px;width:14px;height:14px;border-top:2px solid color-mix(in srgb,var(--accent,#19e3e3) 60%,transparent);border-left:2px solid color-mix(in srgb,var(--accent,#19e3e3) 60%,transparent);"></span>
+                    <span style="position:absolute;bottom:-1px;right:-1px;width:14px;height:14px;border-bottom:2px solid color-mix(in srgb,var(--accent,#19e3e3) 60%,transparent);border-right:2px solid color-mix(in srgb,var(--accent,#19e3e3) 60%,transparent);"></span>
+                    <div style="position:relative;padding:8px 12px 7px;text-align:center;border-bottom:1px solid color-mix(in srgb,var(--accent,#19e3e3) 22%, rgba(255,255,255,.06));background:color-mix(in srgb,var(--accent,#19e3e3) 11%, transparent);">
+                      <div style="display:flex;align-items:center;justify-content:center;gap:7px;">
+                        <span style="width:6px;height:6px;background:var(--accent,#19e3e3);transform:rotate(45deg);box-shadow:0 0 7px var(--accent,#19e3e3);"></span>
+                        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--accent,#19e3e3);">NOTA DE LA CRÍTICA</span>
+                      </div>
+                    </div>
+                    <div style="position:relative;padding:11px 12px;display:flex;flex-direction:column;gap:8px;">
+                      <sc-for list="{{ reviewRows }}" as="r" hint-placeholder-count="6">
+                        <div style="display:flex;flex-direction:column;gap:3px;">
+                          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px;">
+                            <span style="font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.03em;color:#aab0bf;white-space:nowrap;">{{ r.label }}</span>
+                            <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;color:#e9ebf2;">{{ r.val }}</span>
+                          </div>
+                          <span style="height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden;position:relative;display:block;">
+                            <span style="{{ r.barStyle }}"></span>
+                          </span>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="position:relative;padding:9px 12px 11px;border-top:1px solid rgba(255,255,255,.07);font-size:10.5px;line-height:1.46;color:#aeb3c0;text-wrap:pretty;">{{ reviewVerdict }}</div>
+                    <div style="position:relative;padding:8px 12px 12px;text-align:center;border-top:1px solid color-mix(in srgb,var(--accent,#19e3e3) 22%, rgba(255,255,255,.06));background:color-mix(in srgb,var(--accent,#19e3e3) 11%, transparent);">
+                      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:50px;line-height:.88;color:var(--accent,#19e3e3);text-shadow:0 0 18px color-mix(in srgb,var(--accent,#19e3e3) 45%,transparent);">{{ reviewScore }}</div>
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.12em;color:#6a7081;margin-top:1px;">PUNTUACIÓN · SOBRE 100</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+
+            <div style="margin-top:18px;max-width:600px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:var(--accent,#19e3e3);margin-bottom:10px;">SINOPSIS</div>
+              <div style="font-size:16px;line-height:1.62;color:#c4c8d4;text-wrap:pretty;">{{ heroSynopsis }}</div>
+            </div>
+
+            <!-- dynamic section cards -->
+            <div style="margin-top:auto;padding-top:24px;padding-bottom:72px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:#6a7081;margin-bottom:14px;">{{ extrasLabel }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:14px;">
+                <sc-for list="{{ extras }}" as="ex" hint-placeholder-count="3">
+                  <button onClick="{{ ex.onClick }}" onMouseEnter="{{ ex.onHover }}" style="{{ ex.style }}">
+                    <div style="display:flex;align-items:center;gap:13px;">
+                      <div style="flex:none;width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:color-mix(in srgb, var(--accent,#19e3e3) 15%, transparent);border:1px solid color-mix(in srgb, var(--accent,#19e3e3) 38%, transparent);">
+                        <sc-if value="{{ ex.isMag }}" hint-placeholder-val="{{ false }}">
+                          <div style="width:27px;height:34px;background:#ece2cf;border-radius:2px;box-shadow:0 2px 5px rgba(0,0,0,.45);overflow:hidden;display:flex;flex-direction:column;">
+                            <div style="height:10px;background:var(--accent,#19e3e3);"></div>
+                            <div style="flex:1;padding:3px;display:flex;flex-direction:column;gap:2px;justify-content:flex-end;">
+                              <div style="height:3px;width:85%;background:#b23a2a;border-radius:1px;"></div>
+                              <div style="height:2px;background:#bcb091;border-radius:1px;"></div>
+                              <div style="height:2px;width:65%;background:#bcb091;border-radius:1px;"></div>
+                            </div>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ ex.isCheats }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-size:42px;line-height:1;color:var(--accent,#19e3e3);text-shadow:0 0 11px color-mix(in srgb,var(--accent,#19e3e3) 60%,transparent);">&#x2620;&#xFE0E;</span>
+                        </sc-if>
+                        <sc-if value="{{ ex.isManual }}" hint-placeholder-val="{{ false }}">
+                          <div style="display:flex;width:34px;height:27px;border:2px solid var(--accent,#19e3e3);border-radius:3px;overflow:hidden;">
+                            <div style="flex:1;border-right:1px solid var(--accent,#19e3e3);padding:4px 3px;display:flex;flex-direction:column;gap:2px;">
+                              <div style="height:2px;background:var(--accent,#19e3e3);opacity:.7;"></div>
+                              <div style="height:2px;width:70%;background:var(--accent,#19e3e3);opacity:.7;"></div>
+                            </div>
+                            <div style="flex:1;padding:4px 3px;display:flex;flex-direction:column;gap:2px;">
+                              <div style="height:2px;background:var(--accent,#19e3e3);opacity:.7;"></div>
+                              <div style="height:2px;width:70%;background:var(--accent,#19e3e3);opacity:.7;"></div>
+                            </div>
+                          </div>
+                        </sc-if>
+                      </div>
+                      <div style="text-align:left;">
+                        <div style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em;color:#f1f3f8;">{{ ex.label }}</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#b3b9c6;margin-top:3px;">{{ ex.sub }}</div>
+                      </div>
+                    </div>
+                    <span style="font-size:15px;color:#6a7081;">›</span>
+                  </button>
+                </sc-for>
+                <sc-if value="{{ noContent }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:10px;padding:16px 18px;border:1px dashed rgba(255,255,255,.12);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#6a7081;">— Sin contenido extra para este juego —</div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- =================== DOCUMENT VIEWER =================== -->
+    <sc-if value="{{ viewerOpen }}" hint-placeholder-val="{{ false }}">
+      <div onMouseMove="{{ vMove }}" onMouseUp="{{ vUp }}" onMouseLeave="{{ vUp }}" style="position:absolute;inset:0;z-index:40;background:rgba(5,6,9,.86);backdrop-filter:blur(16px);display:flex;flex-direction:column;">
+        <!-- viewer top bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 32px;flex:none;">
+          <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
+            <span style="font-size:20px;color:var(--accent,#19e3e3);">{{ v.glyph }}</span>
+            <div>
+              <div style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:16px;letter-spacing:.02em;white-space:nowrap;">{{ v.title }}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a90a0;margin-top:2px;">{{ v.sourceName }}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <sc-if value="{{ v.showTabs }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:6px;margin-right:8px;">
+                <sc-for list="{{ v.sources }}" as="src" hint-placeholder-count="2">
+                  <button onClick="{{ src.onClick }}" style="{{ src.style }}"><span style="{{ src.dotStyle }}"></span>{{ src.name }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <button onClick="{{ vClose }}" style="width:40px;height:40px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:rgba(255,255,255,.05);color:#c7cbd6;font-size:16px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+
+        <!-- stage -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-height:0;overflow:hidden;">
+          <button onClick="{{ vPrev }}" style="{{ v.prevStyle }}">‹</button>
+
+          <div onMouseDown="{{ vDown }}" onWheel="{{ vWheel }}" style="{{ v.sheetWrapStyle }}">
+            <!-- MAGAZINE SHEET -->
+            <sc-if value="{{ v.isCoverImg }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;inset:0;background:#15120f;display:flex;align-items:center;justify-content:center;">
+                <div style="{{ v.coverImgStyle }}"></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ v.isCoverStyled }}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;background:#ece2cf;">
+                <div style="{{ v.mastheadStyle }}">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
+                    <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:26px;letter-spacing:.02em;line-height:1;white-space:nowrap;flex:none;">{{ v.magName }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;opacity:.85;white-space:nowrap;">{{ v.magIssue }}</span>
+                  </div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;opacity:.7;margin-top:5px;">LA GUÍA DEFINITIVA DE VIDEOJUEGOS</div>
+                </div>
+                <div style="position:relative;flex:1;min-height:0;{{ v.coverHeroStyle }}">
+                  <span style="position:absolute;left:14px;top:12px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#5b5038;background:rgba(236,226,207,.85);padding:3px 7px;border-radius:3px;">tapa · arte de portada</span>
+                  <div style="{{ v.scoreBurstStyle }}">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.12em;opacity:.85;">NOTA</span>
+                    <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:26px;line-height:1;">{{ v.coverScore }}</span>
+                  </div>
+                  <div style="position:absolute;left:0;right:0;bottom:0;padding:60px 24px 22px;background:linear-gradient(0deg, rgba(20,14,8,.92) 0%, rgba(20,14,8,.55) 55%, transparent 100%);">
+                    <span style="display:inline-block;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;color:#fff;background:#b23a2a;padding:4px 10px;border-radius:3px;margin-bottom:12px;">★ EN PORTADA</span>
+                    <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:40px;line-height:.92;text-transform:uppercase;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6);">{{ heroTitle }}</div>
+                    <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px 18px;">
+                      <sc-for list="{{ v.teasers }}" as="tz" hint-placeholder-count="3">
+                        <span style="display:inline-flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;color:#f0e9da;"><span style="width:6px;height:6px;background:#e8b23a;transform:rotate(45deg);flex:none;"></span>{{ tz.t }}</span>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:9px 22px;border-top:1px solid #cabd9e;background:#e3d9c4;">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6b5f4a;letter-spacing:.06em;">{{ v.magDate }} · {{ v.magPrice }}</span>
+                  <div style="width:74px;height:22px;background:repeating-linear-gradient(90deg,#1f1a12 0px,#1f1a12 2px,transparent 2px,transparent 4px,#1f1a12 4px,#1f1a12 5px,transparent 5px,transparent 8px);"></div>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ v.isReview }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;inset:0;padding:30px 32px;display:flex;flex-direction:column;">
+                <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2a241a;padding-bottom:10px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.16em;color:#b23a2a;">{{ v.heading }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6b5f4a;">{{ v.sourceName }}</span>
+                </div>
+                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:26px;line-height:1;text-transform:uppercase;color:#1f1a12;margin-top:14px;">{{ heroTitle }}</div>
+                <div style="display:flex;gap:18px;margin-top:14px;flex:1;min-height:0;">
+                  <div style="flex:1.3;display:flex;flex-direction:column;gap:7px;">
+                    <div style="height:150px;border-radius:3px;background:repeating-linear-gradient(45deg,#cdbf9f 0px,#cdbf9f 7px,#c4b693 7px,#c4b693 14px);position:relative;border:1px solid #b3a583;">
+                      <span style="position:absolute;left:8px;bottom:7px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#5b5038;background:rgba(236,226,207,.85);padding:2px 5px;border-radius:2px;">captura · gameplay</span>
+                    </div>
+                    <sc-for list="{{ v.linesA }}" as="ln" hint-placeholder-count="6">
+                      <div style="{{ ln.style }}"></div>
+                    </sc-for>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
+                    <div style="border:1.5px solid #b23a2a;border-radius:3px;padding:9px 11px;">
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#6b5f4a;letter-spacing:.1em;">PUNTAJE</div>
+                      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:30px;color:#b23a2a;line-height:1;">{{ v.score }}<span style="font-size:14px;color:#8a7d62;">/100</span></div>
+                    </div>
+                    <sc-for list="{{ v.linesB }}" as="ln" hint-placeholder-count="8">
+                      <div style="{{ ln.style }}"></div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8a7d62;border-top:1px solid #cabd9e;padding-top:8px;margin-top:6px;">
+                  <span>{{ v.sourceName }}</span><span>{{ v.pageNum }}</span>
+                </div>
+              </div>
+            </sc-if>
+            <!-- MANUAL SHEET -->
+            <sc-if value="{{ v.isManual }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;inset:0;padding:34px 36px;display:flex;flex-direction:column;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:#8a7d62;">{{ heroTitle }} · MANUAL</div>
+                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:22px;color:#1f1a12;margin-top:8px;border-bottom:1px solid #cabd9e;padding-bottom:12px;">{{ v.heading }}</div>
+                <div style="margin-top:18px;border:1.5px solid #b3a583;border-radius:5px;height:170px;position:relative;background:#efe7d6;">
+                  <span style="position:absolute;left:12px;top:10px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#6b5f4a;letter-spacing:.1em;">DIAGRAMA · CONTROLES</span>
+                  <div style="position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);width:64%;height:46%;border:2px solid #8a7d62;border-radius:30px;"></div>
+                  <div style="position:absolute;left:24%;top:54%;transform:translate(-50%,-50%);width:30px;height:30px;border:2px solid #b23a2a;border-radius:50%;"></div>
+                  <div style="position:absolute;left:74%;top:46%;transform:translate(-50%,-50%);width:14px;height:14px;background:#b23a2a;border-radius:50%;"></div>
+                  <div style="position:absolute;left:80%;top:64%;transform:translate(-50%,-50%);width:14px;height:14px;background:#3a6ab2;border-radius:50%;"></div>
+                </div>
+                <div style="margin-top:16px;display:flex;flex-direction:column;gap:9px;flex:1;min-height:0;">
+                  <sc-for list="{{ v.steps }}" as="st" hint-placeholder-count="5">
+                    <div style="display:flex;gap:11px;align-items:center;">
+                      <span style="flex:none;width:22px;height:22px;border-radius:50%;background:#1f1a12;color:#efe7d6;font-family:'JetBrains Mono',monospace;font-size:11px;display:flex;align-items:center;justify-content:center;">{{ st.n }}</span>
+                      <div style="{{ st.style }}"></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8a7d62;border-top:1px solid #cabd9e;padding-top:8px;text-align:right;">{{ v.pageNum }}</div>
+              </div>
+            </sc-if>
+          </div>
+
+          <button onClick="{{ vNext }}" style="{{ v.nextStyle }}">›</button>
+        </div>
+
+        <!-- viewer bottom controls -->
+        <div style="flex:none;padding:16px 32px 18px;display:flex;align-items:center;justify-content:space-between;gap:24px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <sc-for list="{{ v.thumbs }}" as="th" hint-placeholder-count="6">
+              <button onClick="{{ th.onClick }}" style="{{ th.style }}">{{ th.n }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:18px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#aeb3c0;letter-spacing:.06em;">PÁG. {{ v.pageLabel }}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button onClick="{{ vZoomOut }}" style="width:34px;height:34px;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(255,255,255,.05);color:#e9ebf2;font-size:18px;cursor:pointer;">−</button>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#aeb3c0;min-width:48px;text-align:center;">{{ v.zoomLabel }}</span>
+              <button onClick="{{ vZoomIn }}" style="width:34px;height:34px;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(255,255,255,.05);color:#e9ebf2;font-size:16px;cursor:pointer;">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- =================== CHEATS OVERLAY (arcade command board) =================== -->
+    <sc-if value="{{ cheatsOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:40;background:rgba(3,4,7,.9);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:34px;">
+        <div style="position:relative;width:min(900px,95vw);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#0c0f17 0%,#070910 100%);border:1px solid color-mix(in srgb, var(--accent,#19e3e3) 32%, rgba(255,255,255,.08));box-shadow:0 0 0 1px rgba(0,0,0,.6),0 40px 130px rgba(0,0,0,.75),inset 0 0 90px rgba(0,0,0,.55),0 0 60px color-mix(in srgb, var(--accent,#19e3e3) 18%, transparent);">
+          <!-- scanlines -->
+          <div style="position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.20) 0px,rgba(0,0,0,.20) 1px,transparent 1px,transparent 3px);mix-blend-mode:multiply;opacity:.55;"></div>
+          <!-- corner brackets -->
+          <span style="position:absolute;top:-1px;left:-1px;width:18px;height:18px;border-top:2px solid var(--accent,#19e3e3);border-left:2px solid var(--accent,#19e3e3);"></span>
+          <span style="position:absolute;top:-1px;right:-1px;width:18px;height:18px;border-top:2px solid var(--accent,#19e3e3);border-right:2px solid var(--accent,#19e3e3);"></span>
+          <span style="position:absolute;bottom:-1px;left:-1px;width:18px;height:18px;border-bottom:2px solid var(--accent,#19e3e3);border-left:2px solid var(--accent,#19e3e3);"></span>
+          <span style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-bottom:2px solid var(--accent,#19e3e3);border-right:2px solid var(--accent,#19e3e3);"></span>
+
+          <!-- HUD header -->
+          <div style="position:relative;flex:none;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid color-mix(in srgb, var(--accent,#19e3e3) 24%, rgba(255,255,255,.06));background:linear-gradient(90deg, color-mix(in srgb, var(--accent,#19e3e3) 12%, transparent), transparent 60%);">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div style="flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;position:relative;background:color-mix(in srgb, var(--accent,#19e3e3) 14%, transparent);border:1px solid color-mix(in srgb, var(--accent,#19e3e3) 42%, transparent);clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));">
+                <span style="position:absolute;left:8px;top:10px;width:15px;height:15px;border-radius:50%;background:var(--accent,#19e3e3);box-shadow:0 0 10px var(--accent,#19e3e3);"></span>
+                <span style="position:absolute;right:7px;bottom:8px;width:12px;height:12px;border-radius:50%;border:2px solid #e9ebf2;"></span>
+              </div>
+              <div>
+                <div style="display:flex;align-items:center;gap:9px;">
+                  <span style="width:8px;height:8px;background:var(--accent,#19e3e3);transform:rotate(45deg);box-shadow:0 0 8px var(--accent,#19e3e3);animation:pgblink 1.4s ease-in-out infinite;"></span>
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:20px;letter-spacing:.06em;line-height:1;white-space:nowrap;">TRUCOS &amp; COMBOS</span>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6a7081;letter-spacing:.18em;margin-top:7px;">{{ heroTitle }} · LISTA DE COMANDOS</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;color:#07080c;background:var(--accent,#19e3e3);padding:5px 9px;box-shadow:0 0 12px color-mix(in srgb,var(--accent,#19e3e3) 60%,transparent);">P1</span>
+              <button onClick="{{ closeCheats }}" style="width:36px;height:36px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#c7cbd6;font-size:14px;cursor:pointer;">✕</button>
+            </div>
+          </div>
+
+          <!-- scroll body -->
+          <div style="position:relative;flex:1;min-height:0;overflow:auto;padding:22px 22px 10px;">
+            <sc-if value="{{ hasCombos }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px;">
+                <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;letter-spacing:.2em;color:var(--accent,#19e3e3);">▶ COMBOS</span>
+                <span style="flex:1;height:2px;background:linear-gradient(90deg, color-mix(in srgb, var(--accent,#19e3e3) 50%, transparent), transparent);"></span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6173;letter-spacing:.12em;">{{ comboCount }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:28px;">
+                <sc-for list="{{ comboCards }}" as="c" hint-placeholder-count="3">
+                  <div style="{{ c.cardStyle }}">
+                    <span style="{{ c.numStyle }}">{{ c.num }}</span>
+                    <span style="flex:none;min-width:130px;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;">{{ c.n }}</span>
+                    <div style="flex:1;display:flex;flex-wrap:wrap;gap:7px;align-items:center;justify-content:flex-end;">
+                      <sc-for list="{{ c.tokens }}" as="tok" hint-placeholder-count="3">
+                        <span style="{{ tok.style }}">{{ tok.val }}</span>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ hasCodes }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px;">
+                <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;letter-spacing:.2em;color:var(--accent,#19e3e3);">★ CÓDIGOS SECRETOS</span>
+                <span style="flex:1;height:2px;background:linear-gradient(90deg, color-mix(in srgb, var(--accent,#19e3e3) 50%, transparent), transparent);"></span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6173;letter-spacing:.12em;">{{ codeCount }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px;">
+                <sc-for list="{{ codeCards }}" as="c" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:linear-gradient(90deg, color-mix(in srgb,var(--accent,#19e3e3) 7%, #0c1018) 0%, #0a0d14 70%);border:1px solid rgba(255,255,255,.07);border-left:3px solid color-mix(in srgb,var(--accent,#19e3e3) 80%, #ffffff);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);">
+                    <span style="flex:none;display:flex;align-items:center;justify-content:center;width:30px;height:30px;color:var(--accent,#19e3e3);font-size:14px;background:color-mix(in srgb,var(--accent,#19e3e3) 13%,transparent);border:1px solid color-mix(in srgb,var(--accent,#19e3e3) 45%, transparent);box-shadow:0 0 10px color-mix(in srgb,var(--accent,#19e3e3) 30%,transparent);">★</span>
+                    <span style="flex:none;min-width:130px;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;">{{ c.n }}</span>
+                    <div style="flex:1;display:flex;flex-wrap:wrap;gap:7px;align-items:center;justify-content:flex-end;">
+                      <sc-for list="{{ c.keys }}" as="k" hint-placeholder-count="4">
+                        <span style="{{ k.style }}">{{ k.val }}</span>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <!-- footer -->
+          <div style="position:relative;flex:none;display:flex;align-items:center;justify-content:center;gap:16px;padding:11px;border-top:1px solid color-mix(in srgb, var(--accent,#19e3e3) 18%, rgba(255,255,255,.06));background:rgba(255,255,255,.015);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6173;letter-spacing:.14em;animation:pgblink 1.8s ease-in-out infinite;">— PRESIONÁ B PARA VOLVER —</span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- =================== LAUNCH OVERLAY =================== -->
+    <sc-if value="{{ launching }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:60;background:rgba(5,6,9,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;">
+        <div style="width:56px;height:56px;border:3px solid rgba(255,255,255,.14);border-top-color:var(--accent,#19e3e3);border-radius:50%;animation:pgspin .8s linear infinite;"></div>
+        <div style="text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.2em;color:var(--accent,#19e3e3);margin-bottom:10px;">INICIANDO</div>
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:32px;text-transform:uppercase;">{{ heroTitle }}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a7081;margin-top:10px;">launch: retroarch -L core.dll …</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- CRT overlay -->
+    <sc-if value="{{ crt }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:80;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0px, rgba(0,0,0,.16) 1px, transparent 1px, transparent 3px), radial-gradient(120% 120% at 50% 50%, transparent 62%, rgba(0,0,0,.55) 100%);mix-blend-mode:multiply;"></div>
+    </sc-if>
+
+    <!-- control legend -->
+    <sc-if value="{{ showControls }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute;left:0;right:0;bottom:0;z-index:50;display:flex;align-items:center;justify-content:center;gap:26px;padding:14px;background:linear-gradient(0deg, rgba(7,8,12,.92), transparent);">
+        <sc-for list="{{ legend }}" as="lg" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#0a0b10;background:var(--accent,#19e3e3);padding:3px 8px;border-radius:5px;letter-spacing:.04em;">{{ lg.k }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#9aa0b0;letter-spacing:.04em;">{{ lg.l }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+  </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:720},&quot;crtScanlines&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showControls&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;accentMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;per-game&quot;,&quot;options&quot;:[&quot;per-game&quot;,&quot;cyan&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'library',
+    focus: 0,
+    selected: 0,
+    focusD: 0,
+    viewer: null,
+    magIdx: 0,
+    vidPlaying: true,
+    vidMuted: true,
+    vidVol: 0.6,
+    vidHover: false,
+    cheatsOpen: false,
+    launching: false,
+    scale: 1,
+    clock: ''
+  };
+
+  games = [
+    { id:'striker', title:'Striker', year:1992, system:'AMIGA · DOS', dev:'Rage Software', genre:'F\u00fatbol', players:'1-2', accent:'#3ad17a', accent2:'#0c3d22', cover:'assets/covers/striker-cover.jpg', video:'assets/striker-gameplay.mp4',
+      synopsis:'F\u00fatbol con vista 3D en perspectiva forzada: jugadores grandes y un radar para los pases largos. 64 selecciones internacionales, copa eliminatoria al estilo europeo y un sistema de pelota parada con l\u00ednea de puntos m\u00f3vil que muchos juegos imitar\u00edan despu\u00e9s. Premiado con el Screenstar (94%) de CU Amiga.',
+      mags:[{name:'PC JUEGOS · Nº16', pages:5, color:'#7d2fb8', img:'assets/mag-pcjuegos.jpg'},{name:'MICROMANÍA · Nº0', pages:4, color:'#c0392b', img:'assets/mag-micromania.jpg'},{name:'OK PC · Nº17', pages:6, color:'#e0392b', img:'assets/covers/okpc-17.jpg'},{name:'HOBBY CONSOLAS · Nº1', pages:5, color:'#1466b8', img:'assets/covers/hobby-consolas-01.jpg'}], manual:null,
+      cheats:{ combos:[{n:'Tiro con efecto', i:'mov\u00e9 la l\u00ednea de puntos antes de patear'},{n:'Pase largo al radar', i:'manten\u00e9 disparo + direcci\u00f3n'},{n:'Sprint', i:'doble toque de direcci\u00f3n'}], codes:[{n:'Las 64 selecciones', i:'Disponibles desde el men\u00fa de equipos'},{n:'Copa eliminatoria', i:'Modo torneo europeo a knock-out'}] } },
+    { id:'blade', title:'Blade Circuit', year:1995, system:'ARCADE', dev:'Hex Studios', genre:'Lucha', players:'2', accent:'#ff5a3c', accent2:'#4d150b',
+      synopsis:'Torneo de lucha 1v1 con doce guerreros, cada uno con su set de combos y un super medidor. Cancelaciones, juggles y un sistema de parry recompensan la precisi\u00f3n.',
+      mags:[{name:'EDGE \u00b7 N\u00ba18', pages:6, color:'#16161a'}], manual:{pages:8},
+      cheats:{ combos:[{n:'Patada Tornado', i:'\u2193 \u2198 \u2192 + K'},{n:'Corte Ascendente', i:'\u2192 \u2193 \u2198 + P'},{n:'S\u00faper \u00b7 Tormenta de Filos', i:'\u2193 \u2199 \u2190 \u2193 \u2199 \u2190 + PP'},{n:'Parry', i:'toc\u00e1 \u2190 antes del impacto'}], codes:[{n:'Pelea en espejo', i:'Eleg\u00ed personaje con START mantenido'}] } },
+    { id:'chrono', title:'Chrono Raider', year:2001, system:'CONSOLA', dev:'Lumen Works', genre:'Acci\u00f3n / RPG', players:'1', accent:'#9b6bff', accent2:'#2a1a4d',
+      synopsis:'RPG de acci\u00f3n donde manipul\u00e1s el tiempo para resolver mazmorras. Rebobin\u00e1 la muerte, congel\u00e1 enemigos y ramific\u00e1 la historia seg\u00fan tus decisiones.',
+      mags:[], manual:{pages:12},
+      cheats:{ combos:[{n:'Freno temporal', i:'R2 + \u25cb'},{n:'Eco del pasado', i:'manten\u00e9 L2, solt\u00e1 sobre el enemigo'}], codes:[{n:'Rebobinado infinito', i:'Paus\u00e1 y manten\u00e9 L + R por 3s'},{n:'Todos los fragmentos', i:'Escrib\u00ed CHR0N0 en la pantalla de guardado'}] } },
+    { id:'turbo', title:'Turbo Grid GP', year:1989, system:'ARCADE', dev:'Redline', genre:'Carreras', players:'2', accent:'#ffb020', accent2:'#4d3608',
+      synopsis:'Carreras arcade pura adrenalina: ocho circuitos, derrape con turbo y tr\u00e1fico que no perdona. Modo campeonato y contrarreloj.',
+      mags:[{name:'C+VIDEOJUEGOS \u00b7 N\u00ba52', pages:4, color:'#1466b8'}], manual:null, cheats:null },
+    { id:'pixel', title:'Pixel Dungeon Knight', year:1987, system:'CONSOLA', dev:'Bitwise', genre:'Plataformas', players:'1', accent:'#36d399', accent2:'#0c3d2c',
+      synopsis:'Plataformero de precisi\u00f3n: 40 niveles de saltos milim\u00e9tricos, secretos ocultos y un caballero que solo tiene tres vidas.',
+      mags:[], manual:null,
+      cheats:{ combos:[], codes:[{n:'Niveles desbloqueados', i:'En el t\u00edtulo: \u2191 \u2191 \u2193 \u2193 B A'},{n:'+3 vidas', i:'Romp\u00e9 la caja oculta del mundo 1-2'}] } },
+    { id:'void', title:'Void Sector', year:2008, system:'PC / CONSOLA', dev:'Orbital Dev', genre:'FPS t\u00e1ctico', players:'4', accent:'#4b8cff', accent2:'#10264d',
+      synopsis:'Shooter t\u00e1ctico en primera persona en una estaci\u00f3n orbital tomada. Cobertura, gesti\u00f3n de munici\u00f3n y un modo cooperativo a cuatro.',
+      mags:[{name:'HOBBY CONSOLAS \u00b7 N\u00ba201', pages:7, color:'#e8841a'}], manual:{pages:10},
+      cheats:{ combos:[{n:'Cargar plasma', i:'manten\u00e9 R2, solt\u00e1 al rojo'},{n:'Deslizar + disparo', i:'L3 \u2192 \u2a2f \u2192 R2'}], codes:[{n:'Munici\u00f3n infinita', i:'Consola (~): sv_infammo 1'},{n:'Modo cabez\u00f3n', i:'Opciones \u203a manten\u00e9 \u25b3 5s'}] } },
+    { id:'jelly', title:'Jelly Brawl', year:2004, system:'CONSOLA', dev:'Wobble Co.', genre:'Party', players:'4', accent:'#ff5fb0', accent2:'#4d1638',
+      synopsis:'Fiesta multijugador ca\u00f3tica: cuatro gelatinas rebotan en arenas que se desarman. Ideal para partidas r\u00e1pidas entre amigos.',
+      mags:[], manual:null, cheats:null },
+    { id:'star', title:'Starline Pilot', year:1984, system:'ARCADE', dev:'Nova Coin', genre:'Shooter fijo', players:'2', accent:'#2dd4bf', accent2:'#0c3d38',
+      synopsis:'Cl\u00e1sico de cabina: defend\u00e9 la l\u00ednea estelar de oleadas alien\u00edgenas. Controles simples, dificultad creciente, tabla de r\u00e9cords.',
+      mags:[], manual:{pages:6}, cheats:null }
+  ];
+
+  reviews = {
+    striker:{ score:94, cats:[['ORIGINALIDAD',88],['GRÁFICOS',92],['ADICCIÓN',95],['SONIDO',90],['DIFICULTAD',84],['ANIMACIÓN',93]], verdict:'Adictivo como pocos. El sistema de pelota parada y el radar de pases marcaron época: premiado con el Screenstar de CU Amiga.' },
+    blade:{ score:86, cats:[['ORIGINALIDAD',80],['GRÁFICOS',88],['ADICCIÓN',87],['SONIDO',85],['DIFICULTAD',90],['ANIMACIÓN',89]], verdict:'Técnico y vistoso. Doce luchadores con combos profundos y un parry exigente; algo duro para quien recién empieza.' },
+    chrono:{ score:90, cats:[['ORIGINALIDAD',95],['GRÁFICOS',89],['ADICCIÓN',91],['SONIDO',92],['DIFICULTAD',78],['ANIMACIÓN',88]], verdict:'La mecánica del tiempo es brillante y la historia se ramifica de verdad. Un acción-RPG que se atreve a innovar.' },
+    turbo:{ score:82, cats:[['ORIGINALIDAD',70],['GRÁFICOS',80],['ADICCIÓN',88],['SONIDO',79],['DIFICULTAD',85],['ANIMACIÓN',86]], verdict:'Velocidad arcade sin concesiones. El turbo y el derrape enganchan, aunque el tráfico no perdona ni un despiste.' },
+    pixel:{ score:79, cats:[['ORIGINALIDAD',68],['GRÁFICOS',74],['ADICCIÓN',84],['SONIDO',72],['DIFICULTAD',92],['ANIMACIÓN',70]], verdict:'Plataformeo de precisión milimétrica y secretos por descubrir. Difícil y honesto: cada muerte es culpa tuya.' },
+    void:{ score:88, cats:[['ORIGINALIDAD',82],['GRÁFICOS',91],['ADICCIÓN',86],['SONIDO',90],['DIFICULTAD',80],['ANIMACIÓN',89]], verdict:'Shooter táctico sólido con un cooperativo a cuatro muy logrado. Coberturas y gestión de munición bien medidas.' },
+    jelly:{ score:76, cats:[['ORIGINALIDAD',72],['GRÁFICOS',78],['ADICCIÓN',85],['SONIDO',74],['DIFICULTAD',60],['ANIMACIÓN',80]], verdict:'Caos multijugador perfecto para partidas rápidas. Brilla en compañía; en solitario se queda algo corto.' },
+    star:{ score:81, cats:[['ORIGINALIDAD',65],['GRÁFICOS',70],['ADICCIÓN',88],['SONIDO',75],['DIFICULTAD',86],['ANIMACIÓN',72]], verdict:'Un clásico de cabina directo y adictivo. Simple de aprender, imposible de soltar por culpa de la tabla de récords.' }
+  };
+
+  componentDidMount(){
+    this._onKey = (e)=>this.onKey(e);
+    window.addEventListener('keydown', this._onKey);
+    this._fit = ()=>{ const w=window.innerWidth, h=window.innerHeight; this.setState({scale: Math.min(w/1280, h/720)}); };
+    this._fit();
+    window.addEventListener('resize', this._fit);
+    this.videoCache = {};
+    this.games.forEach(g=>{ if(g.video && !this.videoCache[g.video]){ fetch(g.video).then(r=>r.blob()).then(b=>{ this.videoCache[g.video]=URL.createObjectURL(b); this.forceUpdate(); }).catch(()=>{}); } });
+    this._tick = ()=>{ const d=new Date(); this.setState({clock: String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}); };
+    this._tick();
+    this._timer = setInterval(this._tick, 20000);
+  }
+  componentWillUnmount(){ window.removeEventListener('keydown', this._onKey); window.removeEventListener('resize', this._fit); clearInterval(this._timer); }
+  componentDidUpdate(){ const v=document.querySelector('video'); if(v && v.src && v.src.startsWith('blob:') && v.dataset.kick!==v.src){ v.dataset.kick=v.src; v.load(); const p=v.play(); if(p&&p.catch)p.catch(()=>{}); } }
+
+  cur(){ return this.games[ this.state.screen==='library' ? this.state.focus : this.state.selected ]; }
+
+  hasCheats(g){ return !!(g.cheats && ((g.cheats.combos&&g.cheats.combos.length) || (g.cheats.codes&&g.cheats.codes.length))); }
+
+  extrasFor(g){
+    const out=[];
+    if(this.hasCheats(g)){
+      const nc=(g.cheats.combos||[]).length, nk=(g.cheats.codes||[]).length;
+      const parts=[]; if(nc)parts.push(nc+' combos'); if(nk)parts.push(nk+' trucos');
+      out.push({key:'cheats', glyph:'\u2620', label:'Hacks', sub:parts.join(' \u00b7 '), kind:'cheats'});
+    }
+    if(g.manual){
+      out.push({key:'manual', glyph:'\u2750', label:'Manual digitalizado', sub:g.manual.pages+' p\u00e1gs', kind:'manual'});
+    }
+    return out;
+  }
+  contentTypes(g){ const t=[]; if(g.mags&&g.mags.length)t.push('m'); if(this.hasCheats(g))t.push('c'); if(g.manual)t.push('n'); return t; }
+  mediaFor(g){ const s=(g.system||'').toUpperCase(); if(s.includes('CD')) return 'cd'; if(s.includes('AMIGA')||s.includes('DOS')||s.includes(' ST')) return 'floppy'; if(s.includes('PC')) return g.year>=1996?'cd':'floppy'; if(s.includes('CONSOLA')) return g.year>=1996?'cd':'cartridge'; if(s.includes('ARCADE')) return 'cartridge'; return 'cartridge'; }
+  detailTargets(g){ const t=[{type:'play'}]; if(g.mags&&g.mags.length)t.push({type:'magcar'}); this.extrasFor(g).forEach((x)=>t.push({type:'extra',kind:x.kind})); return t; }
+  openMag(i){ this.setState({viewer:{kind:'magazine', srcIndex:i, page:0, zoom:1, panX:0, panY:0, dragging:false, lx:0, ly:0}}); }
+  parseCombo(str, acc){
+    const arrows='\u2191\u2193\u2190\u2192\u2196\u2197\u2198\u2199';
+    const faces={'\u2715':'#3b6fe0','\u00d7':'#3b6fe0','\u2a2f':'#3b6fe0','\u25cb':'#e0454f','\u25ef':'#e0454f','\u25b3':'#39b878','\u25a1':'#d65bd6'};
+    const raw=str.replace(/([+,])/g,' $1 ').split(/\s+/).filter(Boolean);
+    const toks=[];
+    for(const t of raw){
+      if(t===','){ continue; }
+      if(t==='+'){ toks.push({type:'plus'}); continue; }
+      if([...t].some(ch=>arrows.includes(ch))){ toks.push({type:'dir', val:t}); continue; }
+      if(faces[t]){ toks.push({type:'face', val:t, color:faces[t]}); continue; }
+      if(/^[LR][123]$/i.test(t)){ toks.push({type:'pad', val:t.toUpperCase()}); continue; }
+      if(/^[PK]{1,3}$/.test(t)){ toks.push({type:'btn', val:t, color:t.includes('P')?'#e0454f':'#3b6fe0'}); continue; }
+      toks.push({type:'text', val:t});
+    }
+    const merged=[];
+    for(const tk of toks){
+      if(tk.type==='text' && merged.length && merged[merged.length-1].type==='text'){ merged[merged.length-1].val+=' '+tk.val; }
+      else merged.push({...tk});
+    }
+    return merged.map(tk=>{
+      if(tk.type==='dir') return {val:tk.val, style:'display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:9px;background:linear-gradient(180deg,#1b1e26,#10121a);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 3px 6px rgba(0,0,0,.45);color:'+acc+';font-size:18px;font-weight:700;flex:none;'};
+      if(tk.type==='face') return {val:tk.val, style:'display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#12141b;border:2px solid '+tk.color+';color:'+tk.color+';font-size:14px;font-weight:700;box-shadow:0 0 12px '+tk.color+'55,inset 0 0 8px '+tk.color+'22;flex:none;'};
+      if(tk.type==='pad') return {val:tk.val, style:'display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 12px;border-radius:8px;background:#1b1e26;border:1px solid rgba(255,255,255,.16);color:#dfe3ec;font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700;flex:none;'};
+      if(tk.type==='btn'){ const light=tk.color==='#e0454f'?'#ff8a92':'#7fb0ff'; return {val:tk.val, style:'display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 28%, '+light+', '+tk.color+');color:#fff;font-family:Chakra Petch,sans-serif;font-weight:700;font-size:13px;box-shadow:0 3px 7px rgba(0,0,0,.5),inset 0 1px 2px rgba(255,255,255,.5);flex:none;'}; }
+      if(tk.type==='plus') return {val:'+', style:'color:#5b6173;font-size:16px;font-weight:700;padding:0 1px;flex:none;'};
+      return {val:tk.val, style:'font-family:Sora,sans-serif;font-size:13px;color:#aeb3c0;align-self:center;'};
+    });
+  }
+  parseInput(str, acc){
+    const arrows='\u2191\u2193\u2190\u2192\u2196\u2197\u2198\u2199';
+    const words=String(str).split(/\s+/).filter(Boolean);
+    const keycap='display:inline-flex;align-items:center;justify-content:center;min-width:27px;height:27px;padding:0 7px;border-radius:6px;background:linear-gradient(180deg,#262b39,#12141d);border:1px solid rgba(255,255,255,.18);border-bottom-color:rgba(0,0,0,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 0 rgba(0,0,0,.55),0 3px 6px rgba(0,0,0,.45);font-family:Chakra Petch,sans-serif;font-weight:700;font-size:13px;flex:none;';
+    const out=[];
+    for(const w of words){
+      const isArrow=[...w].length>=1 && [...w].every(ch=>arrows.includes(ch));
+      const isBtn=/^[ABXYZ][12]?$/i.test(w) || /^(L|R)[123]?$/i.test(w) || /^[PK]{1,3}$/i.test(w) || /^(START|SELECT)$/i.test(w);
+      const isFace=/^[\u2715\u00d7\u2a2f\u25cb\u25ef\u25b3\u25a1]+$/.test(w);
+      if(isArrow){ out.push({val:w, style:keycap+'color:'+acc+';font-size:16px;text-shadow:0 0 8px '+acc+'88;'}); }
+      else if(isFace){ out.push({val:w, style:keycap+'color:'+acc+';'}); }
+      else if(isBtn){ out.push({val:w.toUpperCase(), style:keycap+'color:#eef0f6;'}); }
+      else if(w==='+'){ out.push({val:'+', style:'color:#5b6173;font-size:15px;font-weight:700;align-self:center;flex:none;padding:0 1px;'}); }
+      else { out.push({val:w, style:'font-family:Sora,sans-serif;font-size:13px;color:#aeb3c0;align-self:center;flex:none;'}); }
+    }
+    return out;
+  }
+  rotateMag(d){ const n=(this.games[this.state.selected].mags||[]).length; if(!n)return; const max=Math.max(0,n-2); this.setState(s=>({magIdx:Math.max(0,Math.min(max,s.magIdx+d))})); }
+  setVideoRef(el){ this._video = el; }
+  togglePlay(){ const v=this._video; if(!v)return; if(v.paused){ const p=v.play(); if(p&&p.catch)p.catch(()=>{}); this.setState({vidPlaying:true}); } else { v.pause(); this.setState({vidPlaying:false}); } }
+  applyVol(nv){ nv=Math.max(0,Math.min(1,Math.round(nv*100)/100)); const v=this._video; if(v){ v.volume=nv; if(nv>0)v.muted=false; } this.setState({vidVol:nv, vidMuted: nv<=0}); }
+  volDown(){ this.applyVol((this.state.vidVol||0)-0.2); }
+  volUp(){ this.applyVol((this.state.vidVol||0)+0.2); }
+  toggleMute(){ const m=!this.state.vidMuted; const v=this._video; let vol=this.state.vidVol; if(!m && (vol||0)===0){ vol=0.5; } if(v){ v.muted=m; if(!m)v.volume=vol; } this.setState({vidMuted:m, vidVol:vol}); }
+
+  vTotal(v){ if(!v) return 1; const g=this.games[this.state.selected]; return v.kind==='manual' ? g.manual.pages : g.mags[v.srcIndex].pages; }
+
+  // ---- navigation ----
+  moveFocus(d){ this.setState(s=>({focus: Math.max(0, Math.min(this.games.length-1, s.focus+d))})); }
+  openDetail(){ this.setState(s=>({screen:'detail', selected:s.focus, focusD:0, magIdx:0})); }
+  back(){ this.setState({screen:'library'}); }
+  moveFocusD(d){ const n=this.detailTargets(this.games[this.state.selected]).length; this.setState(s=>({focusD:Math.max(0,Math.min(n-1,s.focusD+d))})); }
+  activateD(){ const g=this.games[this.state.selected]; const t=this.detailTargets(g)[this.state.focusD]; if(!t) return; if(t.type==='play'){ this.launch(); } else if(t.type==='magcar'){ this.openMag(this.state.magIdx||0); } else { this.openSection(t.kind); } }
+
+  openSection(kind){ if(kind==='cheats'){ this.setState({cheatsOpen:true}); } else { this.setState({viewer:{kind, srcIndex:0, page:0, zoom:1, panX:0, panY:0, dragging:false, lx:0, ly:0}}); } }
+  closeViewer(){ this.setState({viewer:null}); }
+  closeCheats(){ this.setState({cheatsOpen:false}); }
+
+  setPage(p){ this.setState(s=>{ if(!s.viewer)return{}; const tot=this.vTotal(s.viewer); return {viewer:{...s.viewer, page:Math.max(0,Math.min(tot-1,p)), panX:0, panY:0}}; }); }
+  nextPage(){ this.setState(s=>{ if(!s.viewer)return{}; const tot=this.vTotal(s.viewer); return {viewer:{...s.viewer, page:Math.min(tot-1,s.viewer.page+1), panX:0, panY:0}}; }); }
+  prevPage(){ this.setState(s=>{ if(!s.viewer)return{}; return {viewer:{...s.viewer, page:Math.max(0,s.viewer.page-1), panX:0, panY:0}}; }); }
+  setSrc(i){ this.setState(s=>({viewer:{...s.viewer, srcIndex:i, page:0, panX:0, panY:0}})); }
+
+  ZOOMS=[1,1.4,1.85,2.4];
+  zoomIn(){ this.setState(s=>{ if(!s.viewer)return{}; const idx=Math.min(this.ZOOMS.length-1, this.ZOOMS.indexOf(s.viewer.zoom)+1); return {viewer:{...s.viewer, zoom:this.ZOOMS[idx]}}; }); }
+  zoomOut(){ this.setState(s=>{ if(!s.viewer)return{}; const idx=Math.max(0, this.ZOOMS.indexOf(s.viewer.zoom)-1); const z=this.ZOOMS[idx]; return {viewer:{...s.viewer, zoom:z, panX:z===1?0:s.viewer.panX, panY:z===1?0:s.viewer.panY}}; }); }
+
+  vDown(e){ this.setState(s=>{ if(!s.viewer||s.viewer.zoom<=1)return{}; return {viewer:{...s.viewer, dragging:true, lx:e.clientX, ly:e.clientY}}; }); }
+  vMoveH(e){ const cx=e.clientX, cy=e.clientY; this.setState(s=>{ if(!s.viewer||!s.viewer.dragging)return{}; return {viewer:{...s.viewer, panX:s.viewer.panX+(cx-s.viewer.lx), panY:s.viewer.panY+(cy-s.viewer.ly), lx:cx, ly:cy}}; }); }
+  vUpH(){ this.setState(s=>{ if(!s.viewer||!s.viewer.dragging)return{}; return {viewer:{...s.viewer, dragging:false}}; }); }
+  vWheelH(e){ if(e.deltaY<0) this.zoomIn(); else this.zoomOut(); }
+
+  launch(){ this.setState({launching:true}); clearTimeout(this._lt); this._lt=setTimeout(()=>this.setState({launching:false}), 2300); }
+
+  onKey(e){
+    const s=this.state; const k=e.key;
+    if(s.launching) return;
+    if(s.viewer){
+      if(k==='ArrowRight'||k==='d'){ this.nextPage(); e.preventDefault(); }
+      else if(k==='ArrowLeft'||k==='a'){ this.prevPage(); e.preventDefault(); }
+      else if(k==='+'||k==='='){ this.zoomIn(); e.preventDefault(); }
+      else if(k==='-'||k==='_'){ this.zoomOut(); e.preventDefault(); }
+      else if(k==='Escape'||k==='Backspace'){ this.closeViewer(); e.preventDefault(); }
+      return;
+    }
+    if(s.cheatsOpen){ if(k==='Escape'||k==='Backspace'){ this.closeCheats(); e.preventDefault(); } return; }
+    if(s.screen==='detail'){
+      const tgt=this.detailTargets(this.games[s.selected])[s.focusD];
+      if((k==='ArrowUp'||k==='w')&&tgt&&tgt.type==='magcar'){ this.rotateMag(-1); e.preventDefault(); return; }
+      if((k==='ArrowDown'||k==='s')&&tgt&&tgt.type==='magcar'){ this.rotateMag(1); e.preventDefault(); return; }
+      if(k==='ArrowRight'||k==='d'){ this.moveFocusD(1); e.preventDefault(); }
+      else if(k==='ArrowLeft'||k==='a'){ this.moveFocusD(-1); e.preventDefault(); }
+      else if(k==='Enter'||k===' '){ this.activateD(); e.preventDefault(); }
+      else if(k==='Escape'||k==='Backspace'){ this.back(); e.preventDefault(); }
+      return;
+    }
+    // library
+    if(k==='ArrowRight'||k==='d'){ this.moveFocus(1); e.preventDefault(); }
+    else if(k==='ArrowLeft'||k==='a'){ this.moveFocus(-1); e.preventDefault(); }
+    else if(k==='Enter'||k===' '){ this.openDetail(); e.preventDefault(); }
+  }
+
+  // ---- styles ----
+  coverBg(g, i){
+    return 'background:'
+      +'radial-gradient(140% 120% at '+(18+(i%3)*30)+'% '+(14+(i%2)*42)+'%, '+g.accent+'66 0%, transparent 50%),'
+      +'conic-gradient(from '+(i*42)+'deg at 72% 28%, '+g.accent+'30, transparent 42%),'
+      +'linear-gradient(150deg, '+g.accent2+' 0%, #0a0b10 66%);';
+  }
+
+  renderVals(){
+    const s=this.state;
+    const accentMode=this.props.accentMode || 'per-game';
+    const cardG=this.games[s.focus];
+    const detG=this.games[s.selected];
+    const focusedG = s.screen==='library' ? cardG : detG;
+    const acc = accentMode==='cyan' ? {a:'#19e3e3',b:'#0b3d4d'} : {a:focusedG.accent, b:focusedG.accent2};
+    const accentVars='display:contents;--accent:'+acc.a+';--accent2:'+acc.b+';';
+
+    // library cards
+    const libGames=this.games.map((g,i)=>{
+      const focused=i===s.focus;
+      const ct=this.contentTypes(g);
+      const dots=ct.map(x=>({style:'width:7px;height:7px;border-radius:50%;background:'+(focused?g.accent:'rgba(255,255,255,.5)')+';'}));
+      return {
+        title:g.title, system:g.system, year:g.year, dots,
+        cardStyle:'flex:none;width:148px;height:166px;border-radius:10px;padding:13px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;position:relative;overflow:hidden;'
+          +this.coverBg(g,i)
+          +'transition:transform .3s cubic-bezier(.2,.7,.2,1),opacity .3s,box-shadow .3s;'
+          +(focused
+              ? 'transform:translateY(-14px) scale(1.06);opacity:1;box-shadow:0 0 0 2px '+g.accent+',0 22px 50px rgba(0,0,0,.55),0 0 40px '+g.accent+'55;'
+              : 'opacity:.5;box-shadow:0 10px 26px rgba(0,0,0,.4);'),
+        onClick:()=>{ if(i===s.focus){ this.openDetail(); } else { this.setState({focus:i}); } },
+        onHover:()=>this.setState({focus:i})
+      };
+    });
+
+    // detail extras
+    const exList=this.extrasFor(detG);
+    const magCount=detG.mags?detG.mags.length:0;
+    const magCovers=(detG.mags||[]).map((m,i)=>{
+      const nm=m.name.split(' · ')[0];
+      const iss=m.name.split(' · ')[1]||'';
+      const col=m.color||acc.a;
+      const mf=false;
+      const im=m.img||'';
+      return { name:nm, issue:iss, img:im, hasImg:!!im, noImg:!im, imgBgStyle:im?('position:absolute;inset:0;background-image:url("'+im+'");background-size:cover;background-position:center;'):'', score:String([94,90,88,92][i%4]),
+        outerStyle:'position:relative;flex:none;width:133px;display:flex;flex-direction:column;height:178px;overflow:hidden;cursor:pointer;background:#ece2cf;',
+        mastheadStyle:'flex:none;background:'+col+';color:#fff;padding:6px 8px;',
+        heroStyle:'position:relative;flex:1;min-height:0;background:linear-gradient(160deg,'+acc.a+'dd,'+acc.a+'22 45%,transparent 62%),repeating-linear-gradient(45deg,#cdbf9f 0px,#cdbf9f 6px,#c4b693 6px,#c4b693 12px);',
+        flashStyle:'position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:'+col+';border:2px solid #fff;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Chakra Petch,sans-serif;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.4);',
+        onClick:()=>{ this.setState({focusD:1, magIdx:i}); this.openMag(i); },
+        onHover:()=>this.setState({focusD:1}) };
+    });
+    const mi=s.magIdx||0;
+    const carFocused = s.focusD===1 && magCount>0;
+    const magTrackStyle='display:flex;gap:10px;height:100%;transition:transform .35s cubic-bezier(.2,.7,.2,1);transform:translateX('+(-mi*143)+'px);';
+    const magEnd=Math.min(magCount, mi+2);
+    const magCounter=magCount?((mi+1)+(magEnd>mi+1?'\u2013'+magEnd:'')+' / '+magCount):'0 / 0';
+    const magMax=Math.max(0,magCount-2);
+    const magDots=(detG.mags||[]).map((m,i)=>{ const vis=i>=mi&&i<mi+2; return { style:'width:'+(vis?'16px':'6px')+';height:6px;border-radius:3px;cursor:pointer;transition:width .25s,background .25s;background:'+(vis?acc.a:'rgba(255,255,255,.25)')+';', onClick:()=>this.setState({magIdx:Math.min(magMax,i), focusD:1}) }; });
+    const magViewportStyle='position:relative;overflow:hidden;height:178px;background:transparent;';
+    const magLabelStyle='font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:.16em;margin-bottom:10px;transition:color .2s;color:'+(carFocused?acc.a:'#8a90a0')+';';
+    const magArrow='position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:none;background:rgba(10,11,16,.72);color:#fff;font-size:17px;line-height:1;cursor:pointer;z-index:3;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+    const extras=exList.map((x,i)=>{
+      const focused = s.focusD===1+(magCount>0?1:0)+i;
+      return { glyph:x.glyph, label:x.label, sub:x.sub,
+        isMag:x.kind==='magazine', isCheats:x.kind==='cheats', isManual:x.kind==='manual',
+        style:'display:flex;align-items:center;justify-content:space-between;gap:26px;min-width:230px;padding:16px 18px;border-radius:12px;cursor:pointer;text-align:left;'
+          +'transition:transform .2s,border-color .2s,background .2s;'
+          +'border:1px solid '+(focused?'var(--accent,#19e3e3)':'rgba(255,255,255,.1)')+';'
+          +'background:'+(focused?'rgba(255,255,255,.07)':'rgba(255,255,255,.03)')+';'
+          +(focused?'transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.4);':''),
+        onClick:()=>{ this.setState({focusD:i+1}); this.openSection(x.kind); },
+        onHover:()=>this.setState({focusD:i+1})
+      };
+    });
+
+    const metaChips=[
+      {k:'A\u00d1O', v:String(detG.year)},
+      {k:'SISTEMA', v:detG.system},
+      {k:'G\u00c9NERO', v:detG.genre},
+      {k:'JUG.', v:detG.players},
+      {k:'DEV', v:detG.dev}
+    ];
+
+    // viewer
+    const v=s.viewer;
+    let vv={open:false};
+    if(v){
+      const isMag=v.kind==='magazine';
+      const src=isMag?detG.mags[v.srcIndex]:{name:'Manual de instrucciones', pages:detG.manual.pages};
+      const coverImg=isMag?(src.img||''):'';
+      const tot=isMag?src.pages:detG.manual.pages;
+      const magHead=['REVIEW','AN\u00c1LISIS','GU\u00cdA DE JUEGO','P\u00d3STER CENTRAL','TRUCOS'];
+      const manHead=['CONTROLES','C\u00d3MO JUGAR','PERSONAJES','\u00cdTEMS Y ARMAS','PANTALLAS','PUNTAJE / R\u00c9CORDS'];
+      const heading=isMag?magHead[v.page%magHead.length]:manHead[v.page%manHead.length];
+      const scores=[92,88,95,90,85];
+      const mkLines=(n,off)=>Array.from({length:n}).map((_,i)=>({style:'height:7px;border-radius:3px;background:#bfb293;width:'+(95-((i+off)%5)*11)+'%;'}));
+      const mkSteps=(n)=>Array.from({length:n}).map((_,i)=>({n:String(i+1), style:'flex:1;height:8px;border-radius:3px;background:#c8bb9c;'}));
+      const thumbs=Array.from({length:tot}).map((_,i)=>({ n:String(i+1),
+        onClick:()=>this.setPage(i),
+        style:'width:34px;height:46px;border-radius:4px;cursor:pointer;font-family:JetBrains Mono,monospace;font-size:10px;display:flex;align-items:center;justify-content:center;'
+          +(i===v.page
+            ? 'background:'+acc.a+';color:#07080c;font-weight:700;box-shadow:0 0 14px '+acc.a+'88;'
+            : 'background:rgba(255,255,255,.07);color:#8a90a0;border:1px solid rgba(255,255,255,.1);')
+      }));
+      const sources=isMag?detG.mags.map((m,i)=>({ name:m.name.split(' \u00b7 ')[0],
+        onClick:()=>this.setSrc(i),
+        dotStyle:'width:8px;height:8px;border-radius:2px;flex:none;background:'+(m.color||acc.a)+';box-shadow:0 0 6px '+(m.color||acc.a)+';',
+        style:'display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:7px;cursor:pointer;font-family:JetBrains Mono,monospace;font-size:11px;letter-spacing:.04em;'
+          +(i===v.srcIndex
+            ? 'background:'+acc.a+';color:#07080c;font-weight:700;border:none;'
+            : 'background:rgba(255,255,255,.05);color:#aeb3c0;border:1px solid rgba(255,255,255,.12);')
+      })):[];
+      const magName=isMag?src.name.split(' · ')[0]:'';
+      const magIssue=isMag?(src.name.split(' · ')[1]||''):'';
+      const magColor=isMag?(src.color||acc.a):acc.a;
+      const teasers=isMag?[{t:detG.genre.toUpperCase()+' DEL MES'},{t:'GUÍA + MAPAS COMPLETOS'},{t:this.hasCheats(detG)?'TODOS LOS TRUCOS':'PÓSTER CENTRAL GIGANTE'}]:[];
+      const arrowBase='flex:none;width:54px;height:54px;margin:0 14px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#e9ebf2;font-size:26px;line-height:1;cursor:pointer;backdrop-filter:blur(6px);z-index:2;';
+      const sheetW=isMag?560:540;
+      vv={ open:true, isMag, isManual:!isMag, isCover:isMag&&v.page===0, isCoverImg:isMag&&v.page===0&&!!coverImg, isCoverStyled:isMag&&v.page===0&&!coverImg, isReview:isMag&&v.page>0, coverImg, coverImgStyle:coverImg?('position:absolute;inset:0;background-image:url("'+coverImg+'");background-size:contain;background-repeat:no-repeat;background-position:center;'):'',
+        magName, magIssue, magColor, coverScore:String(scores[0]), magDate:'OCT '+detG.year, magPrice:'$ 4,95', teasers,
+        mastheadStyle:'background:'+magColor+';color:#fff;padding:14px 22px 12px;flex:none;',
+        coverHeroStyle:'background:linear-gradient(160deg, '+acc.a+'dd 0%, '+acc.a+'33 38%, transparent 58%), repeating-linear-gradient(45deg,#cdbf9f 0px,#cdbf9f 8px,#c4b693 8px,#c4b693 16px);',
+        scoreBurstStyle:'position:absolute;top:18px;right:18px;width:66px;height:66px;border-radius:50%;background:'+magColor+';color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.4);border:2.5px solid #fff;',
+        glyph:isMag?'\u25a4':'\u2750',
+        title:isMag?'Revistas de la \u00e9poca':'Manual digitalizado',
+        sourceName:src.name, heading, score:String(scores[v.page%scores.length]),
+        pageLabel:(v.page+1)+' / '+tot, pageNum:'\u2014 '+(v.page+1)+' \u2014',
+        zoomLabel:Math.round(v.zoom*100)+'%',
+        showTabs:isMag && detG.mags.length>1, sources, thumbs,
+        linesA:mkLines(6,0), linesB:mkLines(8,2), steps:mkSteps(5),
+        prevStyle:arrowBase+(v.page<=0?'opacity:.3;pointer-events:none;':''),
+        nextStyle:arrowBase+(v.page>=tot-1?'opacity:.3;pointer-events:none;':''),
+        sheetWrapStyle:'position:relative;flex:none;width:'+sheetW+'px;height:760px;max-height:88%;border-radius:4px;overflow:hidden;'
+          +'background:'+(isMag?'#ece2cf':'#f1e9d8')+';color:#2a241a;'
+          +'box-shadow:0 30px 90px rgba(0,0,0,.6),inset 0 0 120px rgba(120,100,60,.12);'
+          +'transform-origin:center;transition:transform .12s ease-out;'
+          +'transform:translate('+v.panX+'px,'+v.panY+'px) scale('+v.zoom+');'
+          +'cursor:'+(v.zoom>1?(v.dragging?'grabbing':'grab'):'default')+';'
+      };
+    }
+
+    // legend
+    let legend;
+    if(s.launching) legend=[];
+    else if(v) legend=[{k:'\u25c4 \u25ba',l:'P\u00e1gina'},{k:'+ \u2212',l:'Zoom'},{k:'arrastrar',l:'Mover'},{k:'B / Esc',l:'Cerrar'}];
+    else if(s.cheatsOpen) legend=[{k:'B / Esc',l:'Cerrar'}];
+    else if(s.screen==='detail') legend=[{k:'\u25c4 \u25ba',l:'Secciones'},{k:'A / \u23ce',l:'Abrir'},{k:'B / Esc',l:'Volver'},{k:'START',l:'Jugar'}];
+    else legend=[{k:'\u25c4 \u25ba',l:'Navegar'},{k:'A / \u23ce',l:'Abrir'},{k:'START',l:'Jugar'}];
+
+    const cheats=detG.cheats||{combos:[],codes:[]};
+    const rev=this.reviews[detG.id];
+    const comboCards=(cheats.combos||[]).map((c,i)=>({
+      n:c.n,
+      num:String(i+1).padStart(2,'0'),
+      tokens:this.parseCombo(c.i, acc.a),
+      cardStyle:'display:flex;align-items:center;gap:14px;padding:12px 16px;background:linear-gradient(90deg, color-mix(in srgb,'+acc.a+' 8%, #0c1018) 0%, #0a0d14 70%);border:1px solid rgba(255,255,255,.07);border-left:3px solid '+acc.a+';box-shadow:inset 0 1px 0 rgba(255,255,255,.04);',
+      numStyle:'flex:none;display:flex;align-items:center;justify-content:center;width:30px;height:30px;font-family:JetBrains Mono,monospace;font-weight:700;font-size:12px;color:'+acc.a+';background:color-mix(in srgb,'+acc.a+' 14%, transparent);border:1px solid color-mix(in srgb,'+acc.a+' 45%, transparent);'
+    }));
+
+    return {
+      accentVars, clock:s.clock||'\u2014\u2014:\u2014\u2014',
+      stageStyle:'position:relative;flex:none;width:1280px;height:720px;overflow:hidden;border-radius:2px;transform:scale('+s.scale+');transform-origin:center;box-shadow:0 0 0 1px rgba(255,255,255,.05),0 40px 120px rgba(0,0,0,.6);',
+      crt: this.props.crtScanlines !== false,
+      showControls: this.props.showControls !== false,
+      isLibrary:s.screen==='library', isDetail:s.screen==='detail',
+      viewerOpen:!!v, cheatsOpen:s.cheatsOpen, launching:s.launching,
+
+      heroTitle:focusedG.title, heroSystem:focusedG.system, heroYear:String(focusedG.year),
+      heroGenre:focusedG.genre, heroDev:focusedG.dev, heroSynopsis:focusedG.synopsis,
+      heroIndex:String(s.focus+1).padStart(2,'0')+' / '+String(this.games.length).padStart(2,'0'),
+
+      libGames, railStyle:'transform:translateX('+(-Math.max(0,s.focus-2)*164)+'px);',
+      hasCoverVideo:!!detG.video, coverVideoUrl:(detG.video && this.videoCache && this.videoCache[detG.video]) || '',
+      setVideoRef:(el)=>this.setVideoRef(el),
+      onVidEnter:()=>this.setState({vidHover:true}), onVidLeave:()=>this.setState({vidHover:false}),
+      onTogglePlay:()=>this.togglePlay(), onVolDown:()=>this.volDown(), onVolUp:()=>this.volUp(), onToggleMute:()=>this.toggleMute(),
+      vidPlaying:s.vidPlaying!==false, vidMuted:s.vidMuted!==false, vidPlayGlyph:(s.vidPlaying!==false)?'\u275a\u275a':'\u25b6',
+      vidSegs:Array.from({length:5}).map((_,i)=>({ style:'width:5px;height:13px;border-radius:1px;transition:background .15s;background:'+(((s.vidMuted!==false)?false:(i<Math.round((s.vidVol==null?0.6:s.vidVol)*5)))?acc.a:'rgba(255,255,255,.22)')+';' })),
+      vidControlsStyle:'position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;align-items:center;gap:8px;padding:11px 12px;background:linear-gradient(0deg, rgba(5,7,11,.94) 12%, rgba(5,7,11,0) 100%);transition:opacity .2s,transform .2s;'+(s.vidHover?'opacity:1;transform:translateY(0);pointer-events:auto;':'opacity:0;transform:translateY(8px);pointer-events:none;'),
+      vidBtnStyle:'flex:none;width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#e9ebf2;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);',
+      vidMuteBtnStyle:'flex:none;margin-left:auto;width:32px;height:30px;border-radius:7px;border:1px solid '+((s.vidMuted!==false)?'rgba(255,90,90,.5)':'rgba(255,255,255,.16)')+';background:rgba(255,255,255,.06);color:'+((s.vidMuted!==false)?'#ff8a8a':'#e9ebf2')+';cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);',
+      boxartWrapStyle:'position:relative;flex:none;width:108px;height:144px;',
+      boxartStyle:'position:absolute;inset:0;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:7px;box-shadow:0 8px 20px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.08);'+(detG.cover?('background:#0a0b10;background-image:url(\"'+detG.cover+'\");background-size:cover;background-position:center;'):this.coverBg(detG, s.selected)),
+      mediaBadgeStyle:'position:absolute;right:-7px;bottom:-7px;width:26px;height:26px;border-radius:8px;background:#0e1016;border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;color:var(--accent,#19e3e3);box-shadow:0 4px 10px rgba(0,0,0,.55);',
+      mediaLabel:(this.mediaFor(detG)==='cd'?'CD-ROM':(this.mediaFor(detG)==='floppy'?'Diskette':'Cartucho')),
+      isFloppy:this.mediaFor(detG)==='floppy', isCd:this.mediaFor(detG)==='cd', isCartridge:this.mediaFor(detG)==='cartridge',
+      detailCoverStyle:'position:relative;width:100%;height:288px;flex:none;border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);'+this.coverBg(detG, s.selected),
+      playBtnStyle:'display:flex;align-items:center;justify-content:center;gap:10px;padding:15px;border-radius:10px;border:none;cursor:pointer;font-family:Chakra Petch,sans-serif;font-weight:700;font-size:16px;letter-spacing:.04em;'
+        +'background:var(--accent,#19e3e3);color:#07080c;'
+        +(s.focusD===0?'box-shadow:0 0 0 2px #fff6,0 10px 30px var(--accent,#19e3e3);transform:translateY(-2px);':'box-shadow:0 8px 24px var(--accent,#19e3e3);'),
+
+      metaChips, extras, magCovers, hasMags:magCount>0,
+      magTrackStyle, magCounter, magDots, magViewportStyle, carFocused, showMagArrows:magCount>2,
+      magArrowPrevStyle:magArrow+'left:8px;', magArrowNextStyle:magArrow+'right:8px;', magLabelStyle,
+      onMagPrev:()=>this.rotateMag(-1), onMagNext:()=>this.rotateMag(1), extrasLabel:exList.length?'CONTENIDO EXTRA':'', noContent:magCount===0 && exList.length===0,
+
+      onLaunch:()=>this.launch(), onOpenDetail:()=>this.openDetail(), onBack:()=>this.back(),
+      closeCheats:()=>this.closeCheats(),
+      hasCombos:(cheats.combos||[]).length>0, hasCodes:(cheats.codes||[]).length>0,
+      comboCards, comboCount:String((cheats.combos||[]).length).padStart(2,'0')+' MOVS',
+      codeCards:(cheats.codes||[]).map((c)=>({ n:c.n, keys:this.parseInput(c.i, acc.a) })),
+      codeCount:String((cheats.codes||[]).length).padStart(2,'0')+' SECRETOS',
+
+      hasReview: !!rev,
+      reviewScore: rev?String(rev.score):'',
+      reviewVerdict: rev?rev.verdict:'',
+      reviewRows: rev? rev.cats.map((c)=>({ label:c[0], val:String(c[1]),
+        barStyle:'position:absolute;left:0;top:0;bottom:0;width:'+c[1]+'%;border-radius:4px;background:linear-gradient(90deg, color-mix(in srgb,'+acc.a+' 55%, #ffffff), '+acc.a+');box-shadow:0 0 8px color-mix(in srgb,'+acc.a+' 45%, transparent);' })):[],
+
+      v:vv, legend,
+      vPrev:()=>this.prevPage(), vNext:()=>this.nextPage(), vClose:()=>this.closeViewer(),
+      vZoomIn:()=>this.zoomIn(), vZoomOut:()=>this.zoomOut(),
+      vDown:(e)=>this.vDown(e), vMove:(e)=>this.vMoveH(e), vUp:()=>this.vUpH(), vWheel:(e)=>this.vWheelH(e)
+    };
+  }
+}
+</script>
+</body>
+</html>

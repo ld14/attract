@@ -1,0 +1,8 @@
+# Pegá esto en tu metadata.pegasus.txt para alimentar el theme de debug.
+# Los tres casos que hay que probar:
+
+x-formato: GD-ROM
+x-multilinea: uno
+  dos
+  tres
+x-con-guion: valor

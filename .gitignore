@@ -1,0 +1,27 @@
+# Basura de macOS - CRITICO
+# Pegasus escanea por extension: "._mok.zip" termina en .zip y te aparece
+# como juego fantasma en la coleccion.
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# La libreria real no va al repo (ROMs pesadas, CHDs de 132MB, assets)
+library/**
+!library/.gitkeep
+
+# Artefactos de build: metadata.pegasus.txt lo genera ATTRACT (ver ADR-002)
+build/
+*.pegasus.txt
+!docs/**/*.pegasus.txt
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
