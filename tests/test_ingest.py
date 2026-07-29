@@ -1,12 +1,18 @@
 """Tests de attract ingest. Ver spec/features/004-attract-ingest/.
 
-IMPORTANTE: no hay mame instalado en este sandbox. Los tests que necesitan
-la forma del XML mockean subprocess.run con un XML SINTETICO basado en
-conocimiento general del formato de mame -listxml, NO verificado contra un
-binario real (ver spec.md, "Sobre mame -listxml: sin verificar en esta
-sesion"). El unico test que corre contra el mame real de esta maquina es
-test_mame_no_instalado_falla_explicito - y da el resultado esperado
-precisamente PORQUE mame no esta instalado aca.
+No hay mame instalado en este sandbox (se intento via apt, no hay acceso
+root). La mayoria de los tests mockean subprocess.run con XML SINTETICO,
+basado en conocimiento general del formato. El unico test que corre contra
+el mame real de esta maquina es test_mame_no_instalado_falla_explicito - y
+da el resultado esperado precisamente PORQUE mame no esta instalado aca.
+
+test_forma_real_confirmada_2026_07_29 es distinto: usa XML_SF2CE_REAL, la
+salida LITERAL de `mame -listxml sf2ce` (mame vanilla 0.288) que el autor
+corrio en su Mac y pego en el chat - no es una suposicion. Confirma: el
+DOCTYPE con subset interno no rompe ET.fromstring, los tags <description>/
+<year>/<manufacturer> son los que se asumian, runnable="no" filtra bien, y
+el titulo real trae basura de region pegada ("Street Fighter II': Champion
+Edition (World 920513)") - se decidio dejarlo crudo, ver construir_bloque.
 """
 import subprocess
 from pathlib import Path
@@ -53,6 +59,42 @@ XML_DOS_JUGABLES = """<?xml version="1.0"?>
 </mame>
 """
 
+# Salida REAL de `mame -listxml sf2ce` (mame vanilla 0.288), pegada por el
+# autor 2026-07-29. Recortada (sin <rom>/<dipswitch>/etc: el parser de
+# ingest.py solo mira description/year/manufacturer/runnable, el resto no
+# cambia el resultado) pero el DOCTYPE con subset interno se dejo COMPLETO
+# a proposito - eso es justo lo que habia que confirmar que no rompe
+# ET.fromstring.
+XML_SF2CE_REAL = """<?xml version="1.0"?>
+<!DOCTYPE mame [
+<!ELEMENT mame (machine+)>
+	<!ATTLIST mame build CDATA #IMPLIED>
+	<!ATTLIST mame debug (yes|no) "no">
+	<!ATTLIST mame mameconfig CDATA #REQUIRED>
+	<!ELEMENT machine (description, year?, manufacturer?)>
+		<!ATTLIST machine name CDATA #REQUIRED>
+		<!ATTLIST machine sourcefile CDATA #IMPLIED>
+		<!ATTLIST machine runnable (yes|no) "yes">
+		<!ELEMENT description (#PCDATA)>
+		<!ELEMENT year (#PCDATA)>
+		<!ELEMENT manufacturer (#PCDATA)>
+]>
+<mame build="0.288 (unknown)" debug="no" mameconfig="10">
+	<machine name="sf2ce" sourcefile="capcom/cps1.cpp">
+		<description>Street Fighter II': Champion Edition (World 920513)</description>
+		<year>1992</year>
+		<manufacturer>Capcom</manufacturer>
+		<driver status="good" emulation="good" savestate="supported"/>
+	</machine>
+	<machine name="generic_latch_8" sourcefile="devices/machine/gen_latch.cpp" isdevice="yes" runnable="no">
+		<description>Generic 8-bit latch</description>
+	</machine>
+	<machine name="z80" sourcefile="devices/cpu/z80/z80.cpp" isdevice="yes" runnable="no">
+		<description>Zilog Z80</description>
+	</machine>
+</mame>
+"""
+
 
 def _mock_run(stdout, returncode=0):
     def _fake(*a, **kw):
@@ -94,6 +136,38 @@ def test_xml_invalido_falla_explicito():
     with patch("subprocess.run", side_effect=_mock_run("esto no es xml <<<")):
         with pytest.raises(IngestError, match="XML valido"):
             listar_maquinas_jugables("x")
+
+
+# --- forma real, confirmada 2026-07-29 contra mame vanilla 0.288 real -----
+
+def test_forma_real_confirmada_2026_07_29():
+    """XML_SF2CE_REAL es la salida literal que el autor corrio en su Mac,
+    no una suposicion. Confirma tres cosas a la vez: el DOCTYPE con subset
+    interno no rompe el parseo, los tags son los que ingest.py esperaba, y
+    runnable="no" filtra los devices (quedan 3 <machine>, 1 jugable)."""
+    with patch("subprocess.run", side_effect=_mock_run(XML_SF2CE_REAL)):
+        maquinas = listar_maquinas_jugables("sf2ce")
+
+    assert len(maquinas) == 1
+    assert maquinas[0] == {
+        "name": "sf2ce",
+        "description": "Street Fighter II': Champion Edition (World 920513)",
+        "year": "1992",
+        "manufacturer": "Capcom",
+    }
+
+    # el titulo real trae basura de region pegada - decision (2026-07-29):
+    # se deja crudo, construir_bloque no intenta limpiarlo (mismo criterio
+    # que ya usaba: "no inventa nada que -listxml no traiga", limpiar con
+    # una regex seria "adivinar" en el sentido que el proyecto evita).
+    bloque = construir_bloque(maquinas[0], "sf2ce.zip", "sf2ce")
+    assert bloque.lineas == [
+        "game: Street Fighter II': Champion Edition (World 920513)",
+        "file: sf2ce.zip",
+        "developer: Capcom",
+        "release: 1992",
+        "x-set: sf2ce",
+    ]
 
 
 # --- construir_bloque: no inventa datos que -listxml no dio ---------------

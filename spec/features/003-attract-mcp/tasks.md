@@ -63,8 +63,8 @@ _Checklist accionable derivada del `plan.md`._
 
 - [x] Validar contra los criterios de aceptación de `spec.md` — los 5
       quedaron `[x]`.
-- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (49/49: 19
-      `doctor` + 11 `synopsis` + 9 `mcp` + 10 `ingest`).
+- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (50/50: 19
+      `doctor` + 11 `synopsis` + 9 `mcp` + 11 `ingest`).
 - [x] `attract doctor` sobre todo el repo en 0 errores después de agregar
       `mcp_server.py` y el skill.
 - [x] `spec/constitution/tech-stack.md` actualizado (§Límites duros

@@ -79,59 +79,72 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     el paquete instalado, confirmado con un test que lo bloquea vía
     `sys.modules`. 8 tests nuevos. **38 tests en total** (19 `doctor` + 11
     `synopsis` + 8 `mcp`).
-13. **`spec/features/004-attract-ingest/` — implementada, verificación
-    contra `mame` real pendiente.** M7 del bootcamp, el último módulo
-    planeado en `cli.py`. `attract ingest <rom.zip>` es el primer comando
-    que **crea** un `game:` nuevo (no edita uno existente): identifica el
-    set con `mame -listxml` (stdlib `xml.etree.ElementTree`, sin romper
-    el límite duro), exige exactamente una máquina jugable — cero o más
-    de una falla explícito, sin adivinar (el caso ">1" reabre la
-    verificación pendiente de ADR-0004 si aparece de verdad). Crea
-    `media/<set>/` vacía. 10 tests nuevos, todos contra un XML **sintético**
-    (no hay `mame` en este sandbox) salvo uno que sí corre contra la
-    ausencia real del binario. Con esto los cuatro módulos planeados
-    originalmente en `cli.py` (M4, M5, M7 + `doctor`/`synopsis` de M0-M2)
-    están implementados.
+13. **`spec/features/004-attract-ingest/` — implementada.** M7 del
+    bootcamp, el último módulo planeado en `cli.py`. `attract ingest
+    <rom.zip>` es el primer comando que **crea** un `game:` nuevo (no
+    edita uno existente): identifica el set con `mame -listxml` (stdlib
+    `xml.etree.ElementTree`, sin romper el límite duro), exige
+    exactamente una máquina jugable — cero o más de una falla explícito,
+    sin adivinar (el caso ">1" reabre la verificación pendiente de
+    ADR-0004 si aparece de verdad). Crea `media/<set>/` vacía. 10 tests
+    nuevos, todos contra un XML **sintético** (no hay `mame` en este
+    sandbox) salvo uno que sí corre contra la ausencia real del binario.
+    Con esto los cuatro módulos planeados originalmente en `cli.py` (M4,
+    M5, M7 + `doctor`/`synopsis` de M0-M2) están implementados.
 14. **`003-attract-mcp` — roundtrip de protocolo real, cerrado
-    2026-07-29.** Se intentó instalar `mame` vía `apt` en este sandbox
-    para cerrar la verificación de `004-attract-ingest` (punto 1 de
-    "Siguiente" abajo) — no hay acceso root, queda bloqueada de verdad,
-    no fingida. En cambio sí se pudo cerrar algo real: un cliente MCP
-    oficial (`mcp.client.stdio` + `ClientSession`) hablando el protocolo
-    completo — `initialize` → `list_tools` → `call_tool` — contra
-    `python -m attract.mcp_server` como subproceso de verdad, no contra
-    las funciones internas mockeadas. Nuevo test
-    `test_roundtrip_protocolo_real_via_stdio`. **49 tests en total**
-    (19 `doctor` + 11 `synopsis` + 9 `mcp` + 10 `ingest`). Sigue sin ser
-    Claude Desktop/Claude Code — ver `Siguiente` punto 3.
+    2026-07-29.** Se intentó instalar `mame` vía `apt` en este sandbox —
+    no hay acceso root, no se pudo. En cambio sí se pudo cerrar algo real:
+    un cliente MCP oficial (`mcp.client.stdio` + `ClientSession`) hablando
+    el protocolo completo — `initialize` → `list_tools` → `call_tool` —
+    contra `python -m attract.mcp_server` como subproceso de verdad, no
+    contra las funciones internas mockeadas. Nuevo test
+    `test_roundtrip_protocolo_real_via_stdio`. **49 tests en total.**
+    Sigue sin ser Claude Desktop/Claude Code — ver `Siguiente` punto 2.
+15. **`004-attract-ingest` — forma del XML confirmada contra `mame` real,
+    2026-07-29.** El autor corrió `mame -listxml sf2ce` (mame vanilla
+    0.288) en su Mac y pegó la salida completa en el chat — evidencia
+    real, no una suposición. Confirmado: el `DOCTYPE` con subset interno
+    no rompe `ET.fromstring`, `<description>`/`<year>`/`<manufacturer>`
+    son los tags correctos, `runnable="no"` filtra bien. **Hallazgo
+    nuevo:** el título real trae basura de región pegada de verdad
+    (`"... (World 920513)"`) — decidido dejarlo crudo, sin limpieza por
+    regex (ver `spec.md` §Fuera de alcance, que ya lo anticipaba). Nuevo
+    test `test_forma_real_confirmada_2026_07_29` con el XML real como
+    evidencia permanente. **50 tests en total** (19 `doctor` + 11
+    `synopsis` + 9 `mcp` + 11 `ingest`). Sigue abierto un punto menor: si
+    Pegasus acepta `release: <solo año>` en pantalla — necesita el
+    gabinete, no solo el parser.
+16. **ADR-0011 — verificación de formato diferida a propósito,
+    2026-07-29.** El autor va a generar `_synopsis/<set>.json` con un
+    proceso externo propio; hasta que ese proceso exista, no hay nada
+    real contra qué verificar. Se agregó `fixtures/arcade/_synopsis/
+    sf2ce.json` como segundo ejemplo del contrato mínimo (`{"summary":
+    "..."}`), junto al `mok.json` que ya existía — sin pretender que esto
+    cierra la verificación pendiente de la ADR, que sigue abierta.
 
 ## Siguiente 🔜
 
-1. **`004-attract-ingest`** — verificación "bien dummy" contra `mame` real
-   en tu Mac (ver `tasks.md`): confirmar forma exacta del XML, si el
-   `DOCTYPE` interno rompe el parseo, y si `release: <año solo>` es un
-   formato que Pegasus acepta. Intentado en este sandbox vía
-   `apt-get install mame` — sin acceso root, no se pudo instalar. Sigue
-   necesitando tu Mac.
-2. **`002-attract-skill`** — correr la validación de disparo en una sesión
+1. **`002-attract-skill`** — correr la validación de disparo en una sesión
    nueva de **Claude Code** (ver `tasks.md` §Validación). No aplica
    probarlo en un entorno Cowork como este: el mecanismo de disparo de
    `.claude/skills/<nombre>/SKILL.md` es de Claude Code, no de Cowork.
-3. **ADR-0011** — verificaciones pendientes: confirmar el formato real de
-   entrega del sistema de scraping externo (hoy `_synopsis/<set>.json` es
-   un supuesto sin evidencia real, mismo punto de partida que tuvo
-   `magazine.json` antes de ADR-0010).
-4. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
+2. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
    de verdad (`mcp.json` real, tools visibles en la UI). El protocolo en
    sí ya está verificado de punta a punta (ver punto 14 de "Hecho"); lo
    que falta es específicamente la experiencia con un cliente de
    escritorio, que necesita tu máquina.
+3. **`004-attract-ingest`** — punto menor: confirmar en el gabinete real
+   si Pegasus acepta `release: <solo año>` en pantalla. No bloqueante,
+   ajuste de una línea si hace falta.
 
 ## Backlog / ideas 💡
 
 - **Procedencia IA vs. manual** (§3 de `CONVENCION.md`) — decidido no
   distinguir, campo `x-procedencia` dejado por si se reconsidera. No hay
   disparador concreto todavía para revisitarlo.
+- **ADR-0011, formato real de `_synopsis/<set>.json`** — diferido hasta
+  que el proceso externo de scraping del autor exista de verdad (ver
+  punto 16 de "Hecho"). No es bloqueante para nada del resto del proyecto.
 
 > Cada feature nueva se crea como `features/NNN-nombre/` con `spec.md`,
 > `plan.md` y `tasks.md` **antes** de tocar código.

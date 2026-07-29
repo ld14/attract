@@ -1,7 +1,8 @@
 # 004 · `attract ingest` — Spec
 
-**Estado:** implementada (verificación contra `mame` real pendiente — ver
-`tasks.md`)
+**Estado:** implementada, forma del XML confirmada contra `mame` real
+2026-07-29 (ver `tasks.md` — queda un punto menor: si Pegasus acepta
+`release: <solo año>` en pantalla, eso necesita el gabinete).
 
 ## Qué hace
 
@@ -29,23 +30,36 @@ ATTRACT arma la estructura de archivos". Hasta ahora todo el banco de
 pruebas se armó a mano en los fixtures — este es el primer comando que
 hace ese trabajo de verdad. M7 del bootcamp.
 
-## ⚠️ Sobre `mame -listxml`: sin verificar en esta sesión
+## ✅ Sobre `mame -listxml`: confirmado 2026-07-29
 
-Este sandbox **no tiene MAME instalado** — no hay forma de correr
-`mame -listxml` acá y confirmar la forma exacta del XML. Todo lo que sigue
-sobre qué tags trae (`<description>`, `<year>`, `<manufacturer>`) es
-conocimiento general del formato de MAME, **no evidencia verificada en
-esta sesión** — mismo tipo de honestidad que ya aplicamos con
-`_synopsis/<set>.json` (ADR-0011): el contrato puede necesitar un
-ADR-superseded el día que se corra contra el binario real y algo no
-coincida. Ver `tasks.md` — hay una verificación pendiente marcada
-explícitamente para correr en tu Mac.
+Este sandbox no tiene MAME instalado (se intentó `apt-get install mame`;
+sin acceso root, no se pudo). Pero el autor corrió `mame -listxml sf2ce`
+en su Mac (mame vanilla 0.288) y pegó la salida completa acá — evidencia
+real, no una suposición. Confirmado contra ese XML literal
+(`tests/test_ingest.py::XML_SF2CE_REAL` /
+`test_forma_real_confirmada_2026_07_29`):
 
-Lo que sí está verificado (LAB 0.2, esta sesión): el filtro para quedarse
+- El `<!DOCTYPE mame [...]>` con subset interno (declaraciones `<!ELEMENT>`/
+  `<!ATTLIST>`) precede a `<mame>` y **no rompe** `ET.fromstring` — dudaba
+  esto explícitamente, quedó descartado como riesgo.
+- `<description>`, `<year>`, `<manufacturer>` son los tags reales, tal
+  como se había asumido.
+- `runnable="no"` filtra bien: de 3 `<machine>` en el XML real (1 jugable +
+  2 devices), `listar_maquinas_jugables` devuelve solo la jugable.
+- **Hallazgo nuevo:** `<description>` trae basura de región/revisión
+  pegada de verdad — `"Street Fighter II': Champion Edition (World
+  920513)"`, no es un caso hipotético. Decisión (2026-07-29, confirma lo
+  que "Fuera de alcance" ya anticipaba): se deja crudo, ver esa sección.
+
+Lo que sí está verificado desde antes (LAB 0.2): el filtro para quedarse
 solo con máquinas jugables es
-`mame -listxml <set> | grep '<machine name' | grep -v 'runnable="no"'`
-— los dispositivos internos (CPU, sonido, memoria) no llevan ese filtro,
-solo las máquinas reales.
+`mame -listxml <set> | grep '<machine name' | grep -v 'runnable="no"'`.
+
+**Sigue sin confirmar:** si Pegasus, en pantalla, acepta `release: 1992`
+(solo el año, sin mes/día — el único `release:` que había en los fixtures
+antes de esto era `2002-03-06`, fecha completa). Este punto necesita el
+gabinete real, no solo el parser — `attract doctor` ya lo acepta sin
+quejarse, pero eso no confirma que Pegasus lo muestre bien.
 
 ## Criterios de aceptación
 
@@ -53,8 +67,8 @@ solo las máquinas reales.
       una** máquina jugable, `attract ingest` agrega un bloque `game:`
       nuevo a `metadata.pegasus.txt` con `file:`, `title` (de
       `<description>`), `developer` (de `<manufacturer>`, si está),
-      `release` (de `<year>`, si está), `x-set: <set>`. **Probado contra
-      XML sintético, no contra `mame` real — ver `tasks.md`.**
+      `release` (de `<year>`, si está), `x-set: <set>`. **Confirmado
+      contra la salida real de `mame -listxml sf2ce` — ver arriba.**
 - [x] Crea `media/<set>/` (carpeta vacía) si no existe.
 - [x] Si `<set>` ya tiene un bloque `game:` en `metadata.pegasus.txt`, no
       duplica — falla explícito.

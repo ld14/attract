@@ -25,7 +25,7 @@ trampa de la versión de MAME, que puede romper ADR-0005 sin avisar.
 make setup       # config de git (precomposeUnicode)
 make check-git   # verificá que quedó
 make doctor      # el validador contra los fixtures
-make test        # 49 tests, cada uno reproduce un bug real o un caso del contrato
+make test        # 50 tests, cada uno reproduce un bug real o un caso del contrato
 make theme       # instala el theme de debug en Pegasus
 ```
 
@@ -91,7 +91,7 @@ src/        attract doctor + synopsis + mcp + ingest (los 4 módulos planeados e
 themes/     attract-debug ← el harness del Bloque 3 · experimentos/ ← pruebas cerradas
 fixtures/   ROMs falsas de 0 bytes + una revista de mentira. Portables, suficientes
 library/    tu librería real. NO va al repo
-tests/      49 tests. Cada uno reproduce un bug real o un caso del contrato
+tests/      50 tests. Cada uno reproduce un bug real o un caso del contrato
 ```
 
 ## Lo que ya aprendimos a los golpes

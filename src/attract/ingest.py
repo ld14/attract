@@ -10,11 +10,19 @@ de ADR-0004 nunca confirmado con evidencia propia), no agrega nada.
 xml.etree.ElementTree es stdlib: ingest no rompe el limite duro (a
 diferencia de attract mcp, ver ADR-0012).
 
-ADVERTENCIA (ver spec/features/004-attract-ingest/spec.md): la forma
-exacta del XML de "mame -listxml" esta asumida por conocimiento general
-del formato, NO verificada contra un binario real en esta sesion - no hay
-mame instalado en este sandbox. Verificar contra una maquina real antes de
-confiar en esto en produccion.
+Forma del XML confirmada 2026-07-29 contra mame vanilla 0.288 real (el
+autor corrio "mame -listxml sf2ce" en su Mac): el DOCTYPE con subset
+interno no rompe el parseo, <description>/<year>/<manufacturer> son los
+tags correctos, runnable="no" filtra bien los devices. Ver
+tests/test_ingest.py::test_forma_real_confirmada_2026_07_29 para la
+evidencia literal. Sigue sin confirmar en esta sesion: si Pegasus acepta
+"release: <solo el año>" en pantalla - eso necesita el gabinete, no solo
+el parser (ver spec/features/004-attract-ingest/tasks.md).
+
+Tambien confirmado con datos reales: el <description> de mame puede traer
+basura de region/revision pegada al titulo (ej. "... (World 920513)").
+Decision (2026-07-29): se deja crudo, construir_bloque no intenta
+limpiarlo - mismo criterio que el resto del modulo, no adivina.
 
 Filosofia: fallar explicito, nunca escritura parcial ni silenciosa.
 """

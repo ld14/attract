@@ -19,7 +19,7 @@ _Checklist accionable derivada del `plan.md`._
 - [x] `src/attract/cli.py` — agregado `"ingest"` a `COMANDOS` y al
       `--help`.
 
-## Tests (`tests/test_ingest.py`) — 10 tests, todos con XML sintético mockeado
+## Tests (`tests/test_ingest.py`) — 11 tests
 
 - [x] `mame` no instalado → `IngestError` explícito. **Este test corre
       contra el `mame` real de este sandbox** (no hay uno instalado) — es
@@ -36,51 +36,37 @@ _Checklist accionable derivada del `plan.md`._
 - [x] `aplicar` con set no reconocido por mame: falla, archivo sin tocar,
       no crea `media/<set>/`.
 
-## ⚠️ Verificación pendiente — correr en tu Mac, bien dummy
+## ✅ Verificación de la forma del XML — cerrada 2026-07-29
 
-_Esta es la única parte de `004-attract-ingest` que no puedo confirmar yo
-mismo: no hay `mame` instalado en este sandbox. Todo lo de arriba está
-probado contra un XML **sintético** (inventado a partir de conocimiento
-general del formato), no contra el binario real._
+_Confirmada con evidencia real: el autor corrió `mame -listxml sf2ce`
+(mame vanilla 0.288) en su Mac y pegó la salida completa. Se probó
+literalmente contra el código de `ingest.py`
+(`tests/test_ingest.py::test_forma_real_confirmada_2026_07_29`)._
 
-**Paso 1** — elegí un ROM real y conocido de tu librería (por ejemplo
-`sf2ce`, el mismo que ya usamos en el LAB 0.2).
+Resultado:
 
-**Paso 2** — confirmá la forma real del XML:
+- `<description>`, `<year>`, `<manufacturer>`, `runnable="no"` — todo
+  confirmado, tal como se había asumido.
+- El `<!DOCTYPE mame [...]>` con subset interno no rompe `ET.fromstring`.
+- El título real trae basura de región de verdad:
+  `"Street Fighter II': Champion Edition (World 920513)"`. Decisión: se
+  deja crudo (ver spec.md §Fuera de alcance) — no se agrega limpieza por
+  regex, mismo criterio de "no inventar/adivinar" que ya usaba el resto
+  del módulo.
 
-```bash
-mame -listxml sf2ce
-```
-
-Mirá si tiene `<description>`, `<year>`, `<manufacturer>` con esos nombres
-exactos, y si el XML empieza con un `<!DOCTYPE mame [...]>` antes del
-`<mame>` raíz (esperado, no debería romper el parseo, pero confirmalo).
-
-**Paso 3** — corré `attract ingest` contra un `metadata.pegasus.txt` de
-prueba (no el real, para no arriesgar tu librería):
-
-```bash
-cp fixtures/arcade/metadata.pegasus.txt /tmp/prueba.txt
-mkdir -p /tmp/prueba-media
-cd /tmp && PYTHONPATH=<ruta-al-repo>/src python3 -m attract.ingest sf2ce.zip .
-```
-
-(Vas a necesitar ajustar la ruta para que `metadata.pegasus.txt` esté en
-el directorio donde corrés el comando.)
-
-**Paso 4** — mirá qué bloque `game:` quedó. ¿El título tiene basura de
-región/revisión (`"(Japan 920513)"` o similar)? ¿`release:` con solo el
-año se ve bien, o Pegasus lo rechaza? Contame qué viste y ajustamos
-`ingest.py` si algo no coincide — no hace falta una ADR nueva para esto,
-es corregir contra evidencia (mismo patrón que `magazine.json`,
-ADR-0008 → 0010).
+**Único punto que sigue abierto — necesita el gabinete, no solo el
+parser:** si Pegasus acepta `release: 1992` (solo el año) en pantalla sin
+rechistar. `attract doctor` ya lo acepta. Si alguna vez cargás esto en el
+gabinete de verdad, fijate y contame — si Pegasus lo rechaza, es un ajuste
+de una línea en `construir_bloque`, no una decisión de arquitectura.
 
 ## Cierre
 
-- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (48/48: 19
-      `doctor` + 11 `synopsis` + 8 `mcp` + 10 `ingest`).
+- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (50/50: 19
+      `doctor` + 11 `synopsis` + 9 `mcp` + 11 `ingest`).
 - [x] `attract doctor` sobre todo el repo en 0 errores.
-- [ ] Verificación de arriba corrida contra `mame` real — pendiente,
-      necesita tu Mac.
+- [x] Verificación de arriba corrida contra `mame` real — cerrada
+      2026-07-29 (ver sección de arriba). Solo queda el punto menor de
+      `release: <año>` en Pegasus real, no bloqueante.
 - [x] Movido `004-attract-ingest` a "Hecho (con verificación pendiente)"
       en `../../constitution/roadmap.md`.
