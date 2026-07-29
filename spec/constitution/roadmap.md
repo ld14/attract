@@ -192,6 +192,39 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     `FileNotFoundError` real de `subprocess`, sin mock. **68 tests en
     total** (34 `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`).
 
+20. **`004-attract-ingest` cerrada del todo, y el esqueleto del theme
+    verificado — 2026-07-29.** Dos cosas en una sola sesión de Pegasus real,
+    sin escribir código nuevo para ninguna: el harness de
+    `themes/attract-debug/` ya dumpeaba lo necesario y `game_dirs.txt`
+    apuntaba a los dos metadata a la vez.
+
+    **El último pendiente de 004 cae:** `releaseYear` devuelve `2002` tanto
+    desde `release: 2002` (solo el año, `library/arcade`) como desde
+    `release: 2002-03-06` (fecha completa, `fixtures/arcade`). Pegasus acepta
+    el año pelado; `construir_bloque` no se toca. **La feature 004 no tiene
+    ningún pendiente.**
+
+    **El esqueleto del theme carga** y con eso queda confirmado que un theme
+    de Pegasus soporta subcarpetas y un singleton vía `qmldir` — el árbol de
+    `005/plan.md` va tal como está. De ahí salieron cuatro hallazgos más y
+    **ADR-0017** (ver punto 19 y `005/tasks.md` §1).
+
+    **Tres hallazgos del harness que le importan al theme:**
+    1. **Los assets no siempre son `file://`.** Un juego que entra por el
+       provider de Steam devuelve `boxFront` como URL remota
+       (`https://shared.akamai.steamstatic.com/…/header.jpg?t=…`). Mata el
+       plan B de `Paths.qml` (derivar el directorio de un asset) y, en un
+       gabinete offline, esa imagen nunca carga. Refuerza ADR-0017.
+    2. **Los dos fixtures que faltaban se complementan a propósito:**
+       `EXPERIMENTO` no tiene `x-set` pero sí assets; `TEST MULTIFILE` tiene
+       `x-set` pero ningún asset. Cada uno rompe una de las dos vías, así que
+       ninguna alcanza sola — queda probado que hace falta `files[0].path`.
+    3. **`releaseYear` vuelve `0` cuando no hay `release:`** — misma colisión
+       que `rating`: no se distingue "sin dato" de "año cero". El theme tiene
+       que tratar el `0` como "Sin Información" (`CONVENCION.md` §2.3). Y
+       `rating: 0.8500000238418579` confirma que la precisión de float ya
+       queda resuelta con `Math.round(rating * 100)`.
+
 ## Siguiente 🔜
 
 0. **El theme de producción — `005` / `006` / `007`.** Es el trabajo grande
@@ -201,27 +234,36 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
    existentes campos que nunca se definieron (`accent`, `x-manual`) y pedía
    formas que chocaban con límites duros vigentes; eso se cerró primero, en
    **ADR-0013 a 0016** (accent por juego, manual digitalizado, contrato
-   completo de `data.json`, canvas fijo 1280×720). **16 ADR, 15 vigentes.**
+   completo de `data.json`, canvas fijo 1280×720) y **ADR-0017**, que salió
+   de correr el esqueleto contra Pegasus real. **17 ADR, 16 vigentes.**
 
-   - **`005-theme-base`** — especificada. `themes/attract/`: tokens, rutas
-     en runtime, lectura de `data.json`, átomos, librería y detalle.
+   - **`005-theme-base`** — en curso. Esqueleto hecho y **verificado contra
+     Pegasus real**: subcarpetas y singleton vía `qmldir` funcionan, el árbol
+     del plan va tal como está. Faltan `Paths`, `GameData`, los átomos
+     restantes y las dos pantallas.
    - **`006-theme-documentos`** — sin especificar. Video (QtMultimedia),
      carrusel de revistas y visor de documentos paginado.
    - **`007-theme-trucos`** — sin especificar. Tokenizer de inputs y overlay
      de trucos & combos.
 
-   **Bloqueante inmediato:** tres experimentos escritos y **sin correr** en
-   `themes/experimentos/` — `rutas-relativas.qml` (¿de dónde sale
-   `media/<set>/` sin hardcodear? cierra la deuda de ADR-0003 que arrastran
-   los dos experimentos viejos), `graphical-effects.qml` (¿existe
-   `QtGraphicalEffects` en este binario? define si hay blur y glow o
-   aproximaciones planas) y `multimedia-loop.qml` (¿loopea el video?).
-   Necesitan Pegasus real; los dos primeros bloquean el código de la 005.
+   **Bloqueante inmediato: `themes/experimentos/rutas-relativas.qml`**, sin
+   correr. Es el único que bloquea el código de la 005: sin él no hay
+   `Paths.qml`, y sin `Paths` no hay `GameData` ni la mitad de las dos
+   pantallas. Medio resuelto de rebote el 2026-07-29 (`game.files` existe y
+   tiene `.count`); falta confirmar si `files.get(0).path` da la ruta absoluta
+   de la ROM. **Y quedó demostrado que no hay atajo:** el plan B de derivar la
+   ruta de un asset falla en tres casos reales medidos con el harness — un
+   asset puede ser una URL remota (los juegos de Steam devuelven `https://…`),
+   `TEST MULTIFILE` no tiene ningún asset, y el juego de `library/arcade`
+   tampoco. Y el fallback por `x-set` tampoco alcanza solo, porque el fixture
+   `EXPERIMENTO` no tiene `x-set`.
 
-1. **`004-attract-ingest`** — punto menor: confirmar en el gabinete real
-   si Pegasus acepta `release: <solo año>` en pantalla. No bloqueante,
-   ajuste de una línea si hace falta.
-2. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
+   Después, sin bloquear: **`graphical-effects.qml`** (¿existe
+   `QtGraphicalEffects`? define si hay blur y glow reales o aproximaciones
+   planas). **`multimedia-loop.qml` no se puede correr todavía:** no hay ni un
+   `.mp4` en `fixtures/` ni en `library/`. Bloquea la 006, no la 005.
+
+1. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
    de verdad (`mcp.json` real, tools visibles en la UI). El protocolo en
    sí ya está verificado de punta a punta (ver punto 14 de "Hecho"); lo
    que falta es específicamente la experiencia con un cliente de

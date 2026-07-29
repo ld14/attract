@@ -1,9 +1,9 @@
 # 004 · `attract ingest` — Spec
 
-**Estado:** implementada y verificada de punta a punta contra el binario de
-`mame` real (vanilla 0.288, instalado en el Mac del autor el 2026-07-29 —
-ver `tasks.md` §Integración). Queda un punto menor: si Pegasus acepta
-`release: <solo año>` en pantalla, eso necesita el gabinete.
+**Estado:** implementada y **cerrada** (2026-07-29). Verificada de punta a
+punta contra el binario de `mame` real (vanilla 0.288 — ver `tasks.md`
+§Integración) y confirmada en Pegasus real que acepta `release: <solo año>`
+(ver `tasks.md` §`release`). No queda nada pendiente.
 
 ## Qué hace
 

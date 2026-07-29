@@ -54,11 +54,29 @@ Resultado:
   regex, mismo criterio de "no inventar/adivinar" que ya usaba el resto
   del módulo.
 
-**Único punto que sigue abierto — necesita el gabinete, no solo el
-parser:** si Pegasus acepta `release: 1992` (solo el año) en pantalla sin
-rechistar. `attract doctor` ya lo acepta. Si alguna vez cargás esto en el
-gabinete de verdad, fijate y contame — si Pegasus lo rechaza, es un ajuste
-de una línea en `construir_bloque`, no una decisión de arquitectura.
+## ✅ `release: <solo año>` — cerrado 2026-07-29
+
+_Era el último punto abierto de la feature. Se respondió en Pegasus real, con
+los dos casos al lado y sin escribir código nuevo: el harness de
+`themes/attract-debug/` dumpea `releaseYear`, y `game_dirs.txt` apuntaba a los
+dos metadata a la vez._
+
+| Juego | `release:` en el metadata | `releaseYear` en Pegasus |
+|---|---|---|
+| `library/arcade` → The Maze of the Kings | `2002` (solo el año) | **2002** |
+| `fixtures/arcade` → The Maze of the Kings | `2002-03-06` (fecha completa) | **2002** |
+
+**Pegasus acepta el año pelado.** `construir_bloque` no necesita ningún
+ajuste: escribir `release: <año>` cuando `-listxml` solo da el año era la
+decisión correcta, y no hay que inventar un `01-01` para completar la fecha.
+
+**Hallazgo de rebote:** cuando no hay `release:`, `releaseYear` vuelve `0` —
+la misma colisión que `rating` (no se distingue "sin dato" de "año cero", ver
+`docs/CONVENCION.md` §2.3). No afecta a `ingest`, que nunca escribe un año que
+no tenga; sí afecta al theme, que tiene que tratar el `0` como "Sin
+Información". Anotado en `spec/features/005-theme-base/`.
+
+**Con esto la feature 004 no tiene ningún pendiente.**
 
 ## ✅ Integración contra `mame` real — cerrada 2026-07-29
 

@@ -18,9 +18,26 @@
 //
 // PLAN B (si `game.files` no existe o no da la ruta): derivar la base de
 // cualquier asset nativo — assets.boxFront devuelve una URL absoluta, y
-// sacarle el nombre de archivo deja media/<set>/. Falla solo si el juego no
-// tiene NINGÚN asset. Este experimento mide las dos vías a la vez para saber
-// cuál usar, no solo si la primera anda.
+// sacarle el nombre de archivo deja media/<set>/. Este experimento mide las
+// dos vías a la vez para saber cuál usar, no solo si la primera anda.
+//
+// ADVERTENCIA SOBRE EL PLAN B, medida el 2026-07-29 con el harness de
+// attract-debug: **el plan B no alcanza, y en un caso miente.** Tres razones,
+// todas con evidencia:
+//
+//   a) Un asset puede ser una URL REMOTA, no un file://. Un juego que entra
+//      por el provider de Steam devuelve
+//      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/
+//      255710/header.jpg?t=..." en boxFront. Derivar el directorio de ahí da
+//      una ruta http, no una carpeta del disco. (Ver ADR-0017: esos providers
+//      se apagan, pero el theme no puede asumir que alguien lo hizo.)
+//   b) El fixture TEST MULTIFILE no tiene NINGUN asset — boxFront, cartridge
+//      y marquee vienen vacíos. Sin assets no hay nada de donde derivar.
+//   c) El juego de library/arcade tampoco tiene assets ni x-set.
+//
+// Y el fallback por x-set tampoco alcanza solo: el fixture EXPERIMENTO (dino)
+// NO tiene x-set. O sea que las dos vías por separado fallan en fixtures
+// distintos y se complementan — por eso hace falta `files[0].path`.
 //
 // RESULTADO OBSERVADO: PARCIAL — `game.files` EXISTE y tiene `.count`.
 // Confirmado de rebote el 2026-07-29 por el panel de diagnóstico del esqueleto

@@ -64,6 +64,8 @@ Los fixtures ya encarnan los casos límite. No hay que inventar datos:
 | Sin cobertura en revistas | `media/mok/`, `media/sf2ce/` | `"Sin cobertura en revistas"` |
 | Varios `file:` | `TEST MULTIFILE` | **Un solo** juego en el rail, con dos archivos. Confirmado 2026-07-29: `api.allGames` reporta `[files: 2]`, no dos juegos (ADR-0004 se sostiene) |
 | Acentos en NFC | `MICROMANÍA`, `"báculos mágicos"` en el `summary:` de `mok` | Se muestran bien |
+| Sin `release:` | `EXPERIMENTO`, `TEST MULTIFILE`, `sf2ce` | El chip AÑO muestra `"Sin Información"`, **no** `0`. Medido 2026-07-29: `releaseYear` vuelve `0` cuando el campo falta — misma colisión que `rating` (§2.3) |
+| Asset con URL remota | Cualquier juego de Steam si el provider quedó activo | No rompe `Paths` ni `CoverImage`. Medido: `boxFront` puede ser `https://…`, no siempre `file://` |
 | Juego de otro provider | Cualquiera que traiga Steam/es2/logiqx si el provider quedó activo | Se ve degradado (accent neutro, bloques con su mensaje de §2.3), **sin crash**. `Paths` no puede resolver `media/<set>/` para él y eso no debe romper nada. Lo normal es apagar esos providers ([`ADR-0017`](../../decisions/0017-providers-pegasus.md)), pero el theme no puede asumir que alguien lo hizo |
 | Dos colecciones fusionadas con el mismo juego | `game_dirs.txt` apuntando a `fixtures/arcade` **y** `library/arcade`, los dos con un `mok.zip` | Aparecen **las dos** entradas de "The Maze of the Kings". El theme **no** deduplica: no tiene con qué saber cuál es la buena |
 
