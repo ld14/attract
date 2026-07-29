@@ -1,5 +1,5 @@
 # ATTRACT
-.PHONY: help doctor doctor-lib test mcp theme setup check-git check-py venv clean
+.PHONY: help doctor doctor-lib test mcp theme theme-debug setup check-git check-py venv clean
 
 # Si existe .venv lo usa; si no, cae al python3 del sistema.
 # El doctor no tiene dependencias externas: corre con cualquiera de los dos.
@@ -27,7 +27,8 @@ help:
 	@echo "  make check-git   verifica precomposeUnicode y autocrlf"
 	@echo "  make doctor      valida fixtures/"
 	@echo "  make doctor-lib  valida library/  (tu libreria real)"
-	@echo "  make theme       instala el theme de debug ($(UNAME))"
+	@echo "  make theme       instala el theme de produccion ($(UNAME))"
+	@echo "  make theme-debug instala el harness de debug (ADR-0001)"
 	@echo "  make test        corre los tests"
 	@echo "  make mcp         corre el servidor MCP (necesita: pip install mcp)"
 	@echo "  make clean       borra .venv y caches"
@@ -82,6 +83,15 @@ doctor-lib:
 	@$(PY) -m attract.doctor library --target windows
 
 theme:
+	@mkdir -p "$(PEGASUS_THEMES)"
+	@rm -rf "$(PEGASUS_THEMES)/attract"
+	@cp -R themes/attract "$(PEGASUS_THEMES)/"
+	@echo "Instalado en $(PEGASUS_THEMES)/attract"
+	@echo "Abri Pegasus > Settings > Theme > ATTRACT"
+
+# El harness del Bloque 3. Es la evidencia viva de ADR-0001 y el archivo sobre
+# el que se copian los experimentos de themes/experimentos/ - no se pisa.
+theme-debug:
 	@mkdir -p "$(PEGASUS_THEMES)"
 	@cp -R themes/attract-debug "$(PEGASUS_THEMES)/"
 	@echo "Instalado en $(PEGASUS_THEMES)/attract-debug"

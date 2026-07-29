@@ -23,23 +23,82 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
 
 ## 1 · Esqueleto (y la pregunta que responde)
 
-- [ ] `themes/attract/theme.cfg` + `qmldir` + `theme.qml` mínimo (un
-      rectángulo) + `Theme.qml` singleton con dos colores.
-- [ ] Instalar y abrir Pegasus. Hecho cuando: carga sin "Theme loading
-      failed", es decir **un theme de Pegasus soporta subcarpetas y
-      singletons vía `qmldir`**. Si no: aplanar el árbol y reemplazar los
-      singletons por un `QtObject` con `id` en `theme.qml` (ver `plan.md`).
-- [ ] `Makefile`: `make theme` → `themes/attract/`, `make theme-debug` →
+- [x] `themes/attract/theme.cfg` + `qmldir` + `theme.qml` + `Tokens.qml`
+      (singleton, expuesto como `Theme`) + `ui/Background.qml`. El esqueleto
+      ejercita **las dos** cosas que hay que confirmar a la vez: el singleton
+      de la raíz vía `qmldir` y el `import "ui"` de una subcarpeta. Si solo
+      probara una, no responde la pregunta.
+- [x] **Hallazgo, resuelto en el momento: el singleton no puede llamarse
+      `Theme.qml`.** Pegasus exige `theme.qml` como entrada del theme, y en
+      macOS y Windows el filesystem es case-insensitive — son **el mismo
+      archivo**. Se comprobó a lo bruto: un `echo > theme.qml` borró el
+      contenido de `Theme.qml`, sin un error, sin un aviso. El archivo pasa a
+      llamarse `Tokens.qml` y el `qmldir` lo expone como `Theme`, así que en
+      el código no cambia nada (`Theme.screen` sigue siendo `Theme.screen`).
+      **No se agrega un chequeo a `attract doctor`:** en un filesystem
+      case-insensitive el par colisionante no puede existir, así que no hay
+      nada que detectar en el Mac ni en el gabinete; solo se vería en Linux, y
+      el proyecto no tiene ninguna máquina Linux (ADR-0003). Un chequeo que
+      nunca dispara es peor que el comentario que quedó en `Tokens.qml`.
+- [x] **Decisión de diseño que salió de acá: un solo singleton.** `Paths` y
+      `GameData` quedan como componentes normales, no singletons — un
+      singleton en subcarpeta necesita su propio `qmldir` y es el mecanismo
+      del que menos se sabe contra este binario. Se usa el que hace falta y no
+      se apuesta al otro.
+- [x] **Confirmado contra Pegasus real, 2026-07-29.** Cargó de una, sin
+      bisección: **un theme de Pegasus SÍ soporta un singleton vía `qmldir` y
+      un `import` de subcarpeta.** El panel reportó `singleton Theme (qmldir):
+      OK`, `import "ui" (subcarpeta): OK`, lienzo 1280×720 escalado a 1.125
+      en una ventana de 1440×900 (o sea el escalado de ADR-0016 funciona), y
+      `fuentes: DEL SISTEMA` — correcto, los `.ttf` todavía no están.
+      **Con esto el árbol de `plan.md` queda habilitado tal como está: no hace
+      falta aplanarlo ni sacar el singleton.**
+- [x] **Bug de fidelidad encontrado en esa misma corrida y arreglado.** El
+      glow del fondo se derramaba sobre media pantalla en vez de quedar arriba
+      a la derecha. El CSS pide `radial-gradient(130% 100% at 72% 8%, ...)` y
+      ese `130% 100%` es una **elipse**; `createRadialGradient` solo hace
+      círculos, así que el glow se extendía ~765px hacia abajo en vez de ~330.
+      Se arregla escalando el contexto del `Canvas` en `y` antes de pintar.
+      Es exactamente el tipo de cosa que no se ve leyendo el CSS y sí se ve
+      en pantalla — el motivo de que esta tarea exista antes de las pantallas.
+- [x] **Tres hallazgos más de la misma corrida**, que salieron de que el panel
+      reportara 6 juegos donde los metadata declaran 5:
+      1. **`api.allGames` NO es la librería de ATTRACT.** El sexto juego era
+         _Cities: Skylines_, de la librería de Steam del autor — Pegasus tenía
+         cinco providers activos. Un juego que entra por otro provider no
+         tiene `x-set`, ni `data.json`, ni carpeta de colección. Resuelto en
+         [`ADR-0017`](../../decisions/0017-providers-pegasus.md): se apagan
+         por config, el theme no filtra.
+      2. **ADR-0004 se sostiene, y la sospecha previa era falsa.** Se
+         sospechaba que `allGames` contaba un juego por cada `file:`, lo que
+         habría mostrado el mismo juego repetido en el rail. `TEST MULTIFILE`
+         reportó `[files: 2]` — **un** juego con dos archivos, tal como
+         decidió ADR-0004. No hay nada que replantear.
+      3. **`game.files` existe y tiene `.count`.** Es medio experimento 1
+         resuelto de rebote: lo que falta confirmar es si `files.get(0).path`
+         da la ruta absoluta de la ROM, que es de donde `Paths` va a derivar
+         `media/<set>/`. Anotado en el encabezado del experimento.
+      Los dos _The Maze of the Kings_ no son un bug: `game_dirs.txt` apunta a
+      `fixtures/arcade` y a `library/arcade`, los dos declaran
+      `collection: Arcade` (Pegasus las fusiona) y cada uno tiene su propio
+      `mok.zip`. Se deja así a propósito mientras se desarrolla: es un caso
+      real de dos colecciones fusionadas que conviene tener a la vista, y el
+      theme **no** debe intentar deduplicar — no tiene con qué saber cuál es
+      el bueno.
+- [x] `Makefile`: `make theme` → `themes/attract/`, `make theme-debug` →
       `themes/attract-debug/`. El de debug **no se toca ni se borra**: es la
       evidencia de ADR-0001 y el archivo sobre el que se copian los
       experimentos.
 
 ## 2 · Cimientos
 
-- [ ] `Theme.qml` — colores base, radios, sombras, espaciado (handoff §Design
+- [x] `Tokens.qml` — colores base, radios, sombras, espaciado (handoff §Design
       Tokens), `FontLoader` de las tres familias con fallback al sistema, y
       los helpers `mix(a,b,t)` / `alpha(c,a)` que reemplazan `color-mix()` y
-      los `rgba()` del CSS.
+      los `rgba()` del CSS. Más `accentDe()`/`accent2De()`, que centralizan la
+      degradación de ADR-0013 en un solo lugar. `fonts/README.md` dice qué
+      `.ttf` bajar y qué pasa si faltan (el theme carga igual, con las fuentes
+      del sistema, y el panel de diagnóstico lo dice en pantalla).
 - [ ] `theme.qml` — canvas de 1280×720 con
       `scale: Math.min(w/1280, h/720)`, centrado (ADR-0016). Estado: `screen`,
       `selected`, `launching`. Overlays en `Loader { active: ... }`.
@@ -54,8 +113,13 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
 
 ## 3 · Átomos (`ui/`)
 
-- [ ] `Background.qml` — las tres capas del handoff + overlay CRT. Scanlines
-      con `Image` de 1×8px en `fillMode: Image.Tile` y la `y` animada.
+- [x] `Background.qml` — las tres capas del handoff + overlay CRT. Los
+      gradientes radiales y horizontales van con `Canvas` (`Rectangle` solo
+      hace verticales en QtQuick 2.0), y las scanlines con un `Canvas` pintado
+      **una sola vez** animando la `y` — no hay repintado por frame. Todo con
+      `QtQuick 2.0`: si el experimento de `QtGraphicalEffects` falla, este
+      archivo no cambia una línea. Las tres aproximaciones a CSS quedaron
+      anotadas en el encabezado, como pide el handoff.
 - [ ] `CoverImage.qml` — cadena `boxFront → poster → marquee → color-wash con
       accent`, saltando con `onStatusChanged`. Hecho cuando: `mok` (sin
       `boxFront`) muestra su `poster`, y un juego sin ningún asset muestra el

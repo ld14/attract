@@ -46,8 +46,9 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 | [0014](0014-manual-digitalizado.md) | El manual digitalizado vive en `media/<set>/_manual/`, declarado en `data.json` | accepted | 2026-07-29 |
 | [0015](0015-contrato-data-json.md) | Contrato completo de `data.json`, con nombres de campo explícitos | accepted | 2026-07-29 |
 | [0016](0016-canvas-fijo-escalado.md) | El theme se dibuja en un canvas fijo de 1280×720 y se escala entero | accepted | 2026-07-29 |
+| [0017](0017-providers-pegasus.md) | Los providers de Pegasus que no son de ATTRACT se apagan por config, no se filtran en el theme | accepted | 2026-07-29 |
 
-**16 ADR en total, 15 vigentes** (0008 quedó superseded por 0010 — no se
+**17 ADR en total, 16 vigentes** (0008 quedó superseded por 0010 — no se
 edita, se reemplaza). El razonamiento original de 0006-0009 está en
 [`docs/decisiones/2026-07-23.md`](../../docs/decisiones/2026-07-23.md), que
 puede archivarse ahora que su contenido vive formalizado acá. 0010 salió de
@@ -59,9 +60,16 @@ primera vez sin romper ADR-0002. 0012 salió de especificar M5
 (`attract mcp`): acota el límite stdlib-only para una dependencia opcional
 en vez de descartarlo o reimplementar el protocolo MCP a mano.
 
-**0013-0016 son el primer bloque de decisiones de *frontend* del proyecto.**
-Salieron de leer el diseño de referencia (`design_handoff_game_detail/`)
-contra lo ya decidido: el handoff daba por existentes campos que nunca se
-definieron (`accent`, `x-manual`) y pedía formas que chocaban con límites
-duros vigentes. Los cuatro cierran ese hueco antes de escribir el theme de
-producción, no durante.
+**0013-0017 son el primer bloque de decisiones de *frontend* del proyecto.**
+0013-0016 salieron de leer el diseño de referencia
+(`design_handoff_game_detail/`) contra lo ya decidido: el handoff daba por
+existentes campos que nunca se definieron (`accent`, `x-manual`) y pedía
+formas que chocaban con límites duros vigentes. Los cuatro cierran ese hueco
+antes de escribir el theme de producción, no durante.
+
+**0017 salió distinto: de correr el esqueleto del theme contra Pegasus real**
+(`spec/features/005-theme-base/tasks.md` §1). El panel de diagnóstico reportó
+6 juegos donde los metadata declaran 5, y el sexto venía de la librería de
+Steam del autor — o sea que `api.allGames` no es la librería de ATTRACT, es
+todo lo que Pegasus encontró con todos sus providers. Es el tipo de cosa que
+no aparece leyendo documentación, solo abriendo el programa.

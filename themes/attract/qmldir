@@ -1,0 +1,7 @@
+# El nombre expuesto es Theme; el archivo se llama Tokens.qml a proposito.
+# Pegasus exige "theme.qml" como entrada del theme, y en macOS/Windows el
+# filesystem es case-insensitive: un "Theme.qml" al lado seria EL MISMO
+# archivo y se pisarian en silencio. En el codigo se sigue escribiendo
+# Theme.algo. El encabezado de Tokens.qml tiene el detalle y por que esto no
+# es un chequeo de attract doctor.
+singleton Theme 1.0 Tokens.qml

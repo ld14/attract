@@ -24,12 +24,12 @@ como propiedad desde la pantalla hasta cada átomo.
 ```
 themes/attract/
 ├─ theme.cfg
-├─ qmldir                       declara Theme y Paths como singletons
+├─ qmldir                       declara el UNICO singleton: Theme -> Tokens.qml
 ├─ theme.qml                    canvas 1280x720 escalado + estado + ruteo de foco
-├─ Theme.qml          (sing.)   tokens + FontLoader
-├─ fonts/                       .ttf (los baja el autor)
+├─ Tokens.qml         (sing.)   tokens + FontLoader. Expuesto como `Theme`
+├─ fonts/                       .ttf (los baja el autor, ver fonts/README.md)
 ├─ core/
-│  ├─ Paths.qml       (sing.)   media/<set>/ y media/_magazines/<ref>/ en runtime
+│  ├─ Paths.qml                media/<set>/ y media/_magazines/<ref>/ en runtime
 │  └─ GameData.qml             XHR de data.json -> accent, review, cheats, manual, mags
 ├─ ui/
 │  ├─ Background.qml           3 capas + CRT
@@ -158,6 +158,22 @@ ADR-0001 y el archivo sobre el que se copian los experimentos.
 - **El `accent` baja como propiedad, no está en el singleton** — es un dato
   por juego (ADR-0013). Un átomo que lo leyera de `Theme` sería un átomo que
   se equivoca en cuanto haya dos accents en pantalla a la vez.
+- **Un solo singleton, y en la raíz: `Theme`.** `Paths` y `GameData` quedan
+  como componentes normales (`Paths` se instancia una vez en `theme.qml` con
+  un `id`; `GameData` se instancia por pantalla, que es lo que necesita igual
+  porque se liga a un juego puntual). Motivo: un singleton en una subcarpeta
+  necesita su propio `qmldir` y es el mecanismo del que menos se sabe contra
+  este binario. Se usa el que hace falta y no se apuesta al otro.
+- **El archivo del singleton se llama `Tokens.qml`, no `Theme.qml`** — y se
+  expone como `Theme` desde el `qmldir`. Pegasus exige `theme.qml` como
+  entrada, y en macOS y Windows el filesystem es case-insensitive: `Theme.qml`
+  y `theme.qml` son **el mismo archivo**. Verificado a lo bruto durante la
+  implementación: un `echo > theme.qml` borró el contenido de `Theme.qml`.
+  Esto **no** se convierte en un chequeo de `attract doctor`: en un filesystem
+  case-insensitive el par colisionante no puede existir, así que no hay nada
+  que detectar en el Mac ni en el gabinete — solo se vería en Linux, y el
+  proyecto no tiene ninguna máquina Linux (ADR-0003). Vive como comentario en
+  el encabezado de `Tokens.qml`, que es donde alguien lo va a buscar.
 - **Aproximaciones a CSS que Qt 5.15 no tiene**, cada una con su comentario:
   `backdrop-filter` → rectángulo translúcido plano; `color-mix()` →
   `Theme.mix()`; `conic-gradient` → se deja solo el radial + linear (~95%

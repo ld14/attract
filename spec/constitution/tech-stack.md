@@ -28,7 +28,7 @@
 | `library/` | Librería real del autor (ROMs, CHDs, assets). Nunca se commitea |
 | `themes/attract-debug/` | Theme QML de debug: harness del Bloque 3, dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no se pisa |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. No las instala `make theme` |
-| `spec/decisions/` | Decisiones de arquitectura. 0001-0016, 15 vigentes (0008 superseded por 0010) |
+| `spec/decisions/` | Decisiones de arquitectura. 0001-0017, 16 vigentes (0008 superseded por 0010) |
 | `spec/features/001-synopsis/` | Primera feature con spec/plan/tasks — `attract synopsis`, implementada |
 | `spec/features/002-attract-skill/` | `.claude/skills/attract/SKILL.md`, implementada |
 | `spec/features/003-attract-mcp/` | Servidor MCP, implementada |
@@ -147,6 +147,13 @@ página de información por familia, variantes como `file:` múltiples).
   tabla por colección (apaga el theming por juego, que es el efecto central
   del diseño) y derivar el color de la carátula — **imposible**, QML de Qt 5.15
   no lee píxeles sin C++ y Pegasus es un binario congelado (ADR-0006).
+- **`api.allGames` NO es la librería de ATTRACT** — es todo lo que Pegasus
+  encontró con **todos** sus providers activos (Steam, es2, logiqx, skraper…).
+  Los que no son de ATTRACT se apagan en la configuración de Pegasus, y esa
+  configuración es **idéntica en el Mac y en el gabinete**, mismo criterio que
+  MAME y Pegasus ([`ADR-0017`](../decisions/0017-providers-pegasus.md),
+  accepted). Descartado: filtrar en el theme — su modo de falla es un juego
+  invisible, que es peor que un juego de más.
 - **El theme se dibuja en un canvas fijo de 1280×720 y se escala entero**
   ([`ADR-0016`](../decisions/0016-canvas-fijo-escalado.md), accepted): todas
   las medidas son constantes en píxeles, tomadas del diseño. Descartado: layout

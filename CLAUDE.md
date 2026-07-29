@@ -16,8 +16,8 @@ luego las tareas, y solo entonces el código. Ver `spec/README.md`.
 **La constitución manda.** Si una feature choca con `spec/constitution/`, se
 replantea la feature, no la constitución.
 
-**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0016,
-15 vigentes — 0008 superseded por 0010; formato con frontmatter — ver
+**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0017,
+16 vigentes — 0008 superseded por 0010; formato con frontmatter — ver
 `spec/decisions/_TEMPLATE.md`). Se crean con `/new-adr`.
 
 **Los handoffs de sesión viven en `docs/decisiones/AAAA-MM-DD.md`.** Son la red
@@ -52,7 +52,7 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 | `docs/` | SETUP, CONVENCION (plantilla), baseline, mapeo |
 | `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía |
 | `spec/constitution/` | Reglas estables: misión, stack, roadmap |
-| `spec/decisions/` | ADRs. 0001-0016, 15 vigentes (0008 superseded por 0010) |
+| `spec/decisions/` | ADRs. 0001-0017, 16 vigentes (0008 superseded por 0010) |
 | `spec/features/NNN-*/` | spec + plan + tasks por feature. `001-synopsis`, `002-attract-skill` y `003-attract-mcp` implementadas |
 | `spec/features/004-attract-ingest/` | Última feature planeada en `cli.py` — implementada, verificación contra `mame` real pendiente |
 

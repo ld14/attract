@@ -22,7 +22,17 @@
 // tiene NINGÚN asset. Este experimento mide las dos vías a la vez para saber
 // cuál usar, no solo si la primera anda.
 //
-// RESULTADO OBSERVADO: <PENDIENTE — correr contra Pegasus real y anotar acá>
+// RESULTADO OBSERVADO: PARCIAL — `game.files` EXISTE y tiene `.count`.
+// Confirmado de rebote el 2026-07-29 por el panel de diagnóstico del esqueleto
+// del theme (feature 005, tarea 1), que lista `[files: N]` por juego y devolvió
+// `[files: 2]` para el fixture TEST MULTIFILE y `[files: 1]` para el resto. O
+// sea: `files` es un modelo de Qt con `count`, no un array de JS, y la Via 1 de
+// abajo es la correcta.
+//
+// LO QUE SIGUE PENDIENTE, y es lo que de verdad bloquea `Paths.qml`: si
+// `files.get(0).path` devuelve la ruta ABSOLUTA de la ROM. Sin eso no hay de
+// dónde derivar el directorio de la colección. Correr este experimento y
+// anotar acá la forma exacta que tiene ese `path`.
 //
 // Cómo correrlo:
 //   1. cp rutas-relativas.qml <themes de Pegasus>/attract-debug/theme.qml
