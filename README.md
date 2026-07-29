@@ -25,7 +25,7 @@ trampa de la versión de MAME, que puede romper ADR-0005 sin avisar.
 make setup       # config de git (precomposeUnicode)
 make check-git   # verificá que quedó
 make doctor      # el validador contra los fixtures
-make test        # 30 tests, cada uno reproduce un bug real o un caso del contrato
+make test        # 48 tests, cada uno reproduce un bug real o un caso del contrato
 make theme       # instala el theme de debug en Pegasus
 ```
 
@@ -59,13 +59,15 @@ Si solo funciona con Striker, no funciona.
 | [0009](spec/decisions/0009-frontera-produccion-consumo-revistas.md) | ✅ **aceptada** | Frontera: ATTRACT consume revistas, no las produce |
 | [0010](spec/decisions/0010-contrato-magazine-json-extendido.md) | ✅ **aceptada** | Contrato `magazine.json` extendido con evidencia real |
 | [0011](spec/decisions/0011-fuente-synopsis-regeneracion-campo.md) | ✅ **aceptada** | `attract synopsis` escribe desde una fuente, merge de un solo campo |
+| [0012](spec/decisions/0012-mcp-dependencia-opcional-acotada.md) | ✅ **aceptada** | `attract mcp` usa el SDK `mcp` como dependencia opcional, acotada |
 
-**11 ADR, 10 vigentes.** 0010 salió de verificar la 0008 contra un
+**12 ADR, 11 vigentes.** 0010 salió de verificar la 0008 contra un
 `magazine.json` real, que traía más campos de los que se habían inventado
 para el fixture. 0011 salió de especificar la primera feature real
 (`attract synopsis`, `spec/features/001-synopsis/`) y decidir cómo escribe
-`metadata.pegasus.txt` sin romper ADR-0002. Ver
-[`spec/decisions/README.md`](spec/decisions/README.md).
+`metadata.pegasus.txt` sin romper ADR-0002. 0012 salió de especificar
+`attract mcp` (M5) y decidir cómo convive un SDK externo con el límite
+stdlib-only. Ver [`spec/decisions/README.md`](spec/decisions/README.md).
 
 ## Stack
 
@@ -75,19 +77,21 @@ para el fixture. 0011 salió de especificar la primera feature real
 | Runtime | **MAME vanilla 0.288** — mismo binario en Mac y Windows (ADR-0005) |
 | ROMs | MAME 0.288 **merged** |
 | Dev | macOS · Prod | Windows |
+| Dependencias | stdlib-only, excepción única: `mcp` (opcional, solo para `attract mcp`, ADR-0012) |
 
 ## Estructura
 
 ```
 docs/       SETUP.md ← empezá acá · CONVENCION.md ← el documento central
             baseline · mapeo · mockup · decisiones/ ← handoffs de sesión
-spec/       constitution (misión, stack, roadmap) + decisions (11 ADR, 10
-            vigentes) + features (001-synopsis, primera con spec/plan/tasks)
-src/        attract doctor + synopsis (funcionan). El resto llega con los módulos
+spec/       constitution (misión, stack, roadmap) + decisions (12 ADR, 11
+            vigentes) + features (001 a 004, las 4 implementadas)
+src/        attract doctor + synopsis + mcp + ingest (los 4 módulos planeados en cli.py)
+.claude/    skills/attract/ ← le dice a un agente cuándo correr doctor/synopsis
 themes/     attract-debug ← el harness del Bloque 3 · experimentos/ ← pruebas cerradas
 fixtures/   ROMs falsas de 0 bytes + una revista de mentira. Portables, suficientes
 library/    tu librería real. NO va al repo
-tests/      30 tests. Cada uno reproduce un bug real o un caso del contrato
+tests/      48 tests. Cada uno reproduce un bug real o un caso del contrato
 ```
 
 ## Lo que ya aprendimos a los golpes

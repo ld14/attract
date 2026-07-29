@@ -15,17 +15,24 @@
 
 | Ruta | Responsabilidad |
 |---|---|
-| `src/attract/cli.py` | Entry point. Dispatch de subcomandos: `doctor`, `synopsis` |
+| `src/attract/cli.py` | Entry point. Dispatch de subcomandos: `doctor`, `synopsis`, `mcp`, `ingest` |
 | `src/attract/doctor.py` | Validador preflight: todo lo que Windows rechazaría debe fallar en el Mac |
 | `src/attract/synopsis.py` | Primer módulo que **escribe** `metadata.pegasus.txt` — merge quirúrgico del campo `summary:` desde `_synopsis/<set>.json` (ADR-0011) |
+| `src/attract/mcp_server.py` | Servidor MCP (M5) — tools `attract_doctor`/`attract_synopsis`. Única dependencia externa del proyecto, opcional e import perezoso (ADR-0012) |
+| `src/attract/ingest.py` | Primer módulo que **crea** un `game:` nuevo (M7) — identidad vía `mame -listxml` (stdlib `xml.etree.ElementTree`) |
 | `tests/test_doctor.py` | 19 tests, cada uno reproduce un bug real ya visto |
 | `tests/test_synopsis.py` | 11 tests: merge de campo, idempotencia, casos límite/fallo |
+| `tests/test_mcp_server.py` | 8 tests: aislamiento sin `mcp` instalado, lógica de las tools, registro contra el SDK real (se saltea si `mcp` no está) |
+| `tests/test_ingest.py` | 10 tests contra XML sintético (sin `mame` en este sandbox) + 1 contra la ausencia real del binario |
 | `fixtures/` | ROMs falsas de 0 bytes + `metadata.pegasus.txt` de ejemplo, para validar el doctor sin la librería real |
 | `library/` | Librería real del autor (ROMs, CHDs, assets). Nunca se commitea |
 | `themes/attract-debug/` | Theme QML de debug: harness del Bloque 3, dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no se pisa |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. No las instala `make theme` |
-| `spec/decisions/` | Decisiones de arquitectura. 0001-0011, 10 vigentes (0008 superseded por 0010) |
+| `spec/decisions/` | Decisiones de arquitectura. 0001-0012, 11 vigentes (0008 superseded por 0010) |
 | `spec/features/001-synopsis/` | Primera feature con spec/plan/tasks — `attract synopsis`, implementada |
+| `spec/features/002-attract-skill/` | `.claude/skills/attract/SKILL.md`, implementada |
+| `spec/features/003-attract-mcp/` | Servidor MCP, implementada |
+| `spec/features/004-attract-ingest/` | `attract ingest`, implementada (verificación contra `mame` real pendiente) |
 
 ## Comandos
 
@@ -95,7 +102,10 @@ página de información por familia, variantes como `file:` múltiples).
 ## Límites duros
 
 - **Sin dependencias externas** en `src/attract/` — es deliberado (`doctor`
-  corre con cualquier Python ≥3.10, sin instalar nada).
+  corre con cualquier Python ≥3.10, sin instalar nada). **Excepción
+  acotada:** `attract mcp` usa el SDK `mcp` (PyPI) con import perezoso,
+  aislado a ese módulo — `doctor`/`synopsis`/la CLI base siguen sin
+  instalar nada ([`ADR-0012`](../decisions/0012-mcp-dependencia-opcional-acotada.md), accepted).
 - **`library/` nunca va al repo** — pesa y no aporta (ver `.gitignore`/README).
 - **`*.pegasus.txt` es artefacto de build, no fuente** — nunca se edita a
   mano ni se versiona como fuente ([`ADR-0002`](../decisions/0002-metadata-fuente-o-artefacto.md),

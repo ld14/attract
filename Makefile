@@ -1,5 +1,5 @@
 # ATTRACT
-.PHONY: help doctor doctor-lib test theme setup check-git check-py venv clean
+.PHONY: help doctor doctor-lib test mcp theme setup check-git check-py venv clean
 
 # Si existe .venv lo usa; si no, cae al python3 del sistema.
 # El doctor no tiene dependencias externas: corre con cualquiera de los dos.
@@ -29,6 +29,7 @@ help:
 	@echo "  make doctor-lib  valida library/  (tu libreria real)"
 	@echo "  make theme       instala el theme de debug ($(UNAME))"
 	@echo "  make test        corre los tests"
+	@echo "  make mcp         corre el servidor MCP (necesita: pip install mcp)"
 	@echo "  make clean       borra .venv y caches"
 	@echo ""
 	@echo "  python  -> $(PY)"
@@ -88,6 +89,9 @@ theme:
 
 test:
 	@$(PY) -m pytest tests/ -q
+
+mcp:
+	@$(PY) -m attract.mcp_server
 
 fixtures:
 	@echo "Los fixtures ya estan en fixtures/. Son ROMs falsas de 0 bytes."

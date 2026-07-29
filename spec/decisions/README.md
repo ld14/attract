@@ -41,8 +41,9 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 | [0009](0009-frontera-produccion-consumo-revistas.md) | Frontera del sistema: ATTRACT consume revistas, no las produce | accepted | 2026-07-23 |
 | [0010](0010-contrato-magazine-json-extendido.md) | Contrato de `magazine.json` extendido con evidencia real (supersede 0008) | accepted | 2026-07-28 |
 | [0011](0011-fuente-synopsis-regeneracion-campo.md) | `attract synopsis` escribe desde una fuente persistida, no parchea el artefacto a mano | accepted | 2026-07-28 |
+| [0012](0012-mcp-dependencia-opcional-acotada.md) | `attract mcp` usa el SDK oficial `mcp` como dependencia opcional, acotada | accepted | 2026-07-29 |
 
-**11 ADR en total, 10 vigentes** (0008 quedó superseded por 0010 — no se
+**12 ADR en total, 11 vigentes** (0008 quedó superseded por 0010 — no se
 edita, se reemplaza). El razonamiento original de 0006-0009 está en
 [`docs/decisiones/2026-07-23.md`](../../docs/decisiones/2026-07-23.md), que
 puede archivarse ahora que su contenido vive formalizado acá. 0010 salió de
@@ -50,4 +51,6 @@ una verificación de esta misma sesión, no del handoff original — un
 `magazine.json` real no coincidía con el contrato inventado en 0008. 0011
 salió de especificar la primera feature real (`001-synopsis`,
 `spec/features/`): cómo escribe ATTRACT en `metadata.pegasus.txt` por
-primera vez sin romper ADR-0002.
+primera vez sin romper ADR-0002. 0012 salió de especificar M5
+(`attract mcp`): acota el límite stdlib-only para una dependencia opcional
+en vez de descartarlo o reimplementar el protocolo MCP a mano.

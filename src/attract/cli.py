@@ -1,15 +1,24 @@
 """attract - CLI.
 
-`doctor` y `synopsis` existen. Los demas comandos llegan con los modulos:
-  M4     attract skill
-  M5     attract mcp
-  M7     attract ingest
+doctor, synopsis, mcp e ingest. Los proximos modulos del bootcamp se
+agregan aca cuando existan.
+
+`mcp_server` es la unica dependencia externa del proyecto (ADR-0012), y
+esta importada arriba solo como modulo - no importa el paquete `mcp` de
+PyPI hasta que se corre `attract mcp` de verdad (import perezoso adentro
+de mcp_server.main()). doctor, synopsis e ingest siguen sin instalar nada
+(ingest usa xml.etree.ElementTree, stdlib).
 """
 import sys
 
-from attract import doctor, synopsis
+from attract import doctor, ingest, mcp_server, synopsis
 
-COMANDOS = {"doctor": doctor.main, "synopsis": synopsis.main}
+COMANDOS = {
+    "doctor": doctor.main,
+    "synopsis": synopsis.main,
+    "mcp": mcp_server.main,
+    "ingest": ingest.main,
+}
 
 
 def main() -> int:
@@ -19,6 +28,8 @@ def main() -> int:
         print("comandos:")
         print("  doctor [ruta] [--target windows]   validador preflight")
         print("  synopsis <set> [ruta]              escribe summary: desde _synopsis/<set>.json")
+        print("  mcp                                servidor MCP (requiere: pip install mcp)")
+        print("  ingest <rom.zip> [ruta]            crea un game: nuevo via mame -listxml")
         return 0
 
     cmd = sys.argv[1]

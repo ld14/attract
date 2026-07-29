@@ -123,10 +123,18 @@ git init
 make setup       # setea core.precomposeUnicode
 make check-git   # verificá que diga true
 make doctor      # OK
-make test        # 9 passed
+make test        # 48 passed
 git add -A && git commit -m "chore: scaffold v0.0"
 git tag v0.0-inicio
 ```
+
+> `make setup`/`make test` no instalan `mcp` — es la única dependencia
+> externa del proyecto, y es opcional (ver
+> [`ADR-0012`](../spec/decisions/0012-mcp-dependencia-opcional-acotada.md)).
+> Solo hace falta si vas a correr `attract mcp`: `pip install mcp`. Sin
+> eso instalado, los tests de `mcp` se saltean solos
+> (`pytest.importorskip`) y todo lo demás (`doctor`, `synopsis`) funciona
+> exactamente igual.
 
 ## 1.6 Qué ROMs necesita el Mac
 
@@ -239,7 +247,7 @@ editar / codear
      ↓
 make doctor        ← 9 chequeos        (no viajás si esto falla)
      ↓
-make test          ← 30 tests
+make test          ← 48 tests
      ↓
 git push  ────────────────────────────▶ git pull
                                             ↓
@@ -269,7 +277,7 @@ MAC
 [ ] Pegasus abre
 [ ] make check-git → core.precomposeUnicode = true
 [ ] make doctor → OK
-[ ] make test → 9 passed
+[ ] make test → 48 passed
 [ ] make theme → el theme de debug aparece en Pegasus
 
 WINDOWS

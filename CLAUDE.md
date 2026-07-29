@@ -16,8 +16,8 @@ luego las tareas, y solo entonces el código. Ver `spec/README.md`.
 **La constitución manda.** Si una feature choca con `spec/constitution/`, se
 replantea la feature, no la constitución.
 
-**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0011,
-10 vigentes — 0008 superseded por 0010; formato con frontmatter — ver
+**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0012,
+11 vigentes — 0008 superseded por 0010; formato con frontmatter — ver
 `spec/decisions/_TEMPLATE.md`). Se crean con `/new-adr`.
 
 **Los handoffs de sesión viven en `docs/decisiones/AAAA-MM-DD.md`.** Son la red
@@ -30,10 +30,11 @@ cítalos, pero recuerda que el destino de su contenido es un ADR.
 | Acción | Comando |
 |---|---|
 | Setup | `make setup` (git config + venv + verificación) |
-| Tests | `make test` (pytest, 30 tests) |
+| Tests | `make test` (pytest, 48 tests) |
 | Doctor (fixtures) | `make doctor` |
 | Doctor (librería real) | `make doctor-lib` |
 | Instalar theme debug | `make theme` |
+| Servidor MCP | `make mcp` (necesita `pip install mcp`, ver ADR-0012) |
 
 No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 
@@ -41,8 +42,9 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 
 | Ruta | Qué es |
 |---|---|
-| `src/attract/` | CLI Python. Hoy solo `doctor` (validador preflight) |
-| `tests/` | 30 tests (19 `doctor` + 11 `synopsis`), cada uno reproduce un bug real o un caso del contrato |
+| `src/attract/` | CLI Python: `doctor` (validador), `synopsis` (primer escritor de `metadata.pegasus.txt`), `mcp` (servidor MCP, M5), `ingest` (crea `game:` nuevo vía `mame -listxml`, M7) |
+| `.claude/skills/attract/` | Claude Skill de proyecto: le dice a un agente cuándo correr `doctor`/`synopsis` (M4, `spec/features/002-attract-skill/`) |
+| `tests/` | 48 tests (19 `doctor` + 11 `synopsis` + 8 `mcp` + 10 `ingest`), cada uno reproduce un bug real o un caso del contrato |
 | `fixtures/` | ROMs falsas de 0 bytes + `media/_magazines/` (una revista de mentira). Portables y versionables |
 | `library/` | Librería real del autor. NO va a git |
 | `themes/attract-debug/` | Harness de debug: dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no lo reemplaces, agregá al lado |
@@ -50,8 +52,9 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 | `docs/` | SETUP, CONVENCION (plantilla), baseline, mapeo |
 | `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía |
 | `spec/constitution/` | Reglas estables: misión, stack, roadmap |
-| `spec/decisions/` | ADRs. 0001-0009 aceptadas (9/9). No quedan slots reservados |
-| `spec/features/NNN-*/` | spec + plan + tasks por feature (sin usar aún) |
+| `spec/decisions/` | ADRs. 0001-0012, 11 vigentes (0008 superseded por 0010) |
+| `spec/features/NNN-*/` | spec + plan + tasks por feature. `001-synopsis`, `002-attract-skill` y `003-attract-mcp` implementadas |
+| `spec/features/004-attract-ingest/` | Última feature planeada en `cli.py` — implementada, verificación contra `mame` real pendiente |
 
 ## Reglas de trabajo
 
@@ -80,7 +83,10 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 
 ## Fuera de alcance sin preguntar
 
-- Añadir dependencias nuevas (el proyecto es stdlib-only a propósito)
+- Añadir dependencias nuevas (el proyecto es stdlib-only a propósito,
+  única excepción acotada hasta ahora: `mcp`, ver
+  [`ADR-0012`](spec/decisions/0012-mcp-dependencia-opcional-acotada.md) —
+  cualquier otra dependencia nueva sigue necesitando preguntar primero)
 - Completar los docs plantilla del bootcamp (`CONVENCION.md`, `baseline.md`,
   `mapeo-mockup-pegasus.md`) — son ejercicios del autor, no tareas de Claude
 - Cambios en CI/CD o infraestructura

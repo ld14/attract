@@ -62,22 +62,60 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     tipos, `articles[].confidence` en rango 0.0-1.0, `type` con AVISO (no
     ERROR) si no es uno de los conocidos — el enum no es cerrado. 6 tests
     nuevos. **30 tests en total** (19 `doctor` + 11 `synopsis`).
+11. **`spec/features/002-attract-skill/` — implementada.** M4 del
+    bootcamp. `.claude/skills/attract/SKILL.md`: le dice a un agente
+    cuándo correr `attract doctor` (algo cambió en `fixtures/`/`library/`)
+    y `attract synopsis` (apareció `_synopsis/<set>.json`), más las reglas
+    duras que podría romper sin saberlo (ADR-0002, `library/` fuera de
+    git). Sin código nuevo — el entregable es el `SKILL.md`. Queda
+    pendiente verificar que la `description` dispare sola en una sesión
+    nueva (no se puede confirmar desde la misma sesión donde se escribió).
+12. **`spec/features/003-attract-mcp/` — implementada.** M5 del bootcamp.
+    `attract mcp` levanta un servidor MCP por stdio con dos tools
+    (`attract_doctor`, `attract_synopsis`) que llaman directo a la lógica
+    ya existente. **ADR-0012**: primera dependencia externa del proyecto
+    (`mcp`, SDK oficial) — opcional y acotada, import perezoso solo dentro
+    de `mcp_server.py`; `doctor`/`synopsis`/`cli` siguen funcionando sin
+    el paquete instalado, confirmado con un test que lo bloquea vía
+    `sys.modules`. 8 tests nuevos. **38 tests en total** (19 `doctor` + 11
+    `synopsis` + 8 `mcp`).
+13. **`spec/features/004-attract-ingest/` — implementada, verificación
+    contra `mame` real pendiente.** M7 del bootcamp, el último módulo
+    planeado en `cli.py`. `attract ingest <rom.zip>` es el primer comando
+    que **crea** un `game:` nuevo (no edita uno existente): identifica el
+    set con `mame -listxml` (stdlib `xml.etree.ElementTree`, sin romper
+    el límite duro), exige exactamente una máquina jugable — cero o más
+    de una falla explícito, sin adivinar (el caso ">1" reabre la
+    verificación pendiente de ADR-0004 si aparece de verdad). Crea
+    `media/<set>/` vacía. 10 tests nuevos, todos contra un XML **sintético**
+    (no hay `mame` en este sandbox) salvo uno que sí corre contra la
+    ausencia real del binario. **48 tests en total** (19 `doctor` + 11
+    `synopsis` + 8 `mcp` + 10 `ingest`). Con esto los cuatro módulos
+    planeados originalmente en `cli.py` (M4, M5, M7 + `doctor`/`synopsis`
+    de M0-M2) están implementados.
 
 ## Siguiente 🔜
 
-1. **ADR-0011** — verificaciones pendientes: confirmar el formato real de
+1. **`004-attract-ingest`** — verificación "bien dummy" contra `mame` real
+   en tu Mac (ver `tasks.md`): confirmar forma exacta del XML, si el
+   `DOCTYPE` interno rompe el parseo, y si `release: <año solo>` es un
+   formato que Pegasus acepta.
+2. **`002-attract-skill`** — correr la validación de disparo en una sesión
+   nueva (ver `tasks.md` §Validación).
+3. **ADR-0011** — verificaciones pendientes: confirmar el formato real de
    entrega del sistema de scraping externo (hoy `_synopsis/<set>.json` es
    un supuesto sin evidencia real, mismo punto de partida que tuvo
    `magazine.json` antes de ADR-0010).
-2. **`attract skill`** (M4), **`attract mcp`** (M5), **`attract ingest`**
-   (M7) — mencionados como plan en `src/attract/cli.py`, sin spec ni
-   código todavía. `attract ingest` (M7) es además donde se retoma la
-   pregunta de procedencia (§3 de `CONVENCION.md`) si algún día se
-   revisita esa decisión.
+4. **`003-attract-mcp`** — probar el servidor contra un cliente MCP real
+   (Claude Desktop, Claude Code) de punta a punta; hoy solo está probado
+   el registro de tools y la lógica interna, no el protocolo completo
+   hablado con un cliente de verdad.
 
 ## Backlog / ideas 💡
 
-- (vacío por ahora)
+- **Procedencia IA vs. manual** (§3 de `CONVENCION.md`) — decidido no
+  distinguir, campo `x-procedencia` dejado por si se reconsidera. No hay
+  disparador concreto todavía para revisitarlo.
 
 > Cada feature nueva se crea como `features/NNN-nombre/` con `spec.md`,
 > `plan.md` y `tasks.md` **antes** de tocar código.
