@@ -20,15 +20,15 @@
 | `src/attract/synopsis.py` | Primer módulo que **escribe** `metadata.pegasus.txt` — merge quirúrgico del campo `summary:` desde `_synopsis/<set>.json` (ADR-0011) |
 | `src/attract/mcp_server.py` | Servidor MCP (M5) — tools `attract_doctor`/`attract_synopsis`. Única dependencia externa del proyecto, opcional e import perezoso (ADR-0012) |
 | `src/attract/ingest.py` | Primer módulo que **crea** un `game:` nuevo (M7) — identidad vía `mame -listxml` (stdlib `xml.etree.ElementTree`) |
-| `tests/test_doctor.py` | 19 tests, cada uno reproduce un bug real ya visto |
+| `tests/test_doctor.py` | 34 tests, cada uno reproduce un bug real ya visto o un caso del contrato |
 | `tests/test_synopsis.py` | 11 tests: merge de campo, idempotencia, casos límite/fallo |
 | `tests/test_mcp_server.py` | 8 tests: aislamiento sin `mcp` instalado, lógica de las tools, registro contra el SDK real (se saltea si `mcp` no está) |
-| `tests/test_ingest.py` | 10 tests contra XML sintético (sin `mame` en este sandbox) + 1 contra la ausencia real del binario |
+| `tests/test_ingest.py` | 14 tests: 10 contra XML sintético, 1 contra la ausencia real del binario (PATH vacío) y 3 de integración contra el `mame` instalado (se saltean si no hay) |
 | `fixtures/` | ROMs falsas de 0 bytes + `metadata.pegasus.txt` de ejemplo, para validar el doctor sin la librería real |
 | `library/` | Librería real del autor (ROMs, CHDs, assets). Nunca se commitea |
 | `themes/attract-debug/` | Theme QML de debug: harness del Bloque 3, dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no se pisa |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. No las instala `make theme` |
-| `spec/decisions/` | Decisiones de arquitectura. 0001-0012, 11 vigentes (0008 superseded por 0010) |
+| `spec/decisions/` | Decisiones de arquitectura. 0001-0016, 15 vigentes (0008 superseded por 0010) |
 | `spec/features/001-synopsis/` | Primera feature con spec/plan/tasks — `attract synopsis`, implementada |
 | `spec/features/002-attract-skill/` | `.claude/skills/attract/SKILL.md`, implementada |
 | `spec/features/003-attract-mcp/` | Servidor MCP, implementada |
@@ -74,8 +74,16 @@ media/
 │  └─ p001.jpg … pNNN.jpg   # todas las páginas, ceros a la izquierda
 └─ <set>/
    ├─ boxFront.jpg …        # assets nativos, auto-descubiertos por Pegasus
-   └─ data.json             # cheats, review + mags: [{ref: "<rev>-<n>"}]
+   ├─ data.json             # accent, cheats, review, manual + mags: [{ref: "<rev>-<n>"}]
+   └─ _manual/              # páginas del manual escaneado, si hay
+      └─ p001.jpg … pNNN.jpg
 ```
+
+Contrato completo de `data.json` en
+[`ADR-0015`](../decisions/0015-contrato-data-json.md) (accepted): todos los
+campos opcionales, nombres completos (`{name, input}`, no `{n, i}`),
+`review.cats` como objeto de seis claves fijas para poder expresar reseñas
+parciales.
 
 El juego **referencia** la revista, no la contiene: una revista cubre varios
 juegos, y duplicar el escaneo en cada uno es el error que esto evita. Qué páginas
@@ -127,6 +135,23 @@ página de información por familia, variantes como `file:` múltiples).
   contrato encarnado en `fixtures/arcade/media/`.
 - **Las páginas de revista son imágenes, nunca PDF** — Pegasus es Qt 5.15 sin
   soporte de PDF ([`ADR-0007`](../decisions/0007-paginas-revista-imagenes-no-pdf.md), accepted).
+  Lo mismo vale para las páginas de manual
+  ([`ADR-0014`](../decisions/0014-manual-digitalizado.md), accepted): viven en
+  `media/<set>/_manual/`, declaradas en `data.json` con la misma forma que
+  `magazine.json → pages[]`, para que el visor consuma un solo modelo.
+  Descartado: `x-manual` (rompe ADR-0001 y un número de páginas no da rutas) y
+  el manual como entidad propia tipo `_magazines/` (una revista cubre varios
+  juegos, un manual no — no hay duplicación que evitar).
+- **El `accent` de cada juego se declara a mano** en su `data.json`
+  ([`ADR-0013`](../decisions/0013-accent-por-juego.md), accepted). Descartado:
+  tabla por colección (apaga el theming por juego, que es el efecto central
+  del diseño) y derivar el color de la carátula — **imposible**, QML de Qt 5.15
+  no lee píxeles sin C++ y Pegasus es un binario congelado (ADR-0006).
+- **El theme se dibuja en un canvas fijo de 1280×720 y se escala entero**
+  ([`ADR-0016`](../decisions/0016-canvas-fijo-escalado.md), accepted): todas
+  las medidas son constantes en píxeles, tomadas del diseño. Descartado: layout
+  relativo con anchors (obliga a re-derivar cientos de constantes y erosiona la
+  fidelidad, que el handoff declara final) — el gabinete tiene resolución fija.
 - **Pegasus sigue siendo el frontend**, versión fijada e idéntica en ambas
   máquinas, mismo criterio que MAME
   ([`ADR-0006`](../decisions/0006-version-politica-pegasus.md), accepted).

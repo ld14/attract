@@ -16,8 +16,8 @@ luego las tareas, y solo entonces el código. Ver `spec/README.md`.
 **La constitución manda.** Si una feature choca con `spec/constitution/`, se
 replantea la feature, no la constitución.
 
-**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0012,
-11 vigentes — 0008 superseded por 0010; formato con frontmatter — ver
+**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0016,
+15 vigentes — 0008 superseded por 0010; formato con frontmatter — ver
 `spec/decisions/_TEMPLATE.md`). Se crean con `/new-adr`.
 
 **Los handoffs de sesión viven en `docs/decisiones/AAAA-MM-DD.md`.** Son la red
@@ -30,7 +30,7 @@ cítalos, pero recuerda que el destino de su contenido es un ADR.
 | Acción | Comando |
 |---|---|
 | Setup | `make setup` (git config + venv + verificación) |
-| Tests | `make test` (pytest, 50 tests) |
+| Tests | `make test` (pytest, 68 tests) |
 | Doctor (fixtures) | `make doctor` |
 | Doctor (librería real) | `make doctor-lib` |
 | Instalar theme debug | `make theme` |
@@ -44,7 +44,7 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 |---|---|
 | `src/attract/` | CLI Python: `doctor` (validador), `synopsis` (primer escritor de `metadata.pegasus.txt`), `mcp` (servidor MCP, M5), `ingest` (crea `game:` nuevo vía `mame -listxml`, M7) |
 | `.claude/skills/attract/` | Claude Skill de proyecto: le dice a un agente cuándo correr `doctor`/`synopsis` (M4, `spec/features/002-attract-skill/`) |
-| `tests/` | 50 tests (19 `doctor` + 11 `synopsis` + 9 `mcp` + 11 `ingest`), cada uno reproduce un bug real o un caso del contrato |
+| `tests/` | 68 tests (34 `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`), cada uno reproduce un bug real o un caso del contrato |
 | `fixtures/` | ROMs falsas de 0 bytes + `media/_magazines/` (una revista de mentira). Portables y versionables |
 | `library/` | Librería real del autor. NO va a git |
 | `themes/attract-debug/` | Harness de debug: dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no lo reemplaces, agregá al lado |
@@ -52,7 +52,7 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 | `docs/` | SETUP, CONVENCION (plantilla), baseline, mapeo |
 | `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía |
 | `spec/constitution/` | Reglas estables: misión, stack, roadmap |
-| `spec/decisions/` | ADRs. 0001-0012, 11 vigentes (0008 superseded por 0010) |
+| `spec/decisions/` | ADRs. 0001-0016, 15 vigentes (0008 superseded por 0010) |
 | `spec/features/NNN-*/` | spec + plan + tasks por feature. `001-synopsis`, `002-attract-skill` y `003-attract-mcp` implementadas |
 | `spec/features/004-attract-ingest/` | Última feature planeada en `cli.py` — implementada, verificación contra `mame` real pendiente |
 

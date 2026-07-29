@@ -42,8 +42,12 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 | [0010](0010-contrato-magazine-json-extendido.md) | Contrato de `magazine.json` extendido con evidencia real (supersede 0008) | accepted | 2026-07-28 |
 | [0011](0011-fuente-synopsis-regeneracion-campo.md) | `attract synopsis` escribe desde una fuente persistida, no parchea el artefacto a mano | accepted | 2026-07-28 |
 | [0012](0012-mcp-dependencia-opcional-acotada.md) | `attract mcp` usa el SDK oficial `mcp` como dependencia opcional, acotada | accepted | 2026-07-29 |
+| [0013](0013-accent-por-juego.md) | El accent de cada juego se declara a mano en su `data.json` | accepted | 2026-07-29 |
+| [0014](0014-manual-digitalizado.md) | El manual digitalizado vive en `media/<set>/_manual/`, declarado en `data.json` | accepted | 2026-07-29 |
+| [0015](0015-contrato-data-json.md) | Contrato completo de `data.json`, con nombres de campo explícitos | accepted | 2026-07-29 |
+| [0016](0016-canvas-fijo-escalado.md) | El theme se dibuja en un canvas fijo de 1280×720 y se escala entero | accepted | 2026-07-29 |
 
-**12 ADR en total, 11 vigentes** (0008 quedó superseded por 0010 — no se
+**16 ADR en total, 15 vigentes** (0008 quedó superseded por 0010 — no se
 edita, se reemplaza). El razonamiento original de 0006-0009 está en
 [`docs/decisiones/2026-07-23.md`](../../docs/decisiones/2026-07-23.md), que
 puede archivarse ahora que su contenido vive formalizado acá. 0010 salió de
@@ -54,3 +58,10 @@ salió de especificar la primera feature real (`001-synopsis`,
 primera vez sin romper ADR-0002. 0012 salió de especificar M5
 (`attract mcp`): acota el límite stdlib-only para una dependencia opcional
 en vez de descartarlo o reimplementar el protocolo MCP a mano.
+
+**0013-0016 son el primer bloque de decisiones de *frontend* del proyecto.**
+Salieron de leer el diseño de referencia (`design_handoff_game_detail/`)
+contra lo ya decidido: el handoff daba por existentes campos que nunca se
+definieron (`accent`, `x-manual`) y pedía formas que chocaban con límites
+duros vigentes. Los cuatro cierran ese hueco antes de escribir el theme de
+producción, no durante.

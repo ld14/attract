@@ -14,6 +14,12 @@ desktop.ini
 library/**
 !library/.gitkeep
 
+# Binarios instalados: Pegasus.app + una distribucion completa de MAME, 513M.
+# Mismo criterio que library/ - pesa y no aporta, se instala, no se versiona.
+# OJO: mame0286-x86/ ahi adentro es 0.286, y ADR-0005 exige 0.288+ e IDENTICA
+# en las dos maquinas. Ver README.md #Runtime.
+pegasus/
+
 # Artefactos de build: metadata.pegasus.txt lo genera ATTRACT (ver ADR-0002)
 # Excepcion: los de fixtures/ y docs/ NO son artefactos, son entradas de test
 # escritas a mano. Sin ellos "make doctor" no tiene nada que masticar en un
@@ -32,3 +38,9 @@ venv/
 
 # Config local de Claude Code (la compartida, .claude/settings.json, SI va)
 .claude/settings.local.json
+
+# El prototipo del handoff de diseno es byte a byte IDENTICO a
+# docs/mockup-referencia.html, que ya esta versionado. Commitear los dos son
+# 87K duplicados que se desincronizan a la primera. El README.md de esa
+# carpeta SI va: es el handoff escrito, no esta en ningun otro lado.
+design_handoff_game_detail/*.html

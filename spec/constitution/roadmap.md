@@ -131,8 +131,92 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     quedan cumplidos. **Con esto no queda ninguna verificación pendiente
     en todo el proyecto que dependa de este agente — solo el punto menor
     de `release:`/Pegasus de abajo, que necesita el gabinete.**
+18. **Terreno de diseño del theme, 2026-07-29 — ADR-0013 a 0016 y el
+    contrato de `data.json` cerrado con código.** Leer el diseño de
+    referencia (`design_handoff_game_detail/`) contra lo ya decidido
+    destapó que el handoff daba por existentes campos que nunca se
+    definieron (`accent`, `x-manual`) y pedía formas que chocaban con
+    límites duros vigentes. Se cerró antes de escribir theme, no durante:
+    **ADR-0013** (accent a mano por juego; derivar de la carátula quedó
+    descartado por **imposible** — QML 5.15 no lee píxeles sin C++ y
+    Pegasus es un binario congelado), **ADR-0014** (manual en
+    `media/<set>/_manual/`, con la misma forma que `magazine.json.pages[]`
+    para que el visor consuma un solo modelo), **ADR-0015** (contrato
+    completo de `data.json`) y **ADR-0016** (canvas fijo 1280×720).
+    **16 ADR en total, 15 vigentes.**
+
+    Las verificaciones pendientes de ADR-0015 se cerraron en la misma
+    sesión, no se dejaron declaradas: `chk_data_contrato` en `doctor.py`
+    (accent hex, forma de `cheats`, `review.score`/`cats` en rango,
+    categorías desconocidas como AVISO, páginas de manual que existan en
+    el disco, y la forma de `mags[]` — que hasta ahora nadie validaba:
+    `chk_mags_ref` miraba que el `ref` existiera, no que la entrada
+    tuviera uno). Fixtures ampliados para encarnar el contrato repartido
+    entre dos sets, cada uno con un trabajo distinto: `dino` suma accent y
+    `cheats` con notación de lucha real (para que el tokenizer de la 007
+    tenga contra qué probarse), `sf2ce` suma accent y un `_manual/` de 4
+    páginas de 0 bytes conservando su `ref` colgado, y `mok` sigue sin
+    `data.json`. **15 tests nuevos.**
+
+    También quedaron escritos —y **sin correr**— los tres experimentos que
+    bloquean el código del theme, y `spec/features/005-theme-base/` con
+    spec, plan y tareas. Ver `Siguiente` punto 0.
+19. **`004-attract-ingest` — cerrado contra `mame` real, 2026-07-29.** El
+    autor instaló MAME en su Mac (vanilla 0.288) y con eso desapareció el
+    último agujero honesto del módulo: hasta acá **todo** `ingest` estaba
+    probado contra XML sintético o contra una salida pegada a mano en el
+    chat, cosa que el `plan.md` de la feature declaraba explícitamente
+    como hipótesis, no evidencia.
+
+    Corrido de punta a punta contra el binario: `attract ingest 1943.zip`
+    identifica el set, escribe el bloque (`game: 1943: The Battle of
+    Midway (Euro)`, `developer: Capcom`, `release: 1987`, `x-set: 1943`),
+    no toca los bloques que ya estaban, crea `media/1943/` y deja el
+    archivo en 0 errores de `attract doctor`. Segundo caso real de basura
+    de región pegada al título (`(Euro)`, como el `(World 920513)` de
+    sf2ce) — confirma la decisión de dejarlo crudo. Y confirma algo que
+    hace testeable a todo el módulo: `-listxml` lee la base interna de
+    MAME, **no el archivo**, así que un `.zip` de 0 bytes alcanza.
+
+    **3 tests de integración nuevos**, salteados con `skipif` cuando no
+    hay `mame` en el `PATH` — mismo criterio que `test_mcp_server.py` con
+    el SDK `mcp`: en una máquina pelada la suite sigue pasando
+    (verificado: `11 passed, 3 skipped`).
+
+    **Arreglado de paso:** `test_mame_no_instalado_falla_explicito`
+    afirmaba que `mame` **no** estaba instalado —se escribió en un sandbox
+    donde no lo estaba— y se invirtió en cuanto apareció el binario. Un
+    test que depende de que una herramienta no exista se rompe solo al
+    cambiar de máquina. Ahora **fuerza** la ausencia (`PATH` a un
+    directorio vacío) en vez de asumirla, y sigue ejercitando el
+    `FileNotFoundError` real de `subprocess`, sin mock. **68 tests en
+    total** (34 `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`).
 
 ## Siguiente 🔜
+
+0. **El theme de producción — `005` / `006` / `007`.** Es el trabajo grande
+   que sigue, y el primero de todo el proyecto que es _frontend_. Sale de
+   leer el diseño de referencia (`design_handoff_game_detail/`, idéntico a
+   `docs/mockup-referencia.html`) contra lo ya decidido. El handoff daba por
+   existentes campos que nunca se definieron (`accent`, `x-manual`) y pedía
+   formas que chocaban con límites duros vigentes; eso se cerró primero, en
+   **ADR-0013 a 0016** (accent por juego, manual digitalizado, contrato
+   completo de `data.json`, canvas fijo 1280×720). **16 ADR, 15 vigentes.**
+
+   - **`005-theme-base`** — especificada. `themes/attract/`: tokens, rutas
+     en runtime, lectura de `data.json`, átomos, librería y detalle.
+   - **`006-theme-documentos`** — sin especificar. Video (QtMultimedia),
+     carrusel de revistas y visor de documentos paginado.
+   - **`007-theme-trucos`** — sin especificar. Tokenizer de inputs y overlay
+     de trucos & combos.
+
+   **Bloqueante inmediato:** tres experimentos escritos y **sin correr** en
+   `themes/experimentos/` — `rutas-relativas.qml` (¿de dónde sale
+   `media/<set>/` sin hardcodear? cierra la deuda de ADR-0003 que arrastran
+   los dos experimentos viejos), `graphical-effects.qml` (¿existe
+   `QtGraphicalEffects` en este binario? define si hay blur y glow o
+   aproximaciones planas) y `multimedia-loop.qml` (¿loopea el video?).
+   Necesitan Pegasus real; los dos primeros bloquean el código de la 005.
 
 1. **`004-attract-ingest`** — punto menor: confirmar en el gabinete real
    si Pegasus acepta `release: <solo año>` en pantalla. No bloqueante,
