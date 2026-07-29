@@ -1,5 +1,10 @@
 {
+  "accent": "#ff5a3c",
+  "accent2": "#4d150b",
   "mags": [
     { "ref": "revista-que-no-existe" }
-  ]
+  ],
+  "manual": {
+    "pages": ["p001.jpg", "p002.jpg", "p003.jpg", "p004.jpg"]
+  }
 }

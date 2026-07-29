@@ -190,3 +190,115 @@ def test_magazine_review_flag_con_tipo_incorrecto_es_error(tmp_path):
     datos["articles"][0]["cheats"] = "si"  # deberia ser boolean
     _escribir_magazine(tmp_path, datos)
     assert "magazine-contrato" in chequeos(revisar(tmp_path))
+
+
+# --- contrato de data.json (ADR-0015) -------------------------------------
+
+def _escribir_data(tmp_path, datos, set_id="x"):
+    d = tmp_path / "media" / set_id
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "data.json").write_text(json.dumps(datos), encoding="utf-8")
+    return d
+
+
+def test_data_json_vacio_es_valido(tmp_path):
+    # Todos los campos son opcionales (ADR-0015). Un data.json que solo trae
+    # mags es tan valido como uno completo.
+    _escribir_data(tmp_path, {})
+    rep = revisar(tmp_path)
+    assert rep.ok
+    assert "data-contrato" not in {h.chequeo for h in rep.hallazgos}
+
+
+def test_accent_no_hex_es_error(tmp_path):
+    # "verde" escrito a mano deja al juego sin color y no se nota hasta el
+    # gabinete: es justo lo que el doctor existe para atrapar en el Mac.
+    _escribir_data(tmp_path, {"accent": "verde"})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_accent_hex_de_3_digitos_es_error(tmp_path):
+    # CSS acepta #fb0; QML no lo interpreta igual. Se exige #rrggbb completo.
+    _escribir_data(tmp_path, {"accent": "#fb0"})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_accent_hex_valido_no_reporta(tmp_path):
+    _escribir_data(tmp_path, {"accent": "#ffb020", "accent2": "#4d3608"})
+    assert revisar(tmp_path).ok
+
+
+def test_cheats_con_claves_abreviadas_es_error(tmp_path):
+    # El prototipo usaba {n, i}; ADR-0015 fijo {name, input}. Sin este chequeo
+    # un data.json copiado del mockup pasa y el overlay sale vacio.
+    _escribir_data(tmp_path, {"cheats": {"combos": [{"n": "Patada", "i": "K"}]}})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_cheats_bien_formados_no_reportan(tmp_path):
+    _escribir_data(tmp_path, {
+        "cheats": {
+            "combos": [{"name": "Patada", "input": "↓ ↘ → + K"}],
+            "codes": [{"name": "Vidas", "input": "↑ ↑ ↓ ↓ START"}],
+        }
+    })
+    assert revisar(tmp_path).ok
+
+
+def test_review_score_fuera_de_rango_es_error(tmp_path):
+    _escribir_data(tmp_path, {"review": {"score": 940}})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_review_solo_con_score_es_valido(tmp_path):
+    # Resena parcial: es el caso del fixture de dino, no un fixture a medias
+    # (CONVENCION #2.1 nota 3).
+    _escribir_data(tmp_path, {"review": {"score": 94}})
+    assert revisar(tmp_path).ok
+
+
+def test_review_cats_como_lista_de_pares_es_error(tmp_path):
+    # La forma del prototipo. Con lista no se puede expresar "esta categoria
+    # no tiene dato" sin ambiguedad; por eso ADR-0015 la hizo objeto.
+    _escribir_data(tmp_path, {"review": {"score": 94, "cats": [["GRAFICOS", 92]]}})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_review_cats_parcial_es_valido(tmp_path):
+    # Dos categorias cargadas y cuatro sin dato: soportado a proposito.
+    _escribir_data(tmp_path, {"review": {"cats": {"graficos": 92, "sonido": 90}}})
+    assert revisar(tmp_path).ok
+
+
+def test_review_cat_desconocida_es_aviso_no_error(tmp_path):
+    _escribir_data(tmp_path, {"review": {"cats": {"jugabilidad": 88}}})
+    rep = revisar(tmp_path)
+    assert rep.ok  # el theme la ignora, no rompe nada
+    assert "data-contrato" in {h.chequeo for h in rep.avisos}
+
+
+def test_review_cat_fuera_de_rango_es_error(tmp_path):
+    _escribir_data(tmp_path, {"review": {"cats": {"graficos": 192}}})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_con_pagina_que_no_existe_es_error(tmp_path):
+    # Una pagina declarada y ausente deja un hueco en el visor, y a esa altura
+    # el theme no puede hacer nada (ADR-0014).
+    _escribir_data(tmp_path, {"manual": {"pages": ["p001.jpg"]}})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_con_paginas_reales_no_reporta(tmp_path):
+    d = _escribir_data(tmp_path, {"manual": {"pages": ["p001.jpg", "p002.jpg"]}})
+    (d / "_manual").mkdir()
+    (d / "_manual" / "p001.jpg").write_bytes(b"")
+    (d / "_manual" / "p002.jpg").write_bytes(b"")
+    assert revisar(tmp_path).ok
+
+
+def test_mags_sin_ref_es_error(tmp_path):
+    # Distinto de mags-ref-faltante (que es AVISO): aca la entrada esta mal
+    # formada, no apunta a nada. Sin ref no hay degradacion posible.
+    _escribir_data(tmp_path, {"mags": [{"nombre": "micromania-16"}]})
+    assert "data-contrato" in chequeos(revisar(tmp_path))

@@ -220,6 +220,136 @@ def chk_mags_ref(path: Path, rep: Reporte) -> None:
             )
 
 
+HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+# Las seis fijadas en docs/CONVENCION.md #2.1 nota 3, en minuscula y sin
+# tildes: las etiquetas que se ven en pantalla las pone el theme, no los datos.
+REVIEW_CATS_CONOCIDAS = {
+    "originalidad", "graficos", "adiccion",
+    "sonido", "dificultad", "animacion",
+}
+
+
+def chk_data_contrato(path: Path, rep: Reporte) -> None:
+    """Valida el contrato de data.json mas alla de sintaxis JSON (ADR-0015).
+
+    TODOS los campos son opcionales: un juego sin data.json, o con uno que
+    solo trae 'mags', es valido. Lo que se valida es la forma de lo que SI
+    esta - un accent mal escrito no rompe el archivo, deja al juego sin color
+    y no se nota hasta mirar el gabinete."""
+    try:
+        datos = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return  # ya lo reporto chk_json_valido
+
+    if not isinstance(datos, dict):
+        rep.error("data-contrato", path, "se esperaba un objeto JSON")
+        return
+
+    def falla(campo: str, motivo: str) -> None:
+        rep.error("data-contrato", path, f"'{campo}': {motivo}")
+
+    # --- accent / accent2 (ADR-0013) ---
+    for campo in ("accent", "accent2"):
+        val = datos.get(campo)
+        if val is None:
+            continue
+        if not isinstance(val, str) or not HEX_COLOR.match(val):
+            falla(campo, f"tiene que ser un hex '#rrggbb', llego {val!r}")
+
+    # --- mags: la lista de referencias. Que el ref EXISTA lo mira chk_mags_ref ---
+    mags = datos.get("mags")
+    if mags is not None:
+        if not isinstance(mags, list):
+            falla("mags", "tiene que ser una lista")
+        else:
+            for i, mag in enumerate(mags):
+                if not isinstance(mag, dict) or not isinstance(mag.get("ref"), str) or not mag["ref"].strip():
+                    falla(f"mags[{i}]", "tiene que ser un objeto con 'ref' string no vacio")
+
+    # --- manual (ADR-0014) ---
+    manual = datos.get("manual")
+    if manual is not None:
+        if not isinstance(manual, dict):
+            falla("manual", "tiene que ser un objeto")
+        else:
+            pages = manual.get("pages")
+            if not isinstance(pages, list) or not all(isinstance(p, str) for p in pages):
+                falla("manual.pages", "obligatorio si hay manual, lista de strings")
+            else:
+                # Una pagina declarada que no esta en el disco deja un hueco en
+                # el visor. Se chequea aca y no en el theme porque el theme no
+                # puede hacer nada al respecto a esa altura.
+                for nombre in pages:
+                    if not (path.parent / "_manual" / nombre).is_file():
+                        falla(
+                            "manual.pages",
+                            f"'{nombre}' no existe en {path.parent / '_manual'}",
+                        )
+
+    # --- cheats (ADR-0015) ---
+    cheats = datos.get("cheats")
+    if cheats is not None:
+        if not isinstance(cheats, dict):
+            falla("cheats", "tiene que ser un objeto")
+        else:
+            for grupo in ("combos", "codes"):
+                items = cheats.get(grupo)
+                if items is None:
+                    continue
+                if not isinstance(items, list):
+                    falla(f"cheats.{grupo}", "tiene que ser una lista")
+                    continue
+                for i, item in enumerate(items):
+                    prefijo = f"cheats.{grupo}[{i}]"
+                    if not isinstance(item, dict):
+                        falla(prefijo, "tiene que ser un objeto")
+                        continue
+                    for campo in ("name", "input"):
+                        if not isinstance(item.get(campo), str) or not item[campo].strip():
+                            falla(f"{prefijo}.{campo}", "obligatorio, string no vacio")
+
+    # --- review (ADR-0015 + CONVENCION #2.1 nota 3) ---
+    review = datos.get("review")
+    if review is not None:
+        if not isinstance(review, dict):
+            falla("review", "tiene que ser un objeto o null")
+            return
+
+        score = review.get("score")
+        if score is not None and not _numero_0_100(score):
+            falla("review.score", f"tiene que ser un number entre 0 y 100, llego {score!r}")
+
+        if review.get("verdict") is not None and not isinstance(review["verdict"], str):
+            falla("review.verdict", "si esta presente tiene que ser string")
+
+        cats = review.get("cats")
+        if cats is not None:
+            if not isinstance(cats, dict):
+                # Objeto, no lista de pares: es lo que permite expresar una
+                # resena parcial sin ambiguedad (ADR-0015).
+                falla("review.cats", "tiene que ser un objeto {categoria: valor}")
+            else:
+                for clave, val in cats.items():
+                    if clave not in REVIEW_CATS_CONOCIDAS:
+                        rep.aviso(
+                            "data-contrato", path,
+                            f"review.cats['{clave}'] no es de las seis conocidas "
+                            f"({', '.join(sorted(REVIEW_CATS_CONOCIDAS))}) - "
+                            "el theme la va a ignorar",
+                        )
+                        continue
+                    if not _numero_0_100(val):
+                        falla(
+                            f"review.cats['{clave}']",
+                            f"tiene que ser un number entre 0 y 100, llego {val!r}",
+                        )
+
+
+def _numero_0_100(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 100
+
+
 MAGAZINE_TYPES_CONOCIDOS = {
     "publicidad", "indice", "índice", "review", "noticia",
     "entrevista", "especial", "hardware", "preview",
@@ -344,7 +474,7 @@ CHEQUEOS_UNIVERSALES = [
 def revisar(raiz: Path, target: str = "windows") -> Reporte:
     rep = Reporte()
     rep.chequeos_corridos = [n for n, _, _ in CHEQUEOS_UNIVERSALES] + [
-        "metadata", "json-valido", "mags-ref", "magazine-contrato",
+        "metadata", "json-valido", "mags-ref", "magazine-contrato", "data-contrato",
     ]
 
     if not raiz.exists():
@@ -383,6 +513,7 @@ def revisar(raiz: Path, target: str = "windows") -> Reporte:
         if path.name == "data.json":
             try:
                 chk_mags_ref(path, rep)
+                chk_data_contrato(path, rep)
             except UnicodeDecodeError:
                 pass  # ya lo reporto chk_encoding
 
