@@ -1,10 +1,16 @@
 """Tests de attract ingest. Ver spec/features/004-attract-ingest/.
 
-No hay mame instalado en este sandbox (se intento via apt, no hay acceso
-root). La mayoria de los tests mockean subprocess.run con XML SINTETICO,
-basado en conocimiento general del formato. El unico test que corre contra
-el mame real de esta maquina es test_mame_no_instalado_falla_explicito - y
-da el resultado esperado precisamente PORQUE mame no esta instalado aca.
+La mayoria de los tests mockean subprocess.run con XML SINTETICO, basado en
+conocimiento general del formato.
+
+test_mame_no_instalado_falla_explicito no mockea subprocess: corre el
+codigo de verdad contra un PATH vacio. Antes se apoyaba en que el sandbox
+donde se escribio no tenia mame instalado - y en cuanto el autor lo
+instalo en su Mac (2026-07-29, v0.288), el test empezo a fallar. Un test
+que depende de que una herramienta NO exista se invierte solo al cambiar
+de maquina, que es justo lo contrario de lo que tiene que hacer un test.
+Ahora fuerza la ausencia en vez de asumirla, y da igual en que maquina
+corra.
 
 test_forma_real_confirmada_2026_07_29 es distinto: usa XML_SF2CE_REAL, la
 salida LITERAL de `mame -listxml sf2ce` (mame vanilla 0.288) que el autor
@@ -14,6 +20,7 @@ DOCTYPE con subset interno no rompe ET.fromstring, los tags <description>/
 el titulo real trae basura de region pegada ("Street Fighter II': Champion
 Edition (World 920513)") - se decidio dejarlo crudo, ver construir_bloque.
 """
+import shutil
 import subprocess
 from pathlib import Path
 from unittest.mock import patch
@@ -102,9 +109,13 @@ def _mock_run(stdout, returncode=0):
     return _fake
 
 
-# --- mame no esta instalado (real, sin mockear) ----------------------------
+# --- mame no esta en el PATH (real, sin mockear subprocess) ----------------
 
-def test_mame_no_instalado_falla_explicito():
+def test_mame_no_instalado_falla_explicito(tmp_path, monkeypatch):
+    # PATH apuntando a un directorio vacio: mame no se encuentra por mas que
+    # este instalado en la maquina. Se ejercita el FileNotFoundError real de
+    # subprocess, no un mock - que es el punto de este test.
+    monkeypatch.setenv("PATH", str(tmp_path))
     with pytest.raises(IngestError, match="no esta en el PATH"):
         listar_maquinas_jugables("sf2ce")
 
@@ -246,3 +257,63 @@ def test_aplicar_mame_no_reconoce_no_escribe_nada(tmp_path):
 
     assert metadata_path.read_text(encoding="utf-8") == original
     assert not (tmp_path / "media" / "no-existe").exists()
+
+
+# --- integracion contra el mame real de la maquina -------------------------
+#
+# Se saltea si no hay mame en el PATH, mismo criterio que test_mcp_server.py
+# con el SDK mcp: `pytest tests/` sigue pasando en una maquina pelada. La
+# diferencia con todo lo de arriba es que aca NO hay mock - corre el binario
+# de verdad y parsea su salida de verdad.
+#
+# Este test no existia porque hasta el 2026-07-29 no habia mame en ninguna
+# maquina donde se corriera la suite. El autor lo instalo (vanilla 0.288) y
+# con eso el ultimo agujero honesto de 004-attract-ingest se puede cerrar:
+# hasta ahora TODO el modulo estaba probado contra XML sintetico o contra una
+# salida pegada a mano en el chat.
+
+sin_mame = pytest.mark.skipif(
+    shutil.which("mame") is None,
+    reason="mame no esta instalado en esta maquina",
+)
+
+
+@sin_mame
+def test_integracion_mame_real_identifica_un_set_conocido():
+    maquinas = listar_maquinas_jugables("1943")
+    assert len(maquinas) == 1, [m["name"] for m in maquinas]
+    assert maquinas[0]["name"] == "1943"
+    # -listxml lee la base de datos interna de mame, no el archivo: por eso
+    # ingest se puede probar con fixtures de 0 bytes (CLAUDE.md).
+    assert maquinas[0]["year"] == "1987"
+    assert "Capcom" in maquinas[0]["manufacturer"]
+
+
+@sin_mame
+def test_integracion_mame_real_set_inexistente_falla_explicito():
+    with pytest.raises(IngestError):
+        identificar("no-existe-este-set-en-mame")
+
+
+@sin_mame
+def test_integracion_aplicar_punta_a_punta_con_mame_real(tmp_path):
+    (tmp_path / "metadata.pegasus.txt").write_text(
+        "collection: Arcade\n\ngame: Otro\nfile: otro.zip\n", encoding="utf-8"
+    )
+    rom = tmp_path / "1943.zip"
+    rom.write_bytes(b"")
+
+    aplicar(tmp_path / "metadata.pegasus.txt", tmp_path, rom)
+
+    texto = (tmp_path / "metadata.pegasus.txt").read_text(encoding="utf-8")
+    assert "x-set: 1943" in texto
+    assert "release: 1987" in texto
+    assert "developer: Capcom" in texto
+    assert "game: Otro" in texto        # no piso lo que ya estaba
+    assert (tmp_path / "media" / "1943").is_dir()
+
+    # El titulo real trae basura de region pegada, igual que el
+    # "(World 920513)" de sf2ce. Se deja crudo a proposito (spec.md
+    # #Fuera de alcance) - este assert existe para que si algun dia alguien
+    # agrega limpieza por regex, se entere de que rompe una decision.
+    assert "1943: The Battle of Midway" in texto

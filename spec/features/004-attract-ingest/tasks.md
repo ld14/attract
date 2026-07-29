@@ -60,10 +60,48 @@ rechistar. `attract doctor` ya lo acepta. Si alguna vez cargás esto en el
 gabinete de verdad, fijate y contame — si Pegasus lo rechaza, es un ajuste
 de una línea en `construir_bloque`, no una decisión de arquitectura.
 
+## ✅ Integración contra `mame` real — cerrada 2026-07-29
+
+_El autor instaló MAME (vanilla 0.288) en su Mac. Con eso desaparece la
+advertencia que encabezaba `plan.md` §Riesgos: hasta acá **todo** el módulo
+estaba probado contra XML sintético o contra una salida pegada a mano._
+
+- [x] `attract ingest` corrido de punta a punta contra el binario, sobre
+      una copia de los fixtures (los fixtures reales quedaron intactos).
+      Resultado: bloque escrito correcto, bloques existentes sin tocar,
+      `media/1943/` creada, `attract doctor` en 0 errores sobre el
+      resultado.
+
+      ```
+      game: 1943: The Battle of Midway (Euro)
+      file: 1943.zip
+      developer: Capcom
+      release: 1987
+      x-set: 1943
+      ```
+
+- [x] **Segundo caso real de basura de región** pegada al título:
+      `(Euro)`, igual que el `(World 920513)` de sf2ce. Dos ejemplos
+      independientes confirman que no es una rareza de un set — la
+      decisión de dejarlo crudo (§Fuera de alcance) se sostiene.
+- [x] **Confirmado por qué el módulo es testeable con fixtures de 0
+      bytes:** `-listxml` lee la base de datos interna de MAME, no el
+      archivo. `1943.zip` vacío se identifica igual.
+- [x] 3 tests de integración nuevos, con `skipif` cuando no hay `mame` en
+      el `PATH` — mismo criterio que `test_mcp_server.py` con el SDK
+      `mcp`. Verificado que en una máquina pelada la suite sigue pasando
+      (`11 passed, 3 skipped`).
+- [x] **Arreglado `test_mame_no_instalado_falla_explicito`.** Afirmaba que
+      `mame` no estaba instalado y se invirtió en cuanto apareció el
+      binario. Ahora fuerza la ausencia (`PATH` a un directorio vacío) en
+      vez de asumirla; sigue ejercitando el `FileNotFoundError` real de
+      `subprocess`, sin mock.
+
 ## Cierre
 
-- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (50/50: 19
-      `doctor` + 11 `synopsis` + 9 `mcp` + 11 `ingest`).
+- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (68 tests: 34
+      `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`; 2 `mcp` y —sin
+      `mame` instalado— 3 `ingest` se saltean).
 - [x] `attract doctor` sobre todo el repo en 0 errores.
 - [x] Verificación de arriba corrida contra `mame` real — cerrada
       2026-07-29 (ver sección de arriba). Solo queda el punto menor de
