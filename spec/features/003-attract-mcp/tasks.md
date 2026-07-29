@@ -20,7 +20,7 @@ _Checklist accionable derivada del `plan.md`._
 - [x] `src/attract/cli.py` — agregado `"mcp": mcp_server.main` a
       `COMANDOS` y al texto de `--help`.
 
-## Tests (`tests/test_mcp_server.py`) — 8 tests
+## Tests (`tests/test_mcp_server.py`) — 9 tests
 
 - [x] Aislamiento: `doctor`/`synopsis`/`cli`/`mcp_server` importan sin
       excepción con `mcp` bloqueado vía `sys.modules` (subprocess aparte,
@@ -41,13 +41,30 @@ _Checklist accionable derivada del `plan.md`._
 - [x] Registro de tools contra el SDK real, con
       `pytest.importorskip("mcp")` — se salta solo si `mcp` no está
       instalado. (`test_construir_app_registra_las_dos_tools`)
+- [x] Roundtrip de protocolo MCP real: levanta `python -m attract.mcp_server`
+      como subproceso real y le habla `initialize` → `list_tools` →
+      `call_tool` (x2) con `ClientSession`/`stdio_client` del SDK oficial —
+      no mockea nada, es el wire de verdad, cierra la brecha que dejaban
+      los tests de arriba (llaman `_run_doctor`/`_run_synopsis` directo o
+      registran tools en memoria, sin pasar por JSON-RPC).
+      (`test_roundtrip_protocolo_real_via_stdio`, agregado 2026-07-29)
+
+## Verificación pendiente
+
+- [ ] **Cliente real de verdad (Claude Desktop / Claude Code)** — el
+      roundtrip de arriba prueba el protocolo MCP hablado en serio (mismo
+      wire, mismo SDK cliente-servidor), pero no reemplaza correr
+      `attract mcp` colgado de un `mcp.json` real y ver las tools aparecer
+      en la UI de un cliente de verdad. Eso sigue necesitando la máquina
+      del autor — intentado en este sandbox (sin acceso root para instalar
+      un cliente de escritorio), no se pudo cerrar acá.
 
 ## Cierre
 
 - [x] Validar contra los criterios de aceptación de `spec.md` — los 5
       quedaron `[x]`.
-- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (38/38: 19
-      `doctor` + 11 `synopsis` + 8 `mcp`).
+- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (49/49: 19
+      `doctor` + 11 `synopsis` + 9 `mcp` + 10 `ingest`).
 - [x] `attract doctor` sobre todo el repo en 0 errores después de agregar
       `mcp_server.py` y el skill.
 - [x] `spec/constitution/tech-stack.md` actualizado (§Límites duros

@@ -122,3 +122,49 @@ def test_construir_app_registra_las_dos_tools():
     tools = asyncio.run(app.list_tools())
     nombres = {t.name for t in tools}
     assert nombres == {"attract_doctor", "attract_synopsis"}
+
+
+# --- protocolo MCP real de punta a punta (cliente real, subproceso real) ---
+# Los tests de arriba llaman _run_doctor/_run_synopsis directo o registran
+# tools en memoria - no pasan por el wire. Este SI: levanta
+# `python -m attract.mcp_server` como subproceso real y le habla el
+# protocolo MCP (handshake -> list_tools -> call_tool) con el cliente oficial
+# del SDK. Sigue sin ser Claude Desktop/Claude Code (eso queda para
+# spec/features/003-attract-mcp/tasks.md, a mano), pero cierra la parte que
+# SI se puede verificar sin esa app: el servidor habla el protocolo de
+# verdad, no solo responde bien a llamadas internas mockeadas.
+
+def test_roundtrip_protocolo_real_via_stdio():
+    pytest.importorskip("mcp", reason="mcp es una dependencia opcional (ADR-0012)")
+    import asyncio
+
+    from mcp import StdioServerParameters
+    from mcp.client.session import ClientSession
+    from mcp.client.stdio import stdio_client
+
+    async def _correr():
+        params = StdioServerParameters(
+            command=sys.executable,
+            args=["-m", "attract.mcp_server"],
+            env={"PYTHONPATH": str(SRC)},
+            cwd=str(SRC.parent),
+        )
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                init = await session.initialize()
+                assert init.server_info.name == "attract"
+
+                tools = await session.list_tools()
+                assert {t.name for t in tools.tools} == {"attract_doctor", "attract_synopsis"}
+
+                r_doctor = await session.call_tool("attract_doctor", {"ruta": "fixtures", "target": "windows"})
+                assert r_doctor.is_error is False
+                assert '"ok": true' in r_doctor.content[0].text
+
+                r_synopsis = await session.call_tool(
+                    "attract_synopsis", {"set_id": "no-existe-este-set", "ruta": "fixtures/arcade"}
+                )
+                assert r_synopsis.is_error is False
+                assert "no existe fuente" in r_synopsis.content[0].text
+
+    asyncio.run(asyncio.wait_for(_correr(), timeout=15))

@@ -89,27 +89,43 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     verificación pendiente de ADR-0004 si aparece de verdad). Crea
     `media/<set>/` vacía. 10 tests nuevos, todos contra un XML **sintético**
     (no hay `mame` en este sandbox) salvo uno que sí corre contra la
-    ausencia real del binario. **48 tests en total** (19 `doctor` + 11
-    `synopsis` + 8 `mcp` + 10 `ingest`). Con esto los cuatro módulos
-    planeados originalmente en `cli.py` (M4, M5, M7 + `doctor`/`synopsis`
-    de M0-M2) están implementados.
+    ausencia real del binario. Con esto los cuatro módulos planeados
+    originalmente en `cli.py` (M4, M5, M7 + `doctor`/`synopsis` de M0-M2)
+    están implementados.
+14. **`003-attract-mcp` — roundtrip de protocolo real, cerrado
+    2026-07-29.** Se intentó instalar `mame` vía `apt` en este sandbox
+    para cerrar la verificación de `004-attract-ingest` (punto 1 de
+    "Siguiente" abajo) — no hay acceso root, queda bloqueada de verdad,
+    no fingida. En cambio sí se pudo cerrar algo real: un cliente MCP
+    oficial (`mcp.client.stdio` + `ClientSession`) hablando el protocolo
+    completo — `initialize` → `list_tools` → `call_tool` — contra
+    `python -m attract.mcp_server` como subproceso de verdad, no contra
+    las funciones internas mockeadas. Nuevo test
+    `test_roundtrip_protocolo_real_via_stdio`. **49 tests en total**
+    (19 `doctor` + 11 `synopsis` + 9 `mcp` + 10 `ingest`). Sigue sin ser
+    Claude Desktop/Claude Code — ver `Siguiente` punto 3.
 
 ## Siguiente 🔜
 
 1. **`004-attract-ingest`** — verificación "bien dummy" contra `mame` real
    en tu Mac (ver `tasks.md`): confirmar forma exacta del XML, si el
    `DOCTYPE` interno rompe el parseo, y si `release: <año solo>` es un
-   formato que Pegasus acepta.
+   formato que Pegasus acepta. Intentado en este sandbox vía
+   `apt-get install mame` — sin acceso root, no se pudo instalar. Sigue
+   necesitando tu Mac.
 2. **`002-attract-skill`** — correr la validación de disparo en una sesión
-   nueva (ver `tasks.md` §Validación).
+   nueva de **Claude Code** (ver `tasks.md` §Validación). No aplica
+   probarlo en un entorno Cowork como este: el mecanismo de disparo de
+   `.claude/skills/<nombre>/SKILL.md` es de Claude Code, no de Cowork.
 3. **ADR-0011** — verificaciones pendientes: confirmar el formato real de
    entrega del sistema de scraping externo (hoy `_synopsis/<set>.json` es
    un supuesto sin evidencia real, mismo punto de partida que tuvo
    `magazine.json` antes de ADR-0010).
-4. **`003-attract-mcp`** — probar el servidor contra un cliente MCP real
-   (Claude Desktop, Claude Code) de punta a punta; hoy solo está probado
-   el registro de tools y la lógica interna, no el protocolo completo
-   hablado con un cliente de verdad.
+4. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
+   de verdad (`mcp.json` real, tools visibles en la UI). El protocolo en
+   sí ya está verificado de punta a punta (ver punto 14 de "Hecho"); lo
+   que falta es específicamente la experiencia con un cliente de
+   escritorio, que necesita tu máquina.
 
 ## Backlog / ideas 💡
 

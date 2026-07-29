@@ -30,7 +30,7 @@ cítalos, pero recuerda que el destino de su contenido es un ADR.
 | Acción | Comando |
 |---|---|
 | Setup | `make setup` (git config + venv + verificación) |
-| Tests | `make test` (pytest, 48 tests) |
+| Tests | `make test` (pytest, 49 tests) |
 | Doctor (fixtures) | `make doctor` |
 | Doctor (librería real) | `make doctor-lib` |
 | Instalar theme debug | `make theme` |
@@ -44,7 +44,7 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 |---|---|
 | `src/attract/` | CLI Python: `doctor` (validador), `synopsis` (primer escritor de `metadata.pegasus.txt`), `mcp` (servidor MCP, M5), `ingest` (crea `game:` nuevo vía `mame -listxml`, M7) |
 | `.claude/skills/attract/` | Claude Skill de proyecto: le dice a un agente cuándo correr `doctor`/`synopsis` (M4, `spec/features/002-attract-skill/`) |
-| `tests/` | 48 tests (19 `doctor` + 11 `synopsis` + 8 `mcp` + 10 `ingest`), cada uno reproduce un bug real o un caso del contrato |
+| `tests/` | 49 tests (19 `doctor` + 11 `synopsis` + 9 `mcp` + 10 `ingest`), cada uno reproduce un bug real o un caso del contrato |
 | `fixtures/` | ROMs falsas de 0 bytes + `media/_magazines/` (una revista de mentira). Portables y versionables |
 | `library/` | Librería real del autor. NO va a git |
 | `themes/attract-debug/` | Harness de debug: dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no lo reemplaces, agregá al lado |

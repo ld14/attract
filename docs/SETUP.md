@@ -123,7 +123,7 @@ git init
 make setup       # setea core.precomposeUnicode
 make check-git   # verificá que diga true
 make doctor      # OK
-make test        # 48 passed
+make test        # 49 passed
 git add -A && git commit -m "chore: scaffold v0.0"
 git tag v0.0-inicio
 ```
@@ -247,7 +247,7 @@ editar / codear
      ↓
 make doctor        ← 9 chequeos        (no viajás si esto falla)
      ↓
-make test          ← 48 tests
+make test          ← 49 tests
      ↓
 git push  ────────────────────────────▶ git pull
                                             ↓
@@ -277,7 +277,7 @@ MAC
 [ ] Pegasus abre
 [ ] make check-git → core.precomposeUnicode = true
 [ ] make doctor → OK
-[ ] make test → 48 passed
+[ ] make test → 49 passed
 [ ] make theme → el theme de debug aparece en Pegasus
 
 WINDOWS
