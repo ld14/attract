@@ -1,7 +1,7 @@
 # 002 · Claude Skill de ATTRACT — Spec
 
-**Estado:** implementada (verificación de disparo pendiente — ver
-`tasks.md` §Validación)
+**Estado:** implementada y verificada — disparo confirmado 2026-07-29 en
+una sesión real de Claude Code (ver `tasks.md` §Validación).
 
 ## Qué hace
 
@@ -49,11 +49,10 @@ después de tocar la librería.
       `library/` nunca va a git.
 - [x] Redactado en la misma convención que `.claude/agents/example-agent.md`
       ya establece para este repo (frontmatter + secciones cortas).
-- [ ] **Sin verificar todavía:** que la `description` efectivamente
-      dispare el skill en una sesión real, fresca, sin el contexto de
-      donde se escribió — ver `tasks.md` §Validación. Esto no lo puedo
-      confirmar yo mismo dentro de esta conversación (estaría "primeado"
-      por haberlo escrito); necesita una sesión nueva.
+- [x] **Verificado 2026-07-29:** la `description` dispara el skill sola
+      en una sesión real de Claude Code, sin el contexto de esta
+      conversación — ver `tasks.md` §Validación, los cuatro casos
+      (2 felices + 2 límite) confirmados en una sola corrida real.
 
 ## Fuera de alcance
 

@@ -121,21 +121,27 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     sf2ce.json` como segundo ejemplo del contrato mínimo (`{"summary":
     "..."}`), junto al `mok.json` que ya existía — sin pretender que esto
     cierra la verificación pendiente de la ADR, que sigue abierta.
+17. **`002-attract-skill` — disparo confirmado, 2026-07-29.** El autor
+    corrió una sesión real de Claude Code (sin el contexto de esta
+    conversación) y probó los cuatro casos de `tasks.md` §Validación en
+    una sola corrida: el skill cargó solo, corrió `make doctor` y
+    `attract synopsis mok` sin que se lo pidieran, reportó un ERROR real
+    (byte inválido) sin intentar adivinarle un arreglo, y mencionó un
+    AVISO sin bloquearse. Los 6/6 criterios de aceptación de `spec.md`
+    quedan cumplidos. **Con esto no queda ninguna verificación pendiente
+    en todo el proyecto que dependa de este agente — solo el punto menor
+    de `release:`/Pegasus de abajo, que necesita el gabinete.**
 
 ## Siguiente 🔜
 
-1. **`002-attract-skill`** — correr la validación de disparo en una sesión
-   nueva de **Claude Code** (ver `tasks.md` §Validación). No aplica
-   probarlo en un entorno Cowork como este: el mecanismo de disparo de
-   `.claude/skills/<nombre>/SKILL.md` es de Claude Code, no de Cowork.
+1. **`004-attract-ingest`** — punto menor: confirmar en el gabinete real
+   si Pegasus acepta `release: <solo año>` en pantalla. No bloqueante,
+   ajuste de una línea si hace falta.
 2. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
    de verdad (`mcp.json` real, tools visibles en la UI). El protocolo en
    sí ya está verificado de punta a punta (ver punto 14 de "Hecho"); lo
    que falta es específicamente la experiencia con un cliente de
    escritorio, que necesita tu máquina.
-3. **`004-attract-ingest`** — punto menor: confirmar en el gabinete real
-   si Pegasus acepta `release: <solo año>` en pantalla. No bloqueante,
-   ajuste de una línea si hace falta.
 
 ## Backlog / ideas 💡
 

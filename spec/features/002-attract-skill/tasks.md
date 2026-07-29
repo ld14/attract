@@ -13,29 +13,31 @@ _Checklist accionable derivada del `plan.md`._
 - [x] Sacado `.claude/skills/.gitkeep` — ya no hace falta, la carpeta tiene
       contenido real (`attract/SKILL.md`).
 
-## Validación — pendiente, necesita una sesión nueva
+## Validación — confirmada 2026-07-29, sesión nueva de Claude Code
 
-_No puedo marcar estos yo mismo: los escribí en esta misma conversación,
-así que ya sé qué se supone que tienen que disparar — no es una prueba
-real de si la `description` dispara sola. Necesita correrse en una sesión
-distinta, sin este contexto._
+_Corrida por el autor en una sesión real de Claude Code, sin el contexto
+de la conversación donde se escribió el `SKILL.md` — es la prueba real de
+que la `description` dispara sola, no una expectativa de quien lo escribió._
 
-- [ ] Caso feliz 1: describir un cambio en `fixtures/` (ej. "agregué un
-      juego nuevo a fixtures/arcade") a un agente con el skill instalado —
-      tiene que correr `attract doctor` sin que se lo pidan explícitamente.
-- [ ] Caso feliz 2: describir que apareció un `_synopsis/<set>.json` — el
-      agente tiene que correr `attract synopsis <set>`.
-- [ ] Caso límite: `doctor` devuelve ERROR — el agente tiene que reportarlo
-      y no seguir como si nada, no "arreglarlo" adivinando qué falta.
-- [ ] Caso límite: `doctor` devuelve solo AVISO — el agente sigue, pero lo
-      menciona.
+- [x] Caso feliz 1: "agregué un juego nuevo a fixtures/arcade, fijate si
+      quedó bien" → el agente cargó el skill (`Skill(attract) Successfully
+      loaded skill`) y corrió `make doctor` sin que se lo pidieran
+      explícito. Confirmado.
+- [x] Caso feliz 2: "ya tengo el synopsis de mok" → corrió
+      `attract synopsis mok` y `doctor` después, sin pedírselo. Confirmado.
+- [x] Caso límite ERROR: archivo con byte inválido (`0x93`) en
+      `fixtures/arcade/` → el agente corrió `doctor`, reportó el ERROR
+      exacto (byte inválido, mojibake en Windows) y preguntó si el archivo
+      era intencional en vez de "arreglarlo" adivinando. Confirmado.
+- [x] Caso límite AVISO: en el caso feliz 1, `doctor` devolvió 1 aviso
+      (`mags-ref-faltante`) — el agente lo mencionó explícitamente
+      ("degradación esperada y documentada, no es cosa tuya, no tocar") y
+      siguió sin bloquearse. Confirmado de yapa, no hizo falta un caso
+      aparte.
 
 ## Cierre
 
-- [x] Validar contra los criterios de aceptación de `spec.md` — 5 de 6
-      cumplidos, el sexto (disparo real) queda para la validación de
-      arriba.
-- [x] Movido `002-attract-skill` a "Hecho" en
-      `../../constitution/roadmap.md` (con la salvedad de la verificación
-      de disparo, igual que se hizo con las verificaciones "bien dummy"
-      de Pegasus).
+- [x] Validar contra los criterios de aceptación de `spec.md` — 6 de 6
+      cumplidos, incluido el disparo real (arriba).
+- [x] Movido `002-attract-skill` a "Hecho, sin salvedades" en
+      `../../constitution/roadmap.md`.

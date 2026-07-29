@@ -12,8 +12,7 @@ publisher: Sega
 genre: Light-gun shooter
 players: 2
 release: 2002-03-06
-summary: Dos arqueologos abren fuego con baculos magicos en un laberinto
-  egipcio que se rearma en cada partida.
+summary: Dos arqueólogos armados con báculos mágicos se internan en un laberinto egipcio que cambia de forma en cada partida, cazando tesoros y criaturas mitológicas.
 assets.marquee: media/mok/marquee.png
 assets.poster: media/mok/poster.jpg
 x-set: mok
