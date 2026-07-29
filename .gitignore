@@ -14,10 +14,14 @@ desktop.ini
 library/**
 !library/.gitkeep
 
-# Artefactos de build: metadata.pegasus.txt lo genera ATTRACT (ver ADR-002)
+# Artefactos de build: metadata.pegasus.txt lo genera ATTRACT (ver ADR-0002)
+# Excepcion: los de fixtures/ y docs/ NO son artefactos, son entradas de test
+# escritas a mano. Sin ellos "make doctor" no tiene nada que masticar en un
+# clon limpio.
 build/
 *.pegasus.txt
 !docs/**/*.pegasus.txt
+!fixtures/**/*.pegasus.txt
 
 # Python
 __pycache__/
@@ -25,3 +29,6 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+
+# Config local de Claude Code (la compartida, .claude/settings.json, SI va)
+.claude/settings.local.json

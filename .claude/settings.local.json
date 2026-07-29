@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(make setup *)",
-      "Bash(make doctor *)",
-      "Bash(make test *)"
-    ]
-  }
-}

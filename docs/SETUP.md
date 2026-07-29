@@ -90,7 +90,7 @@ mame -version        # ← ANOTÁ ESTE NÚMERO
 > **Y Homebrew va atrás.** En marzo de 2026 la fórmula estaba en 0.286. Tus ROMs
 > son 0.288.
 >
-> **Si `mame -version` en el Mac ≠ `mame -version` en Windows, ADR-005 está roto**
+> **Si `mame -version` en el Mac ≠ `mame -version` en Windows, ADR-0005 está roto**
 > y no te vas a enterar: vas a tener dos `-listxml` distintos, dos ideas distintas
 > de qué juegos existen, y bugs que aparecen en la semana 8.
 
@@ -102,7 +102,7 @@ Si Homebrew no llegó a 0.288, tenés tres salidas:
 | **Bajar el Windows a la de Homebrew** | Tus ROMs 0.288 pueden no validar contra 0.286 |
 | **Aceptar la deriva y documentarla** | Solo si verificás que `-listxml` no cambió para tus 5 juegos |
 
-Ninguna es gratis. **Elegí conscientemente y anotalo en ADR-005.**
+Ninguna es gratis. **Elegí conscientemente y anotalo en ADR-0005.**
 
 Datos útiles de MAME en Mac:
 - **No hay app de doble clic.** Es una aplicación de consola. Terminal o un frontend.
@@ -197,14 +197,16 @@ Deja toda la config en `<dir del programa>/config/`, que podés versionar y copi
 ## 3.1 Qué viaja y qué no
 
 ```
-git   ✅  src/  docs/  adr/  tests/  themes/  fixtures/  Makefile  .gitattributes
+git   ✅  src/  docs/  spec/  tests/  themes/  fixtures/  Makefile  .gitattributes
 git   ❌  library/**   ← ROMs, CHDs, assets. Pesan y no aportan
-git   ❌  *.pegasus.txt ← es un artefacto de build (ADR-002)
+git   ❌  *.pegasus.txt ← es un artefacto de build (ADR-0002)
 ```
 
-El repo entero pesa ~260 KB y viaja en un `git push`. Los fixtures son ROMs de **0 bytes**
-con los nombres correctos: para validar que el generador emite bien no necesitás un CHD de
-132 MB.
+El repo entero pesa unos pocos MB y viaja en un `git push` sin problema. Los
+fixtures son casi todos ROMs de **0 bytes** con los nombres correctos: para
+validar que el generador emite bien no necesitás un CHD de 132 MB.
+Excepción a propósito: `fixtures/arcade/sf2ce.zip` es un romset real chico
+(~3.5 MB), para poder correr `mame -listxml` contra él de verdad.
 
 ## 3.2 Los tres settings de git
 
@@ -237,7 +239,7 @@ editar / codear
      ↓
 make doctor        ← 9 chequeos        (no viajás si esto falla)
      ↓
-make test          ← 9 tests
+make test          ← 30 tests
      ↓
 git push  ────────────────────────────▶ git pull
                                             ↓
@@ -281,7 +283,7 @@ EL PUENTE
 
 CRÍTICO
 [ ] Las dos versiones de MAME coinciden.
-    Si no: elegiste una salida y la anotaste en ADR-005.
+    Si no: elegiste una salida y la anotaste en ADR-0005.
 ```
 
 > El único que puede bloquearte es el último. Los demás se arreglan en minutos.
@@ -293,19 +295,19 @@ CRÍTICO
 Ninguna lleva más de 15 minutos y las cuatro cambian decisiones:
 
 ```bash
-# 1. ¿Los -listxml de las dos máquinas son idénticos?  (ADR-005)
+# 1. ¿Los -listxml de las dos máquinas son idénticos?  (ADR-0005)
 mame -listxml sf2ce > /tmp/mac.xml          # en el Mac
 mame.exe -listxml sf2ce > win.xml           # en Windows
 #    después: diff. Si difieren, tenés dos verdades.
 
-# 2. ¿Cuántos juegos hay dentro de un archivo?  (ADR-004)
+# 2. ¿Cuántos juegos hay dentro de un archivo?  (ADR-0004)
 mame -listxml sf2ce | grep -c "<machine"
 unzip -l sf2ce.zip | tail -1
 
 # 3. ¿Qué necesita mok para arrancar?
 mame -listxml mok | grep -E "disk name|romof|<machine name"
 
-# 4. ¿game.extra.X es string o lista?  (ADR-001 — el experimento del Bloque 3)
+# 4. ¿game.extra.X es string o lista?  (ADR-0001 — el experimento del Bloque 3)
 make theme
 ```
 

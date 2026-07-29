@@ -1,0 +1,31 @@
+{
+  "name": "MICROMANÍA",
+  "issue": "16",
+  "year": 1993,
+  "color": "#7d2fb8",
+  "cover": "cover.jpg",
+  "key_id": "micromania-016",
+  "pages": [
+    "p001.jpg", "p002.jpg", "p003.jpg", "p004.jpg",
+    "p005.jpg", "p006.jpg", "p007.jpg", "p008.jpg"
+  ],
+  "articles": [
+    {
+      "type": "review",
+      "game": "dino",
+      "title": "Cadillacs and Dinosaurs",
+      "startPage": 3,
+      "pages": [3, 4, 5, 7, 8],
+      "confidence": 0.95,
+      "cheats": true,
+      "walkthrough": false,
+      "tips": true
+    },
+    {
+      "type": "publicidad",
+      "startPage": 6,
+      "pages": [6],
+      "confidence": 0.99
+    }
+  ]
+}

@@ -1,16 +1,15 @@
 """attract - CLI.
 
-Hoy solo existe `doctor`. Los demas comandos llegan con los modulos:
-  M1-M2  attract synopsis
+`doctor` y `synopsis` existen. Los demas comandos llegan con los modulos:
   M4     attract skill
   M5     attract mcp
   M7     attract ingest
 """
 import sys
 
-from attract import doctor
+from attract import doctor, synopsis
 
-COMANDOS = {"doctor": doctor.main}
+COMANDOS = {"doctor": doctor.main, "synopsis": synopsis.main}
 
 
 def main() -> int:
@@ -19,6 +18,7 @@ def main() -> int:
         print()
         print("comandos:")
         print("  doctor [ruta] [--target windows]   validador preflight")
+        print("  synopsis <set> [ruta]              escribe summary: desde _synopsis/<set>.json")
         return 0
 
     cmd = sys.argv[1]

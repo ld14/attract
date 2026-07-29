@@ -19,13 +19,13 @@ sin scans, sin manual y sin combos, para siempre. Striker es la excepción.
 ## Arrancar
 
 **Primera vez:** leé [`docs/SETUP.md`](docs/SETUP.md) — arma las dos máquinas y tiene la
-trampa de la versión de MAME, que puede romper ADR-005 sin avisar.
+trampa de la versión de MAME, que puede romper ADR-0005 sin avisar.
 
 ```bash
 make setup       # config de git (precomposeUnicode)
 make check-git   # verificá que quedó
 make doctor      # el validador contra los fixtures
-make test        # 9 tests, cada uno reproduce un bug real
+make test        # 30 tests, cada uno reproduce un bug real o un caso del contrato
 make theme       # instala el theme de debug en Pegasus
 ```
 
@@ -48,20 +48,31 @@ Si solo funciona con Striker, no funciona.
 
 | ADR | Estado | Decisión |
 |---|---|---|
-| [001](adr/001-transporte-datos-ricos.md) | 🔴 pendiente | Transporte de datos ricos al theme |
-| [002](adr/002-metadata-fuente-o-artefacto.md) | 🔴 pendiente | ¿Metadata es fuente o artefacto de build? |
-| [003](adr/003-cross-platform.md) | 🔴 pendiente | Estrategia macOS → Windows |
-| [004](adr/004-identidad-set-merged.md) | 🔴 pendiente | Identidad en un set merged |
-| [005](adr/005-runtime-mame-vanilla.md) | ✅ **aceptada** | **Runtime: MAME vanilla 0.288** |
+| [0001](spec/decisions/0001-transporte-datos-ricos.md) | ✅ **aceptada** | Transporte de datos ricos al theme |
+| [0002](spec/decisions/0002-metadata-fuente-o-artefacto.md) | ✅ **aceptada** | Metadata es artefacto de build, no fuente |
+| [0003](spec/decisions/0003-cross-platform.md) | ✅ **aceptada** | Estrategia macOS → Windows |
+| [0004](spec/decisions/0004-identidad-set-merged.md) | ✅ **aceptada** | Identidad en un set merged |
+| [0005](spec/decisions/0005-runtime-mame-vanilla.md) | ✅ **aceptada** | **Runtime: MAME vanilla 0.288** |
+| [0006](spec/decisions/0006-version-politica-pegasus.md) | ✅ **aceptada** | Frontend: Pegasus, versión fijada |
+| [0007](spec/decisions/0007-paginas-revista-imagenes-no-pdf.md) | ✅ **aceptada** | Páginas de revista: imágenes, no PDF |
+| [0008](spec/decisions/0008-modelo-datos-revistas.md) | 🔁 superseded por 0010 | Revistas como entidad de primera clase |
+| [0009](spec/decisions/0009-frontera-produccion-consumo-revistas.md) | ✅ **aceptada** | Frontera: ATTRACT consume revistas, no las produce |
+| [0010](spec/decisions/0010-contrato-magazine-json-extendido.md) | ✅ **aceptada** | Contrato `magazine.json` extendido con evidencia real |
+| [0011](spec/decisions/0011-fuente-synopsis-regeneracion-campo.md) | ✅ **aceptada** | `attract synopsis` escribe desde una fuente, merge de un solo campo |
 
-ADR-005 está escrita y sirve de modelo. Las otras cuatro las escribís en el LAB 0.3.
+**11 ADR, 10 vigentes.** 0010 salió de verificar la 0008 contra un
+`magazine.json` real, que traía más campos de los que se habían inventado
+para el fixture. 0011 salió de especificar la primera feature real
+(`attract synopsis`, `spec/features/001-synopsis/`) y decidir cómo escribe
+`metadata.pegasus.txt` sin romper ADR-0002. Ver
+[`spec/decisions/README.md`](spec/decisions/README.md).
 
 ## Stack
 
 | | |
 |---|---|
 | Frontend | Pegasus (QML) |
-| Runtime | **MAME vanilla 0.288** — mismo binario en Mac y Windows (ADR-005) |
+| Runtime | **MAME vanilla 0.288** — mismo binario en Mac y Windows (ADR-0005) |
 | ROMs | MAME 0.288 **merged** |
 | Dev | macOS · Prod | Windows |
 
@@ -69,13 +80,14 @@ ADR-005 está escrita y sirve de modelo. Las otras cuatro las escribís en el LA
 
 ```
 docs/       SETUP.md ← empezá acá · CONVENCION.md ← el documento central
-            baseline · mapeo · mockup
-adr/        las decisiones. 005 escrita, 001-004 tuyas
-src/        attract doctor (funciona). El resto llega con los módulos
-themes/     attract-debug ← el experimento del Bloque 3
-fixtures/   ROMs falsas de 0 bytes. Portables, versionables, suficientes
+            baseline · mapeo · mockup · decisiones/ ← handoffs de sesión
+spec/       constitution (misión, stack, roadmap) + decisions (11 ADR, 10
+            vigentes) + features (001-synopsis, primera con spec/plan/tasks)
+src/        attract doctor + synopsis (funcionan). El resto llega con los módulos
+themes/     attract-debug ← el harness del Bloque 3 · experimentos/ ← pruebas cerradas
+fixtures/   ROMs falsas de 0 bytes + una revista de mentira. Portables, suficientes
 library/    tu librería real. NO va al repo
-tests/      9 tests. Cada uno reproduce un bug que pasó de verdad
+tests/      30 tests. Cada uno reproduce un bug real o un caso del contrato
 ```
 
 ## Lo que ya aprendimos a los golpes

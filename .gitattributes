@@ -19,6 +19,12 @@
 *.jpg   binary
 *.jpeg  binary
 *.png   binary
+*.webp  binary
+*.gif   binary
 *.mp4   binary
 *.ttf   binary
 *.otf   binary
+
+# Un PDF sin esto cae bajo "* text=auto" y git le normaliza los saltos de linea
+# adentro del binario. Lo corrompe en silencio.
+*.pdf   binary

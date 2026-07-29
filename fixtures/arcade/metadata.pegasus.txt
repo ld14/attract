@@ -1,0 +1,45 @@
+# FIXTURE - no es tu convencion, es un ejemplo para que doctor tenga que masticar.
+# Tu convencion la escribis vos en el LAB 0.3.
+
+collection: Arcade
+shortname: arcad
+launch: mame -rompath "{file.dir}" {file.basename}
+
+game: The Maze of the Kings
+file: mok.zip
+developer: Hitmaker
+publisher: Sega
+genre: Light-gun shooter
+players: 2
+release: 2002-03-06
+summary: Dos arqueologos abren fuego con baculos magicos en un laberinto
+  egipcio que se rearma en cada partida.
+assets.marquee: media/mok/marquee.png
+assets.poster: media/mok/poster.jpg
+x-set: mok
+x-formato: GD-ROM
+x-procedencia: manual
+
+game: Street Fighter II: Champion Edition
+file: sf2ce.zip
+developer: Capcom
+genre: Fighting
+players: 2
+assets.boxFront: media/sf2ce/boxFront.jpg
+assets.marquee: media/sf2ce/marquee.png
+x-set: sf2ce
+x-formato: PCB
+x-procedencia: manual
+
+game: EXPERIMENTO
+file: dino.zip
+x-simple: valor unico
+x-multilinea: uno
+  dos
+  tres
+x-con-guion: tiene guion en el nombre
+
+game: TEST MULTIFILE (verificacion ADR-0004)
+file: multifile-a.zip
+file: multifile-b.zip
+x-set: test-multifile

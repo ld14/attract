@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "document-skills@anthropic-agent-skills": true,
+    "example-skills@anthropic-agent-skills": true,
+    "42crunch-api-security-testing@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "chrome-devtools-mcp@claude-plugins-official": true
+  }
+}

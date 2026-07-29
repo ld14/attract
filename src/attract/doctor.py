@@ -10,6 +10,7 @@ Ningun chequeo necesita IA. Ninguno necesita Windows.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 import unicodedata
@@ -183,6 +184,150 @@ def chk_metadata(path: Path, rep: Reporte) -> None:
                     )
 
 
+def chk_json_valido(path: Path, rep: Reporte) -> None:
+    """data.json y magazine.json tienen que ser JSON sintacticamente valido.
+    Hoy un JSON roto pasa el doctor sin aviso y explota recien en el theme
+    (docs/CONVENCION.md #4.4, "falta")."""
+    try:
+        json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        rep.error("json-invalido", path, f"JSON invalido: {e}")
+
+
+def chk_mags_ref(path: Path, rep: Reporte) -> None:
+    """mags[].ref de un data.json deberia apuntar a una carpeta real en
+    media/_magazines/<ref>/. Es AVISO, no ERROR: la degradacion con un ref
+    colgado es un caso soportado a proposito (ver fixtures/arcade/media/sf2ce/,
+    ADR-0008) - no bloquea el viaje a Windows, pero vale la pena que se note."""
+    try:
+        datos = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return  # ya lo reporto chk_json_valido
+
+    if not isinstance(datos, dict):
+        return
+
+    for mag in datos.get("mags") or []:
+        ref = mag.get("ref") if isinstance(mag, dict) else None
+        if not ref:
+            continue
+        # data.json vive en media/<juego>/data.json; las revistas en media/_magazines/<ref>/
+        destino = path.parent.parent / "_magazines" / ref
+        if not destino.is_dir():
+            rep.aviso(
+                "mags-ref-faltante", path,
+                f"mags[].ref='{ref}' -> {destino} no existe (degradacion esperada, no error)",
+            )
+
+
+MAGAZINE_TYPES_CONOCIDOS = {
+    "publicidad", "indice", "índice", "review", "noticia",
+    "entrevista", "especial", "hardware", "preview",
+}
+
+
+def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
+    """Valida el contrato de magazine.json mas alla de sintaxis JSON:
+    campos obligatorios, tipos, rango de confidence (ADR-0010)."""
+    try:
+        datos = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return  # ya lo reporto chk_json_valido
+
+    if not isinstance(datos, dict):
+        rep.error("magazine-contrato", path, "se esperaba un objeto JSON")
+        return
+
+    def falla(campo: str, motivo: str) -> None:
+        rep.error("magazine-contrato", path, f"'{campo}': {motivo}")
+
+    if not isinstance(datos.get("name"), str) or not datos["name"].strip():
+        falla("name", "obligatorio, string no vacio")
+    if not isinstance(datos.get("cover"), str) or not datos["cover"].strip():
+        falla("cover", "obligatorio, string no vacio")
+    if not isinstance(datos.get("key_id"), str) or not datos["key_id"].strip():
+        falla("key_id", "obligatorio, string no vacio")
+
+    pages = datos.get("pages")
+    if not isinstance(pages, list) or not all(isinstance(p, str) for p in pages):
+        falla("pages", "obligatorio, lista de strings")
+
+    for campo_opc in ("issue", "color"):
+        val = datos.get(campo_opc)
+        if val is not None and not isinstance(val, str):
+            falla(campo_opc, "tiene que ser string o null")
+
+    year = datos.get("year")
+    if year is not None and not (isinstance(year, int) and not isinstance(year, bool)):
+        falla("year", "tiene que ser number o null")
+
+    articles = datos.get("articles")
+    if not isinstance(articles, list):
+        falla("articles", "obligatorio, lista")
+        return
+
+    for i, art in enumerate(articles):
+        prefijo = f"articles[{i}]"
+        if not isinstance(art, dict):
+            rep.error("magazine-contrato", path, f"{prefijo}: tiene que ser un objeto")
+            continue
+
+        tipo = art.get("type")
+        if not isinstance(tipo, str) or not tipo.strip():
+            rep.error(
+                "magazine-contrato", path,
+                f"{prefijo}.type: obligatorio, string no vacio",
+            )
+        elif tipo not in MAGAZINE_TYPES_CONOCIDOS:
+            rep.aviso(
+                "magazine-contrato", path,
+                f"{prefijo}.type='{tipo}' no es de los conocidos "
+                f"({', '.join(sorted(MAGAZINE_TYPES_CONOCIDOS))}) - "
+                "el enum no es cerrado (ADR-0010), puede ser valido igual",
+            )
+
+        for campo_str_opc in ("game", "title"):
+            val = art.get(campo_str_opc)
+            if val is not None and not isinstance(val, str):
+                rep.error(
+                    "magazine-contrato", path,
+                    f"{prefijo}.{campo_str_opc}: si esta presente tiene que ser string",
+                )
+
+        if not isinstance(art.get("startPage"), int) or isinstance(art.get("startPage"), bool):
+            rep.error(
+                "magazine-contrato", path,
+                f"{prefijo}.startPage: obligatorio, number",
+            )
+
+        art_pages = art.get("pages")
+        if not isinstance(art_pages, list) or not all(
+            isinstance(p, int) and not isinstance(p, bool) for p in art_pages
+        ):
+            rep.error(
+                "magazine-contrato", path,
+                f"{prefijo}.pages: obligatorio, lista de numbers",
+            )
+
+        conf = art.get("confidence")
+        if (
+            not isinstance(conf, (int, float))
+            or isinstance(conf, bool)
+            or not (0.0 <= conf <= 1.0)
+        ):
+            rep.error(
+                "magazine-contrato", path,
+                f"{prefijo}.confidence: obligatorio, number entre 0.0 y 1.0",
+            )
+
+        for flag in ("cheats", "walkthrough", "tips"):
+            if flag in art and not isinstance(art[flag], bool):
+                rep.error(
+                    "magazine-contrato", path,
+                    f"{prefijo}.{flag}: si esta presente tiene que ser boolean",
+                )
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -198,7 +343,9 @@ CHEQUEOS_UNIVERSALES = [
 
 def revisar(raiz: Path, target: str = "windows") -> Reporte:
     rep = Reporte()
-    rep.chequeos_corridos = [n for n, _, _ in CHEQUEOS_UNIVERSALES] + ["metadata"]
+    rep.chequeos_corridos = [n for n, _, _ in CHEQUEOS_UNIVERSALES] + [
+        "metadata", "json-valido", "mags-ref", "magazine-contrato",
+    ]
 
     if not raiz.exists():
         rep.error("ruta", raiz, "no existe")
@@ -224,6 +371,24 @@ def revisar(raiz: Path, target: str = "windows") -> Reporte:
         if path.name.endswith(".pegasus.txt"):
             try:
                 chk_metadata(path, rep)
+            except UnicodeDecodeError:
+                pass  # ya lo reporto chk_encoding
+
+        if path.name in ("data.json", "magazine.json"):
+            try:
+                chk_json_valido(path, rep)
+            except UnicodeDecodeError:
+                pass  # ya lo reporto chk_encoding
+
+        if path.name == "data.json":
+            try:
+                chk_mags_ref(path, rep)
+            except UnicodeDecodeError:
+                pass  # ya lo reporto chk_encoding
+
+        if path.name == "magazine.json":
+            try:
+                chk_magazine_contrato(path, rep)
             except UnicodeDecodeError:
                 pass  # ya lo reporto chk_encoding
 
