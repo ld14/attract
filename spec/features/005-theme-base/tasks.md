@@ -244,14 +244,36 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
 
 ## 4 · Librería
 
-- [ ] `screens/LibraryScreen.qml` — barra superior (wordmark, pills de filtro
-      **decorativas**, reloj que se actualiza cada 20s), hero (eyebrow,
-      título, sinopsis, botones, contador `NN / NN`) y el rail de carátulas.
-- [ ] Foco: flechas izquierda/derecha mueven de a uno; el rail sigue al foco
-      manteniendo la tarjeta enfocada tercera desde la izquierda. La enfocada
-      se eleva y toma su accent; las demás quedan al 50%.
-- [ ] Enter/A: si la tarjeta ya está enfocada, abre el detalle; si no, solo la
-      enfoca. Es el patrón TV del handoff — **no** se entra de una.
+- [x] `screens/LibraryScreen.qml` — escrita. Barra superior (wordmark, pills
+      de filtro **decorativas**, reloj cada 20s — no cada segundo: no hay
+      segundero en pantalla), hero (eyebrow, título a 82px —el `clamp()` del
+      CSS colapsa con el lienzo fijo—, sinopsis, botones, contador `NN / NN`)
+      y el rail.
+- [x] Foco del rail: `ListView` con `StrictlyEnforceRange` y
+      `preferredHighlightBegin` en 2 anchos + gaps. Eso deja la tarjeta
+      enfocada tercera desde la izquierda como pide el diseño, y `ListView`
+      clampea sola en los extremos — no hace falta el `max(0, focus-2)` del
+      prototipo.
+- [x] Enter/A: si la tarjeta ya está enfocada, abre el detalle; si no, solo la
+      enfoca. Patrón TV del handoff. En un gabinete con joystick, entrar al
+      primer toque hace imposible recorrer la librería.
+- [x] `screens/GameCard.qml` — la tarjeta del rail. **No muestra la
+      carátula**: el diseño la quiere teñida con el accent del juego y con el
+      título encima; la carátula aparece recién en el detalle como box art.
+      Los puntos de contenido son el único lugar de la librería donde se ve
+      que un juego tiene revistas, trucos o manual sin entrar.
+- [x] `ui/AccentWash.qml` — el gradiente teñido, extraído porque lo usan dos
+      cosas con significados distintos: el último eslabón de `CoverImage`
+      (fallback) y el fondo de las tarjetas (donde **no** es fallback, es el
+      diseño). Duplicarlo eran dos `Canvas` que sincronizar a mano.
+- [x] `core/DataCache.js` — caché **compartido** (`.pragma library`). Salió de
+      un problema que aparece recién con el rail: cada tarjeta necesita su
+      propio accent, o sea su propio `data.json`. Con `ListView` solo existen
+      las visibles, pero los delegates se **destruyen** al scrollear y un
+      caché por instancia se pierde en cada pasada. La clave es la URL
+      completa y no el `<set>`: dos colecciones pueden tener el mismo set
+      (pasa de verdad — `fixtures/arcade` y `library/preview` tienen las dos
+      un `mok`).
 - [ ] `overlays/LaunchOverlay.qml` — scrim, spinner en accent, "INICIANDO" y
       el título. La línea del comando de lanzamiento sale de Pegasus o no se
       muestra; **no se inventa un `retroarch -L core.dll` como el prototipo**.

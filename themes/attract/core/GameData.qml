@@ -27,6 +27,7 @@
 
 import QtQuick 2.0
 import ".."
+import "DataCache.js" as Cache
 
 QtObject {
     id: gd
@@ -88,7 +89,10 @@ QtObject {
 
     // --- interna ---------------------------------------------------------
 
-    property var _cache: ({})       // url -> objeto parseado (o null si 404)
+    // El cache es COMPARTIDO (DataCache.js, .pragma library), no una propiedad
+    // de esta instancia: en el rail de la libreria las tarjetas son delegates
+    // de un ListView y se destruyen al scrollear. Un cache por instancia se
+    // perderia en cada pasada.
     property var _xhr: null
     property string _urlVigente: ""
 
@@ -115,8 +119,8 @@ QtObject {
             return;
         }
 
-        if (_cache.hasOwnProperty(url)) {
-            aplicar(url, _cache[url]);
+        if (Cache.tiene(url)) {
+            aplicar(url, Cache.leer(url));
             return;
         }
 
@@ -145,7 +149,9 @@ QtObject {
                 }
             }
 
-            gd._cache[url] = parseado;
+            // null tambien se cachea: "ya se pidio y no hay data.json" es
+            // un resultado, no un fallo que convenga reintentar.
+            Cache.guardar(url, parseado);
             gd.aplicar(url, parseado);
         };
         xhr.open("GET", url);

@@ -17,11 +17,9 @@
 // como URL remota (https://shared.akamai.steamstatic.com/...), y en un
 // gabinete offline eso nunca carga. Image.Error es la unica senal confiable.
 //
-// APROXIMACION A CSS: el coverBg() del prototipo apila radial + conic +
-// linear. Qt Quick 5.15 no tiene conic-gradient y Canvas tampoco, asi que se
-// deja radial + linear. La diferencia visual es minima (el conic aportaba un
-// tinte suave en una esquina) y no justifica dibujar el gradiente a mano
-// pixel por pixel.
+// El ultimo eslabon lo dibuja ui/AccentWash.qml, que es el mismo gradiente
+// que usan las tarjetas del rail — ahi no es un fallback sino el fondo que el
+// diseno pide. Vive aparte para no tener dos Canvas que sincronizar a mano.
 
 import QtQuick 2.0
 import ".."
@@ -78,41 +76,14 @@ Item {
     onGameChanged: _idx = 0
 
     // --- ultimo eslabon: el color-wash ------------------------------------
+    // Mismo dibujo que usan las tarjetas del rail, de ahi que viva aparte.
 
-    Canvas {
+    AccentWash {
         anchors.fill: parent
         visible: root.mostrandoPlaceholder
-        renderStrategy: Canvas.Cooperative
-
-        property color a: root.accent
-        property color b: root.accent2
-        onAChanged: requestPaint()
-        onBChanged: requestPaint()
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
-
-        onPaint: {
-            var ctx = getContext("2d");
-            ctx.reset();
-
-            // linear-gradient(150deg, accent2 0%, #0a0b10 66%)
-            var lin = ctx.createLinearGradient(0, 0, width, height);
-            lin.addColorStop(0.00, b);
-            lin.addColorStop(0.66, "#0a0b10");
-            lin.addColorStop(1.00, "#0a0b10");
-            ctx.fillStyle = lin;
-            ctx.fillRect(0, 0, width, height);
-
-            // radial-gradient(140% 120% at X% Y%, accent 40%, transparent 50%)
-            var cx = width * (0.18 + (root.variacion % 3) * 0.30);
-            var cy = height * (0.14 + (root.variacion % 2) * 0.42);
-            var r = Math.max(width, height) * 1.40;
-            var rad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-            rad.addColorStop(0.00, Theme.alpha(a, 0.40));
-            rad.addColorStop(0.50, Theme.alpha(a, 0.00));
-            ctx.fillStyle = rad;
-            ctx.fillRect(0, 0, width, height);
-        }
+        accent: root.accent
+        accent2: root.accent2
+        variacion: root.variacion
     }
 
     // --- la imagen --------------------------------------------------------
