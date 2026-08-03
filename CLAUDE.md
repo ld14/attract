@@ -75,11 +75,25 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
   mano, sí van al repo.
 - Los fixtures son **de 0 bytes a propósito, salvo excepción explícita**.
   Para validar estructura no hace falta un CHD de 132 MB ni un escaneo real.
-  Fixture nuevo → archivo vacío. Excepción: `fixtures/arcade/sf2ce.zip` es un
-  romset real (~3.5 MB), a propósito, para poder correr `mame -listxml`
-  contra él y verificar cosas como el conteo de sets de una familia — un zip
-  de 0 bytes no sirve para eso. Si se agrega otra excepción similar,
-  anotarla acá.
+  Fixture nuevo → archivo vacío. Si se agrega otra excepción, anotarla acá.
+
+  Excepciones vigentes:
+  - `fixtures/arcade/sf2ce.zip` es un romset real (~3.5 MB), para poder correr
+    `mame -listxml` contra él y verificar cosas como el conteo de sets de una
+    familia — un zip de 0 bytes no sirve para eso.
+  - `media/dino/boxFront.png` y `media/mok/poster.png` son PNG **generados**
+    (~2 KB cada uno, colores planos con un patrón diagonal obviamente
+    sintético). Con todo en 0 bytes, `Image` siempre da `Error` y la cadena de
+    carátula de `CONVENCION.md` §2.2 siempre termina en el último eslabón: no
+    hay forma de distinguir "cargó `boxFront`" de "cargó el color-wash".
+    Estos dos hacen observables los tres eslabones — `dino` tiene `boxFront`
+    (eslabón 1), `mok` **no** lo tiene y cae a `poster` (eslabón 2), `sf2ce`
+    queda en 0 bytes (eslabón 3). No son arte y no pretenden serlo.
+- **Las carátulas de verdad van en `library/`, nunca en `fixtures/`.** Son
+  arte con copyright y `fixtures/` se versiona. `library/preview/` es una
+  colección desechable para mirar el theme con arte real y compararlo contra
+  el diseño de referencia; se borra con `rm -rf library/preview` más sacar su
+  línea de `game_dirs.txt` de Pegasus.
 
 ## Fuera de alcance sin preguntar
 

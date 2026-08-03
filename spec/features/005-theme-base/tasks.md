@@ -122,17 +122,17 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       descartado**, con tres casos medidos que lo rompen — asset con URL
       remota, `TEST MULTIFILE` sin ningún asset, y el juego de
       `library/arcade` tampoco.
-- [ ] **Verificar `Paths` en Pegasus.** El panel de diagnóstico ahora lista,
-      por cada juego, el `set` y la `base` que resuelve — es el chequeo, ya
-      que en QML no hay framework de tests. Hecho cuando, con `game_dirs`
-      apuntando a los dos directorios:
+- [x] **`Paths` verificado en Pegasus real, 2026-08-02.** Las tres vías dieron
+      lo esperado:
 
-      | Juego | `set` esperado | `base` esperada |
+      | Juego | `set` | `base` |
       |---|---|---|
-      | `EXPERIMENTO` (dino) | `dino` — por basename, no tiene `x-set` | `…/fixtures/arcade/media/dino/` |
-      | `sf2ce`, los dos `mok` | por `x-set` | `…/media/<set>/` |
-      | `TEST MULTIFILE` | `test-multifile` | `…/media/test-multifile/` aunque no tenga **ningún** asset |
-      | Cualquiera de Steam | `steam:NNNNN` | **vacía** — `path` es un URI, no una ruta. Degradar acá es lo correcto |
+      | `EXPERIMENTO` (dino) | `dino` — **por basename**, no tiene `x-set` | `file:///…/fixtures/arcade/media/dino/` |
+      | `sf2ce` | `sf2ce` — por `x-set` | `file:///…/fixtures/arcade/media/sf2ce/` |
+      | Cities: Skylines | `steam:255710` | **vacía** — `path` es un URI, no una ruta |
+
+      El esquema `file://` se antepone bien y la detección del URI de Steam
+      funciona. **No queda una sola ruta absoluta en el theme.**
 - [x] `core/GameData.qml` — escrito. XHR de `data.json`, expone
       `accent`/`accent2`/`review`/`cheats`/`manual`/`mags`, el `estado`, los
       flags `hayRevistas`/`hayCheats`/`hayManual`/`hayReview` y `catDe()` para
@@ -147,17 +147,18 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       silencioso y difícil de reproducir a mano. Cada respuesta se compara
       contra la URL vigente antes de aplicarse, y la petición anterior se
       aborta al empezar una nueva.
-- [ ] **Verificar `GameData` en Pegasus** (mismo panel, misma pasada que
-      `Paths`). Recorriendo los juegos con ← →, el fondo cambia de color con
-      el accent real de cada `data.json`. Hecho cuando:
+- [x] **`GameData` verificado en Pegasus real, 2026-08-02.** Y el fondo cambia
+      de color con el accent real de cada juego al recorrerlos.
 
-      | Juego | Esperado |
+      | Juego | Resultado |
       |---|---|
-      | `EXPERIMENTO` (dino) | `listo`, accent `#ffb020` de `data.json`, 1 revista, 4 combos + 2 trucos, review con `score=94` y las seis categorías en `-` (reseña parcial) |
+      | `EXPERIMENTO` (dino) | `listo`, accent `#ffb020` de `data.json`, 1 revista `ref=micromania-16`, `4 combos, 2 trucos`, `score=94` con las seis categorías en `-` |
       | `sf2ce` | `listo`, accent `#ff5a3c`, 1 revista con el `ref` colgado, manual de 4 págs, sin cheats, sin review |
-      | `mok` (fixtures y library) | `sin-datos` — no tienen `data.json`. Accent neutro. **Sin crash** |
-      | `TEST MULTIFILE` | `sin-datos` con la base bien resuelta, aunque no tenga ningún asset |
-      | Cualquiera de Steam | `sin-datos` con base vacía |
+      | Cities: Skylines | `sin-datos`, accent neutro `#6f7a8d`, los cuatro mensajes de §2.3 |
+
+      La **reseña parcial** es el caso que más importaba y salió exacto:
+      `score=94` presente, las seis categorías en `-`, el bloque entero
+      visible. Los dos niveles de "sin dato" de §2.3 funcionan.
 
 ## 3 · Átomos (`ui/`)
 
@@ -184,22 +185,41 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       quedaron en un archivo: diferían en dos colores y nada más.
       `Chip` centraliza el `"Sin Información"` de §2.3 para que no se olvide
       en una pantalla.
-- [ ] **Verificar los átomos en Pegasus** (misma pasada que `Paths` y
-      `GameData`). El panel dibuja una `CoverImage` del juego enfocado, dos
-      `Chip` (AÑO desde `releaseYear`, FORMATO desde `x-formato`) y los dos
-      `Boton`, con **▲ ▼** para mover el foco entre ellos. Hecho cuando,
-      recorriendo los juegos:
+- [x] **Átomos verificados en Pegasus real, 2026-08-02.** `Chip` mostró
+      `AÑO: Sin Información` donde `releaseYear` es `0` y `FORMATO: PCB` desde
+      `x-formato` — **no** desde `mediaFor()`, que se equivoca en 4 de 5
+      (`docs/mapeo-mockup-pegasus.md`). `Boton` dibuja las dos variantes y el
+      anillo de foco salta con ▲ ▼. `CoverImage` cargó la URL remota de un
+      juego de Steam (había internet) y cayó al color-wash en los fixtures.
 
-      | Juego | Eslabón de la cadena que tiene que verse |
-      |---|---|
-      | `EXPERIMENTO` (dino) | imagen — tiene `boxFront` |
-      | `mok` (fixtures) | imagen — **no** tiene `boxFront`, cae a `poster` |
-      | `TEST MULTIFILE` | color-wash con el accent — no tiene ningún asset |
-      | Cualquiera de Steam | color-wash — la URL remota no carga sin internet |
+      **Hallazgo: la cadena de §2.2 no se puede verificar visualmente contra
+      `fixtures/`.** Todas sus imágenes pesan **0 bytes** (la regla de
+      `CLAUDE.md`), así que `Image` siempre da `Error` y la cadena siempre
+      termina en el último eslabón. El comportamiento es correcto —de hecho es
+      la prueba de que la cadena recorre todos los eslabones— pero no permite
+      distinguir "el eslabón 1 cargó" de "el 3 cargó", y deja la tarea de
+      cierre de esta feature (comparar contra el prototipo al lado)
+      imposible: la librería entera serían cuadrados de color.
+- [x] **Resuelto 2026-08-02, en dos lugares distintos a propósito:**
+      - **`fixtures/` (versionado):** dos PNG **generados** con stdlib
+        (`zlib` + `struct`, ~2 KB cada uno, colores planos con un patrón
+        diagonal obviamente sintético). `media/dino/boxFront.png` hace
+        observable el eslabón 1; `media/mok/poster.png` el eslabón 2 —`mok`
+        **no** tiene `boxFront`, así que tiene que caer ahí—; `sf2ce` se queda
+        en 0 bytes para el eslabón 3. Anotado como excepción en `CLAUDE.md`,
+        al lado de la de `sf2ce.zip`. No son arte y no pretenden serlo.
+      - **`library/preview/` (gitignored):** colección desechable con carátulas
+        **reales** bajadas de `libretro-thumbnails/MAME`, para poder comparar
+        el theme contra el diseño de referencia. Ahí sí hay arte con copyright,
+        y por eso no va a `fixtures/`, que se versiona — la separación ya la
+        tenía el proyecto, esto solo la usa. Se borra con
+        `rm -rf library/preview` más sacar su línea de `game_dirs.txt`.
 
-      Y los chips: `AÑO` en `"Sin Información"` donde `releaseYear` es `0`,
-      `FORMATO` con `PCB`/`GD-ROM` desde `x-formato` — nunca desde
-      `mediaFor()`, que se equivoca en 4 de 5 (`docs/mapeo-mockup-pegasus.md`).
+      Wikipedia sirvió para 1 de 3 juegos y devolvió un match **equivocado**
+      para Maze of the Kings (el logo de otra cosa); `libretro-thumbnails`
+      —la fuente que usan los frontends retro— resolvió 2 de 3. Maze of the
+      Kings no está en ese set (es NAOMI GD-ROM), y queda bien así: es el caso
+      real de un juego sin carátula, que tiene que caer al color-wash.
 
 ## 4 · Librería
 
@@ -244,7 +264,9 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       `design_handoff_game_detail/Pegasus Game Detail.dc.html` abierto al
       lado, y anotar las diferencias que queden. Es a ojo: no hay forma
       automática, y el canvas fijo (ADR-0016) existe para que la comparación
-      tenga sentido.
+      tenga sentido. **Se compara contra `library/preview/`**, que tiene
+      carátulas reales — contra `fixtures/` la comparación no sirve, sus
+      imágenes son stand-ins generados (ver §3).
 - [ ] Anotar en `plan.md` qué aproximaciones a CSS hicieron falta de verdad,
       una vez que el experimento de `QtGraphicalEffects` haya respondido.
 - [ ] `make test` y `make doctor` en verde.
