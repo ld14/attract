@@ -73,14 +73,19 @@ Item {
             border.color: Theme.screen
         }
 
-        Column {
+        // Arriba y abajo se anclan a los bordes, NO se separan con un
+        // espaciador de alto calculado a mano. Habia un `parent.height - 14 -
+        // 44` que asumia cuanto median tres renglones de titulo; al entrar las
+        // fuentes reales dejo de ser cierto y el titulo se salia de la tarjeta
+        // (visto en Pegasus el 2026-08-03). Con anchors, el alto del texto lo
+        // decide el texto.
+        Item {
             anchors.fill: parent
             anchors.margins: 13
-            spacing: 0
 
             // fila de arriba: sistema + año
             Text {
-                width: parent.width
+                anchors { top: parent.top; left: parent.left; right: parent.right }
                 elide: Text.ElideRight
                 color: Theme.textPrimary
                 font.family: Theme.fontMono
@@ -100,35 +105,36 @@ Item {
                 }
             }
 
-            Item { width: 1; height: parent.height - 14 - 44 }
+            // abajo: titulo + puntos de contenido, anclados al pie
+            Column {
+                anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+                spacing: 7
 
-            // abajo: titulo + puntos de contenido
-            Text {
-                width: parent.width
-                wrapMode: Text.WordWrap
-                maximumLineCount: 3
-                elide: Text.ElideRight
-                color: Theme.textBright
-                font.family: Theme.fontDisplay
-                font.bold: true
-                font.pixelSize: 15
-                lineHeight: 1.1
-                text: root.game ? root.game.title : ""
-            }
+                Text {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 3
+                    elide: Text.ElideRight
+                    color: Theme.textBright
+                    font.family: Theme.fontDisplay
+                    font.bold: true
+                    font.pixelSize: 15
+                    lineHeight: 1.1
+                    text: root.game ? root.game.title : ""
+                }
 
-            Item { width: 1; height: 7 }
-
-            // Un punto por tipo de contenido extra. Es el unico lugar de la
-            // libreria donde se ve que un juego tiene revistas, trucos o
-            // manual sin entrar al detalle.
-            Row {
-                spacing: 5
-                Repeater {
-                    model: [datos.hayRevistas, datos.hayCheats, datos.hayManual]
-                    Rectangle {
-                        visible: modelData
-                        width: 7; height: 7; radius: 3.5
-                        color: root.activo ? root.accent : Theme.alpha(Theme.textBright, 0.5)
+                // Un punto por tipo de contenido extra. Es el unico lugar de
+                // la libreria donde se ve que un juego tiene revistas, trucos
+                // o manual sin entrar al detalle.
+                Row {
+                    spacing: 5
+                    Repeater {
+                        model: [datos.hayRevistas, datos.hayCheats, datos.hayManual]
+                        Rectangle {
+                            visible: modelData
+                            width: 7; height: 7; radius: 3.5
+                            color: root.activo ? root.accent : Theme.alpha(Theme.textBright, 0.5)
+                        }
                     }
                 }
             }

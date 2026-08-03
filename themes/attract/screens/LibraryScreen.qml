@@ -126,6 +126,17 @@ FocusScope {
     }
 
     // ----------------------------------------------------------------- hero
+    // El hero esta anclado ABAJO y crece hacia arriba, como el
+    // "bottom-aligned in remaining flex space" del diseno. El riesgo de eso es
+    // que crezca MAS que el espacio disponible y se meta en la barra: paso al
+    // entrar las fuentes reales, que ocupan mas que Helvetica, y el eyebrow
+    // quedo pegado al wordmark (visto en Pegasus el 2026-08-03).
+    //
+    // La sinopsis es la que cede, porque es el unico bloque del hero que puede
+    // dar menos renglones sin dejar de decir lo mismo. Su maximo de renglones
+    // se calcula con lo que sobra en vez de ser una constante — que es
+    // literalmente el comportamiento flex que pide el diseno, y aguanta
+    // cualquier fuente que se le ponga despues.
     Column {
         id: hero
         anchors { left: parent.left; leftMargin: Theme.gutter }
@@ -133,7 +144,14 @@ FocusScope {
         width: 680
         spacing: 16
 
+        // Lo que queda entre la barra y el rail, descontando todo lo que no
+        // es la sinopsis.
+        readonly property real espacioLibre:
+            (rail.y - 24) - (barra.y + barra.height + 16)
+            - eyebrow.height - titulo.height - acciones.height - (spacing * 3)
+
         Row {
+            id: eyebrow
             spacing: 14
 
             // pill del sistema: borde y texto en accent
@@ -165,6 +183,7 @@ FocusScope {
         }
 
         Text {
+            id: titulo
             width: parent.width
             height: 151                  // dos renglones a 82px con lineHeight .92
             wrapMode: Text.WordWrap
@@ -192,9 +211,14 @@ FocusScope {
         }
 
         Text {
+            id: sinopsis
             width: 560
             wrapMode: Text.WordWrap
-            maximumLineCount: 4
+            // Cuantos renglones entran de verdad, no cuantos me gustaria.
+            // Entre 1 y 4: menos de 1 no tiene sentido y mas de 4 el diseno
+            // no los quiere aunque sobre lugar.
+            maximumLineCount: Math.max(1, Math.min(4,
+                Math.floor(hero.espacioLibre / (Theme.sizeBody * 1.55))))
             elide: Text.ElideRight
             color: Theme.textBody
             font.family: Theme.fontBody
@@ -207,6 +231,7 @@ FocusScope {
         }
 
         Row {
+            id: acciones
             spacing: 26
 
             Boton {
