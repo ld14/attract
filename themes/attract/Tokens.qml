@@ -108,8 +108,14 @@ QtObject {
     readonly property FontLoader _display: FontLoader {
         source: Qt.resolvedUrl("fonts/ChakraPetch-Bold.ttf")
     }
+    // Sora se llama "-Variable" y no "-Regular" porque Google Fonts solo la
+    // publica como fuente VARIABLE: no existe un estatico oficial. Qt la carga
+    // en su instancia por defecto, que para Sora es wght 400 — justo el
+    // Regular que hace falta para el cuerpo de texto. Si algun dia Qt no la
+    // resolviera, `name` vuelve vacio y se cae a la fuente del sistema, sin
+    // romper nada.
     readonly property FontLoader _body: FontLoader {
-        source: Qt.resolvedUrl("fonts/Sora-Regular.ttf")
+        source: Qt.resolvedUrl("fonts/Sora-Variable.ttf")
     }
     readonly property FontLoader _mono: FontLoader {
         source: Qt.resolvedUrl("fonts/JetBrainsMono-Regular.ttf")
