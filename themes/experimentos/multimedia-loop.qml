@@ -26,7 +26,15 @@
 // primero en Mac — o sea que este punto hay que correrlo en LAS DOS máquinas
 // (ADR-0003), no alcanza con el Mac.
 //
-// RESULTADO OBSERVADO (Mac):      <PENDIENTE>
+// RESULTADO OBSERVADO (Mac):      PARCIAL, 2026-08-03.
+//   punto 1 (import 5.9)  ✅ resuelve.
+//   punto 3 (transporte)  ✅ play/pausa, mute y volumen responden en vivo.
+//   punto 2 (loops)       ❓ sin responder — y la primera medicion estaba
+//                            MAL HECHA: contaba onStopped, que un loop
+//                            continuo puede no disparar nunca. Reemplazada
+//                            por un contador de reenganches que mira si la
+//                            posicion retrocede. Falta correrlo de nuevo.
+//   punto 4 (crop)        ❓ sin responder.
 // RESULTADO OBSERVADO (gabinete): <PENDIENTE>
 //
 // OJO — esto NO se puede correr contra fixtures/. Los fixtures son de 0 bytes
@@ -69,7 +77,10 @@ FocusScope {
 
     property int idx: 0
     property var g: api.allGames.count > 0 ? api.allGames.get(idx) : null
-    property int vueltas: 0
+    property int vueltas: 0        // via onStopped - poco confiable, ver abajo
+    property int reenganches: 0    // via posicion que retrocede - el bueno
+    property int posAnterior: 0
+    property int posMaxVista: 0
 
     Rectangle { anchors.fill: parent; color: "#0d1117" }
 
@@ -81,10 +92,23 @@ FocusScope {
         volume: 0.6
         muted: true
 
-        // Punto 2: si `loops` anda de verdad, este contador sube solo al
-        // terminar cada vuelta y el video sigue. Si el video se queda quieto
-        // en el ultimo frame, `loops` NO esta funcionando en este backend.
+        // Punto 2, PRIMER intento de medirlo: contar los onStopped.
+        //
+        // NO ALCANZA, y se vio corriendolo (2026-08-03): un loop continuo
+        // puede no pasar NUNCA por StoppedState, asi que este contador se
+        // queda en 0 tanto si el loop anda bien como si el video se colgo en
+        // el ultimo cuadro. Un contador que no distingue el exito del fracaso
+        // no mide nada.
         onStopped: root.vueltas += 1
+
+        // Punto 2, la medicion que SI sirve: si la posicion RETROCEDE de
+        // golpe, el video reengancho. Es independiente de por que estados
+        // pase el player, y por eso responde la pregunta de verdad.
+        onPositionChanged: {
+            if (position + 200 < root.posAnterior) root.reenganches += 1;
+            root.posAnterior = position;
+            if (position > root.posMaxVista) root.posMaxVista = position;
+        }
     }
 
     // Punto 4: el panel del diseno mide 280x288 y el video lo llena recortando.
@@ -168,10 +192,15 @@ FocusScope {
         out.push("--- 1. el import resolvio (si lees esto, si) ---");
         out.push("");
         out.push("--- 2. loops: MediaPlayer.Infinite ---");
-        out.push("  vueltas    : " + root.vueltas + "   (tiene que subir sola al terminar)");
+        out.push("  REENGANCHES: " + root.reenganches
+                 + "   <- ESTE es el que importa. Sube cuando la posicion");
+        out.push("               retrocede, o sea cuando el video vuelve a");
+        out.push("               empezar. Espera que llegue al final.");
+        out.push("  posicion   : " + player.position + " / " + player.duration + " ms");
+        out.push("  pos maxima : " + root.posMaxVista + " ms   (tiene que acercarse a la duracion)");
         out.push("  status     : " + nombreStatus(player.status));
-        out.push("  duracion   : " + player.duration + " ms");
-        out.push("  posicion   : " + player.position + " ms");
+        out.push("  vueltas    : " + root.vueltas
+                 + "   (via onStopped; puede quedarse en 0 aunque loopee)");
         out.push("");
         out.push("--- 3. transporte ---");
         out.push("  estado     : " + nombreEstado(player.playbackState));
@@ -180,10 +209,12 @@ FocusScope {
         out.push("  medidor    : " + medidor());
         out.push("");
         out.push("--- 4. PreserveAspectCrop ---");
-        out.push("  mira el panel de la derecha: tiene que LLENARLO entero,");
-        out.push("  recortando lo que sobra. Si deja franjas negras o si la");
-        out.push("  imagen se ve estirada, el fillMode no esta haciendo lo");
-        out.push("  que el diseno necesita.");
+        out.push("  video 640x480 (4:3) en un panel de 280x288 (casi cuadrado).");
+        out.push("  Con PreserveAspectCrop tiene que RECORTAR ~52px de cada");
+        out.push("  lado. El patron testsrc trae un circulo que toca los bordes");
+        out.push("  izquierdo y derecho: si ves el circulo COMPLETO, no esta");
+        out.push("  recortando; si le faltan los costados, esta bien.");
+        out.push("  Y no tiene que haber franjas negras ni imagen estirada.");
 
         if (player.errorString) {
             out.push("");
