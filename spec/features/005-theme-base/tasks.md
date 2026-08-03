@@ -384,13 +384,35 @@ _Ninguno de estos aparece leyendo el codigo. Salieron de abrir Pegasus._
 
 - [ ] Los 7 casos de la tabla de `spec.md` §"Contra qué se verifica",
       corridos contra `fixtures/` en Pegasus real.
-- [ ] Comparar la librería y el detalle contra
-      `design_handoff_game_detail/Pegasus Game Detail.dc.html` abierto al
-      lado, y anotar las diferencias que queden. Es a ojo: no hay forma
-      automática, y el canvas fijo (ADR-0016) existe para que la comparación
-      tenga sentido. **Se compara contra `library/preview/`**, que tiene
-      carátulas reales — contra `fixtures/` la comparación no sirve, sus
-      imágenes son stand-ins generados (ver §3).
+- [~] **La comparación "al lado" es IMPOSIBLE con lo que hay: el prototipo
+      no se puede renderizar.** `Pegasus Game Detail.dc.html` carga
+      `<script src="./support.js">` —el runtime de "Design Component"— y
+      **ese archivo no vino en el bundle**. Sin él la página no dibuja nada:
+      todo el HTML son elementos `<x-dc>` y bindings `{{ }}` que resuelve ese
+      script. Si aparece el `support.js`, la comparación visual se puede
+      hacer; hasta entonces, no.
+
+      **En su lugar se auditó el theme contra las medidas del `README.md` del
+      handoff**, que las especifica todas. Es más riguroso que mirar dos
+      pantallas al lado, aunque no reemplace el juicio estético.
+
+      **Coinciden**, medida por medida: gutter 48, barra a 26 del borde,
+      cuadrado de accent 13×13 r3, wordmark 15px con `letter-spacing .18em`,
+      reloj cada 20s, hero de 680 con sinopsis a 560, botones con gap 26,
+      rail a 58 del fondo con gap 16, tarjetas 148×166 r10 que suben 14 y
+      escalan 1.06 con las demás al 50%, tarjeta enfocada tercera desde la
+      izquierda, columna izquierda de 280 con panel de 288, columna derecha de
+      190 con box art 108×144, extras a 72 del fondo con tile de 50×50.
+
+      **Divergencias, todas deliberadas y ya anotadas en el código:**
+
+      | Qué | Por qué |
+      |---|---|
+      | El badge de FORMATO es texto, no un ícono de 26×26 | `x-formato` es texto libre (PCB, GD-ROM, Diskette…); un ícono por valor obliga a un mapa que se desactualiza solo. Decidido en el LAB 0.3 |
+      | Las tarjetas de extras están siempre, con "No Disponible" | §2.3 le gana al handoff: la estructura no cambia de juego en juego |
+      | Sin `conic-gradient` en el fondo de las tarjetas | No existe en Qt Quick 5.15, ni en `Rectangle` ni en `Canvas`. Queda radial + linear |
+      | `mix-blend-mode` aproximado con `opacity` | Sin equivalente en Qt Quick |
+      | Los `clamp()` de los títulos conservan su **piso** vía `Text.Fit` | Al colapsarlos por el lienzo fijo se había perdido; los títulos reales de MAME son largos |
 - [ ] Anotar en `plan.md` qué aproximaciones a CSS hicieron falta de verdad,
       una vez que el experimento de `QtGraphicalEffects` haya respondido.
 - [ ] `make test` y `make doctor` en verde.
