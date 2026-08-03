@@ -246,22 +246,13 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
    - **`007-theme-trucos`** — sin especificar. Tokenizer de inputs y overlay
      de trucos & combos.
 
-   **Bloqueante inmediato: `themes/experimentos/rutas-relativas.qml`**, sin
-   correr. Es el único que bloquea el código de la 005: sin él no hay
-   `Paths.qml`, y sin `Paths` no hay `GameData` ni la mitad de las dos
-   pantallas. Medio resuelto de rebote el 2026-07-29 (`game.files` existe y
-   tiene `.count`); falta confirmar si `files.get(0).path` da la ruta absoluta
-   de la ROM. **Y quedó demostrado que no hay atajo:** el plan B de derivar la
-   ruta de un asset falla en tres casos reales medidos con el harness — un
-   asset puede ser una URL remota (los juegos de Steam devuelven `https://…`),
-   `TEST MULTIFILE` no tiene ningún asset, y el juego de `library/arcade`
-   tampoco. Y el fallback por `x-set` tampoco alcanza solo, porque el fixture
-   `EXPERIMENTO` no tiene `x-set`.
-
-   Después, sin bloquear: **`graphical-effects.qml`** (¿existe
-   `QtGraphicalEffects`? define si hay blur y glow reales o aproximaciones
-   planas). **`multimedia-loop.qml` no se puede correr todavía:** no hay ni un
-   `.mp4` en `fixtures/` ni en `library/`. Bloquea la 006, no la 005.
+   **Ya no hay experimentos bloqueando:** los cuatro corrieron contra Pegasus
+   real (ver punto 21 de "Hecho"). Lo que queda de la 005 son dos cosas que
+   necesitan tu mano, ninguna bloqueante: bajar los `.ttf` a
+   `themes/attract/fonts/` (hoy el theme corre con Helvetica y Courier, y va
+   a verse bastante distinto) y la comparación final contra el prototipo
+   abierto al lado, que se hace contra `library/preview/` porque tiene
+   carátulas reales.
 
 1. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
    de verdad (`mcp.json` real, tools visibles en la UI). El protocolo en

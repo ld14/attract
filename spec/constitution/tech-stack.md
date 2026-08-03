@@ -26,6 +26,7 @@
 | `tests/test_ingest.py` | 14 tests: 10 contra XML sintético, 1 contra la ausencia real del binario (PATH vacío) y 3 de integración contra el `mame` instalado (se saltean si no hay) |
 | `fixtures/` | ROMs falsas de 0 bytes + `metadata.pegasus.txt` de ejemplo, para validar el doctor sin la librería real |
 | `library/` | Librería real del autor (ROMs, CHDs, assets). Nunca se commitea |
+| `themes/attract/` | Theme de producción (feature 005). Tres capas según quién sabe de qué: `core/` datos y rutas, `ui/` dibuja, `screens/`+`overlays/` componen. Un solo singleton (`Theme`, el archivo es `Tokens.qml` — ver su encabezado) |
 | `themes/attract-debug/` | Theme QML de debug: harness del Bloque 3, dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no se pisa |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. No las instala `make theme` |
 | `spec/decisions/` | Decisiones de arquitectura. 0001-0017, 16 vigentes (0008 superseded por 0010) |
@@ -42,7 +43,7 @@
 | Tests | `make test` |
 | Doctor (fixtures) | `make doctor` |
 | Doctor (librería real) | `make doctor-lib` |
-| Instalar theme | `make theme` |
+| Instalar theme | `make theme` (producción) / `make theme-debug` (harness) |
 | Lint | <PENDIENTE: no configurado> |
 
 ## Modelo de datos / dominio

@@ -33,7 +33,7 @@ cítalos, pero recuerda que el destino de su contenido es un ADR.
 | Tests | `make test` (pytest, 68 tests) |
 | Doctor (fixtures) | `make doctor` |
 | Doctor (librería real) | `make doctor-lib` |
-| Instalar theme debug | `make theme` |
+| Instalar theme | `make theme` (producción) / `make theme-debug` (harness ADR-0001) |
 | Servidor MCP | `make mcp` (necesita `pip install mcp`, ver ADR-0012) |
 
 No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
@@ -47,6 +47,7 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 | `tests/` | 68 tests (34 `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`), cada uno reproduce un bug real o un caso del contrato |
 | `fixtures/` | ROMs falsas de 0 bytes + `media/_magazines/` (una revista de mentira). Portables y versionables |
 | `library/` | Librería real del autor. NO va a git |
+| `themes/attract/` | **Theme de producción** (feature 005). `Tokens.qml` (singleton `Theme`), `core/` (datos y rutas), `ui/` (dibuja), `screens/`, `overlays/`. Ver `spec/features/005-theme-base/plan.md` |
 | `themes/attract-debug/` | Harness de debug: dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no lo reemplaces, agregá al lado |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. `make theme` no las instala |
 | `docs/` | SETUP, CONVENCION (plantilla), baseline, mapeo |
