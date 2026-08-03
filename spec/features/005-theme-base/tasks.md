@@ -9,9 +9,20 @@ correrlos contra Pegasus real y anotar el `RESULTADO OBSERVADO` en el
 encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
 `json-chain-test.qml`.
 
-- [ ] **`rutas-relativas.qml`** — ¿existe `game.files`? ¿qué forma tiene?
-      Hecho cuando: sabemos, para los 4 juegos del fixture, qué vía resuelve
-      `media/<set>/` sin hardcodear. **Bloquea `Paths.qml`.**
+- [x] **`rutas-relativas.qml` — cerrado 2026-08-02.** La Vía 1 funciona:
+      `files[0].path` da la ruta absoluta de la ROM y de ahí sale el
+      directorio de la colección. Tres cosas que no eran obvias y que
+      cambiaron cómo se escribió `Paths.qml`:
+      1. **`path` viene SIN esquema** (`/Users/…/dino.zip`), al revés que los
+         assets, que sí traen `file:///`. Esa asimetría es una trampa: el
+         `XMLHttpRequest` necesita el esquema, así que se agrega en un solo
+         lugar.
+      2. **`files[0].name` ya viene sin extensión** (`dino`, no `dino.zip`).
+         El fallback del set para juegos sin `x-set` sale directo de ahí, sin
+         parsear nada.
+      3. **Un juego de Steam devuelve `steam:255710`** — un URI sin ninguna
+         barra, no una ruta. `Paths` lo detecta y devuelve `""`, que es la
+         degradación de §2.3, no una ruta inválida.
 - [ ] **`graphical-effects.qml`** — ¿resuelve `import QtGraphicalEffects 1.0`?
       Hecho cuando: sabemos cuál de los tres desenlaces del encabezado pasó.
       **Bloquea las sombras, el glow y el blur de todo el theme.**
@@ -102,10 +113,26 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
 - [ ] `theme.qml` — canvas de 1280×720 con
       `scale: Math.min(w/1280, h/720)`, centrado (ADR-0016). Estado: `screen`,
       `selected`, `launching`. Overlays en `Loader { active: ... }`.
-- [ ] `core/Paths.qml` — `baseDe(game)` y `magazineDe(ref)`, con el set desde
-      `x-set` y fallback al basename. Hecho cuando: devuelve la ruta correcta
-      para los 4 juegos del fixture, incluido el bloque `EXPERIMENTO` que no
-      tiene `x-set`, **y no hay una sola ruta absoluta en el theme**.
+- [x] `core/Paths.qml` — escrito. `setDe`, `baseDe`, `dataJsonDe`,
+      `magazineDe`/`magazineJsonDe` y `manualDe`. Es el único lugar del theme
+      que arma una ruta, y **no hay una sola ruta absoluta en todo el theme**:
+      con esto se paga la deuda que arrastran los dos experimentos viejos, que
+      hardcodean la ruta al Mac del autor y rompen ADR-0003.
+      **El plan B (derivar de un asset) no quedó como fallback: está
+      descartado**, con tres casos medidos que lo rompen — asset con URL
+      remota, `TEST MULTIFILE` sin ningún asset, y el juego de
+      `library/arcade` tampoco.
+- [ ] **Verificar `Paths` en Pegasus.** El panel de diagnóstico ahora lista,
+      por cada juego, el `set` y la `base` que resuelve — es el chequeo, ya
+      que en QML no hay framework de tests. Hecho cuando, con `game_dirs`
+      apuntando a los dos directorios:
+
+      | Juego | `set` esperado | `base` esperada |
+      |---|---|---|
+      | `EXPERIMENTO` (dino) | `dino` — por basename, no tiene `x-set` | `…/fixtures/arcade/media/dino/` |
+      | `sf2ce`, los dos `mok` | por `x-set` | `…/media/<set>/` |
+      | `TEST MULTIFILE` | `test-multifile` | `…/media/test-multifile/` aunque no tenga **ningún** asset |
+      | Cualquiera de Steam | `steam:NNNNN` | **vacía** — `path` es un URI, no una ruta. Degradar acá es lo correcto |
 - [ ] `core/GameData.qml` — XHR de `data.json`, expone `accent`/`accent2`/
       `review`/`cheats`/`manual`/`mags` + `estado`. Hecho cuando: `mok` (sin
       archivo) cae a `sin-datos` sin crashear, un JSON corrupto también, y el

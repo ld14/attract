@@ -1,36 +1,34 @@
-// ATTRACT — theme de produccion. ESQUELETO (feature 005, tarea 1).
+// ATTRACT — theme de produccion. ESQUELETO (feature 005).
 //
 // Todavia no dibuja la libreria ni el detalle: dibuja el lienzo, el fondo y
-// un panel de diagnostico. Existe para responder UNA pregunta antes de que
-// haya veinte componentes escritos encima:
+// un panel de diagnostico.
 //
-//     ¿un theme de Pegasus soporta subcarpetas y un singleton via qmldir?
+// La pregunta que existia para responder ya esta respondida (2026-07-29,
+// contra Pegasus real): SI, un theme de Pegasus soporta subcarpetas y un
+// singleton via qmldir. El arbol de spec/features/005-theme-base/plan.md va
+// tal como esta.
 //
-// Toda la arquitectura de spec/features/005-theme-base/plan.md lo asume. Si
-// la respuesta es no, la salida es aplanar el arbol y reemplazar el singleton
-// por un QtObject con id declarado aca — un cambio mecanico, pero mucho mas
-// barato de hacer ahora que despues.
+// AHORA el panel sirve para otra cosa: es el chequeo de core/Paths.qml. No
+// hay framework de tests en QML, asi que la verificacion es abrir Pegasus y
+// mirar que resuelve Paths para cada juego que encontro — incluidos los que
+// NO son de ATTRACT, que son los que tienen que degradar sin romper nada.
 //
-// SI PEGASUS DICE "Theme loading failed", bisecta en este orden:
-//   1. agrega `import "."` arriba, junto a los otros imports. Si con eso
-//      carga: el qmldir del directorio implicito no se estaba leyendo.
-//   2. saca `import "ui"` y el bloque Background. Si con eso carga: el
-//      problema son las subcarpetas, no el singleton.
-//   3. saca el singleton: reemplaza cada Theme.algo por un valor literal. Si
-//      con eso carga: el problema es el singleton, no las subcarpetas.
-// Anota cual de los tres fue en spec/features/005-theme-base/tasks.md.
-//
-// Lo que este archivo NO hace todavia, a proposito: leer data.json (necesita
-// core/Paths.qml, bloqueado por themes/experimentos/rutas-relativas.qml) y
-// dibujar sombras o glows (bloqueado por graphical-effects.qml).
+// Lo que este archivo NO hace todavia, a proposito: leer data.json (falta
+// core/GameData.qml) y dibujar sombras o glows (bloqueado por
+// themes/experimentos/graphical-effects.qml, sin correr).
 
 import QtQuick 2.0
 import "ui"
+import "core"
 
 FocusScope {
     id: root
     focus: true
     anchors.fill: parent
+
+    // Se instancia UNA vez y baja por id. No es singleton a proposito, ver
+    // spec/features/005-theme-base/plan.md.
+    Paths { id: paths }
 
     // El accent es por juego (ADR-0013). Todavia no hay GameData, asi que se
     // rota a mano con las flechas para ver el fondo reaccionar — es lo mismo
@@ -62,7 +60,7 @@ FocusScope {
         // --- panel de diagnostico (se va cuando entren las pantallas) ---
         Rectangle {
             anchors.centerIn: parent
-            width: 660
+            width: 780
             height: contenido.height + 44
             radius: Theme.radiusPanel
             color: Theme.alpha(Theme.screen, 0.82)
@@ -155,19 +153,22 @@ FocusScope {
         out.push("accent   : " + root.accent + "  (de prueba, todavia no sale de data.json)");
         out.push("");
 
-        // Los titulos, no solo el conteo: la primera corrida dio 6 juegos
-        // donde los metadata declaran 5 bloques game: (4 en fixtures/arcade +
-        // 1 en library/arcade). La sospecha es que allGames cuenta un juego
-        // por CADA file:, y TEST MULTIFILE tiene dos. Si es asi, el rail de la
-        // libreria mostraria el mismo juego repetido, y eso choca con ADR-0004
-        // ("una sola pagina de informacion por familia"). Listar los titulos
-        // lo responde sin adivinar.
-        out.push("juegos   : " + api.allGames.count + "  (los metadata declaran 5)");
+        // Este bloque es el chequeo de Paths.qml: no hay framework de tests en
+        // QML, asi que la verificacion es ver que resuelve para CADA juego que
+        // Pegasus encontro, incluidos los que no son de ATTRACT.
+        //
+        // Lo que tiene que pasar:
+        //   dino            -> set por basename (no tiene x-set) + base OK
+        //   sf2ce, mok      -> set por x-set + base OK
+        //   TEST MULTIFILE  -> base OK aunque no tenga NINGUN asset
+        //   Steam           -> base VACIA (path es "steam:255710", no una ruta)
+        // Una base vacia no es un fallo: es la degradacion de CONVENCION #2.3.
+        out.push("juegos   : " + api.allGames.count);
         for (var i = 0; i < api.allGames.count; i++) {
             var g = api.allGames.get(i);
-            var nf = (g.files !== undefined && g.files.count !== undefined)
-                     ? g.files.count : "?";
-            out.push("  " + (i + 1) + ". " + g.title + "   [files: " + nf + "]");
+            out.push("  " + (i + 1) + ". " + g.title);
+            out.push("      set : " + (paths.setDe(g) || "(sin set)"));
+            out.push("      base: " + (paths.baseDe(g) || "(vacia - degrada, OK)"));
         }
         return out.join("\n");
     }

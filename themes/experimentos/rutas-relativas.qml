@@ -39,17 +39,35 @@
 // NO tiene x-set. O sea que las dos vías por separado fallan en fixtures
 // distintos y se complementan — por eso hace falta `files[0].path`.
 //
-// RESULTADO OBSERVADO: PARCIAL — `game.files` EXISTE y tiene `.count`.
-// Confirmado de rebote el 2026-07-29 por el panel de diagnóstico del esqueleto
-// del theme (feature 005, tarea 1), que lista `[files: N]` por juego y devolvió
-// `[files: 2]` para el fixture TEST MULTIFILE y `[files: 1]` para el resto. O
-// sea: `files` es un modelo de Qt con `count`, no un array de JS, y la Via 1 de
-// abajo es la correcta.
+// RESULTADO OBSERVADO: ✅ CERRADO — la Vía 1 funciona. Corrido contra Pegasus
+// real el 2026-08-02, sobre los 6 juegos que veía esa instalación.
 //
-// LO QUE SIGUE PENDIENTE, y es lo que de verdad bloquea `Paths.qml`: si
-// `files.get(0).path` devuelve la ruta ABSOLUTA de la ROM. Sin eso no hay de
-// dónde derivar el directorio de la colección. Correr este experimento y
-// anotar acá la forma exacta que tiene ese `path`.
+//   juego            files[0].path                                  files[0].name
+//   ---------------  ---------------------------------------------  -------------
+//   dino             /Users/…/fixtures/arcade/dino.zip              dino
+//   sf2ce            /Users/…/fixtures/arcade/sf2ce.zip             sf2ce
+//   TEST MULTIFILE   /Users/…/fixtures/arcade/multifile-a.zip       multifile-a
+//   Cities: Skylines steam:255710                                   steam:255710
+//
+// `files` es un modelo de Qt: tiene `count`, `length` da `undefined`, y se
+// accede con `get(i)`.
+//
+// TRES COSAS QUE NO ERAN OBVIAS Y QUE CAMBIAN COMO SE ESCRIBE Paths.qml:
+//
+//   1. `path` es una ruta absoluta PELADA, SIN esquema `file://` — al revés
+//      que los assets, que SÍ vienen como "file:///Users/…". Esa asimetría es
+//      una trampa: para pasarle la ruta a un XMLHttpRequest hay que anteponer
+//      el esquema a mano.
+//   2. `name` es el basename SIN extensión ("dino", no "dino.zip"). El
+//      fallback del <set> para juegos sin x-set sale directo de ahí, sin
+//      parsear el path.
+//   3. Un juego que entra por el provider de Steam devuelve "steam:255710":
+//      no es una ruta, es un URI sin ninguna barra. Tercera evidencia (con la
+//      del asset remoto y la del juego sin assets) de que el theme NO puede
+//      asumir que `path` apunte a un archivo en disco. Paths tiene que
+//      detectarlo y degradar, no construir una ruta inválida.
+//
+// La Vía 2 (plan B) queda descartada del todo, ver la ADVERTENCIA de abajo.
 //
 // Cómo correrlo:
 //   1. cp rutas-relativas.qml <themes de Pegasus>/attract-debug/theme.qml
