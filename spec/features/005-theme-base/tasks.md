@@ -274,9 +274,26 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       completa y no el `<set>`: dos colecciones pueden tener el mismo set
       (pasa de verdad — `fixtures/arcade` y `library/preview` tienen las dos
       un `mok`).
-- [ ] `overlays/LaunchOverlay.qml` — scrim, spinner en accent, "INICIANDO" y
-      el título. La línea del comando de lanzamiento sale de Pegasus o no se
-      muestra; **no se inventa un `retroarch -L core.dll` como el prototipo**.
+- [x] `overlays/LaunchOverlay.qml` — escrito. Scrim, spinner en accent
+      (`Canvas`, no `QtGraphicalEffects`, que sigue sin verificarse),
+      "INICIANDO" y el título.
+
+      **Dos cosas que el handoff daba por sentadas y la API de Pegasus no da**
+      (verificado en `pegasus-frontend.org/docs/themes/api`, 2026-08-03):
+      1. **El comando de lanzamiento resuelto no está expuesto.** La API tiene
+         `game.launch()` y nada más. En su lugar se muestra `files[0].path`,
+         que sí tenemos y es dato real — el prototipo simulaba un
+         `retroarch -L core.dll` inventado.
+      2. **No hay ninguna señal de éxito ni de fallo.** La documentación dice
+         que un fallo "se loguea" y punto. Un overlay que espere "hasta que
+         arranque el juego" se queda colgado **para siempre** cuando el
+         lanzamiento falla — y falla de verdad: ya se vio
+         `Could not launch 'mame'` en este Mac.
+
+      Por eso el overlay **se cierra solo** a los 6s. No es paranoia
+      defensiva: es el único camino de salida que existe. Cuando el
+      lanzamiento funciona, Pegasus suspende el theme y el timer no llega a
+      correr; si el theme sigue vivo, es que el juego nunca arrancó.
 
 ## 5 · Detalle
 

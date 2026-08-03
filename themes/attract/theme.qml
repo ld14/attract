@@ -16,6 +16,7 @@
 import QtQuick 2.0
 import "core"
 import "screens"
+import "overlays"
 import "ui"
 
 FocusScope {
@@ -61,8 +62,8 @@ FocusScope {
             id: libreria
             anchors.fill: parent
             paths: paths
-            visible: root.pantalla === "library"
-            focus: root.pantalla === "library"
+            visible: root.pantalla === "library" && !lanzando.active
+            focus: root.pantalla === "library" && !lanzando.active
             // Sin esto, el rail sigue comiendose las flechas desde atras
             // mientras el detalle esta arriba.
             enabled: visible
@@ -79,18 +80,41 @@ FocusScope {
             anchors.fill: parent
             paths: paths
             game: root.juegoDetalle
-            visible: root.pantalla === "detail"
-            focus: root.pantalla === "detail"
+            visible: root.pantalla === "detail" && !lanzando.active
+            focus: root.pantalla === "detail" && !lanzando.active
             enabled: visible
 
             onVolver: root.pantalla = "library"
             onLanzar: root.lanzar(game)
         }
+
+        // Los overlays van en un Loader: cerrados no cuestan nada, y al
+        // activarse se llevan el foco sin que nadie tenga que quitarselo a la
+        // pantalla de atras.
+        Loader {
+            id: lanzando
+            anchors.fill: parent
+            active: false
+            focus: active
+
+            sourceComponent: LaunchOverlay {
+                game: root.juegoLanzado
+                accent: root.accent
+                focus: true
+                onCerrar: lanzando.active = false
+            }
+        }
     }
 
-    // El overlay de lanzamiento llega con LaunchOverlay; por ahora se lanza
-    // directo. Pegasus se encarga de la transicion mientras tanto.
+    property var juegoLanzado: null
+
+    // Se muestra el overlay ANTES de lanzar: si Pegasus toma la pantalla,
+    // fue el ultimo cuadro que se vio; si el lanzamiento falla -pasa, ver el
+    // encabezado de LaunchOverlay- el overlay se cierra solo.
     function lanzar(game) {
-        if (game) game.launch();
+        if (!game) return;
+        root.juegoLanzado = game;
+        lanzando.active = true;
+        game.launch();
     }
 }
