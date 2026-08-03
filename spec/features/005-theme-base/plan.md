@@ -33,8 +33,9 @@ themes/attract/
 │  └─ GameData.qml             XHR de data.json -> accent, review, cheats, manual, mags
 ├─ ui/
 │  ├─ Background.qml           3 capas + CRT
-│  ├─ CoverImage.qml           cadena de fallback 2.2 + placeholder accent
-│  ├─ Chip.qml  GlassButton.qml  AccentButton.qml  SectionLabel.qml  FocusRing.qml
+│  ├─ CoverImage.qml           cadena de fallback 2.2 + color-wash con accent
+│  ├─ Boton.qml                variant: "accent" | "glass" (eran dos archivos)
+│  ├─ Chip.qml  SectionLabel.qml  FocusRing.qml
 ├─ screens/
 │  ├─ LibraryScreen.qml
 │  └─ DetailScreen.qml
@@ -113,9 +114,20 @@ del theme que conoce esa cadena.
 de 1×8px en `fillMode: Image.Tile` con la `y` animada — más barato que un
 shader y no necesita `QtGraphicalEffects`.
 
-El resto (`Chip`, `GlassButton`, `AccentButton`, `SectionLabel`, `FocusRing`)
-son envoltorios finos sobre `Rectangle`/`Text` con las constantes del diseño.
-Cada uno recibe `accent` como propiedad; ninguno lo busca por su cuenta.
+El resto son envoltorios finos sobre `Rectangle`/`Text` con las constantes del
+diseño. Cada uno recibe `accent` como propiedad; ninguno lo busca por su
+cuenta.
+
+**Cambio al escribirlos: `GlassButton` y `AccentButton` son un solo `Boton`
+con `variant`.** Difieren en dos colores y en nada más — mismo layout, mismo
+padding, mismo tratamiento de foco, mismo glifo opcional. Dos archivos
+idénticos salvo dos líneas son un archivo con una propiedad.
+
+`FocusRing` sí se queda en su propio archivo aunque sean tres rectángulos, y
+por una razón concreta: el resplandor de verdad necesita `QtGraphicalEffects`,
+que sigue sin verificarse. Cuando se responda, el upgrade se hace ahí y lo
+heredan todos los estados de foco del theme, en vez de haber que buscar veinte
+rectángulos repartidos.
 
 ### 6. `screens/` y el estado
 

@@ -168,14 +168,38 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       `QtQuick 2.0`: si el experimento de `QtGraphicalEffects` falla, este
       archivo no cambia una línea. Las tres aproximaciones a CSS quedaron
       anotadas en el encabezado, como pide el handoff.
-- [ ] `CoverImage.qml` — cadena `boxFront → poster → marquee → color-wash con
-      accent`, saltando con `onStatusChanged`. Hecho cuando: `mok` (sin
-      `boxFront`) muestra su `poster`, y un juego sin ningún asset muestra el
-      color-wash, no un hueco. **Es el único lugar del theme que conoce la
-      cadena de §2.2.**
-- [ ] `Chip.qml`, `GlassButton.qml`, `AccentButton.qml`, `SectionLabel.qml`,
-      `FocusRing.qml` — cada uno recibe `accent` como propiedad; ninguno lo
-      busca en el singleton.
+- [x] `CoverImage.qml` — escrito. Cadena `boxFront → poster → marquee →
+      color-wash con accent`, saltando con `onStatusChanged`. **Es el único
+      lugar del theme que conoce la cadena de §2.2.**
+      Se salta por `Image.Error` y **no** chequeando si el string está vacío,
+      por algo medido: un asset puede existir en el metadata y no cargar — un
+      juego de Steam devuelve `boxFront` como URL remota, y en un gabinete
+      offline eso nunca llega. `Image.Error` es la única señal confiable.
+      Lleva `asynchronous: true` (una URL remota no puede congelar la UI) y
+      `sourceSize` (un escaneo real dibujado en una tarjeta de 148×166 no
+      tiene por qué decodificarse entero en memoria, por tarjeta).
+- [x] `Boton.qml` (`variant: "accent" | "glass"`), `Chip.qml`,
+      `SectionLabel.qml`, `FocusRing.qml` — cada uno recibe `accent` como
+      propiedad; ninguno lo busca en el singleton. Los dos botones del plan
+      quedaron en un archivo: diferían en dos colores y nada más.
+      `Chip` centraliza el `"Sin Información"` de §2.3 para que no se olvide
+      en una pantalla.
+- [ ] **Verificar los átomos en Pegasus** (misma pasada que `Paths` y
+      `GameData`). El panel dibuja una `CoverImage` del juego enfocado, dos
+      `Chip` (AÑO desde `releaseYear`, FORMATO desde `x-formato`) y los dos
+      `Boton`, con **▲ ▼** para mover el foco entre ellos. Hecho cuando,
+      recorriendo los juegos:
+
+      | Juego | Eslabón de la cadena que tiene que verse |
+      |---|---|
+      | `EXPERIMENTO` (dino) | imagen — tiene `boxFront` |
+      | `mok` (fixtures) | imagen — **no** tiene `boxFront`, cae a `poster` |
+      | `TEST MULTIFILE` | color-wash con el accent — no tiene ningún asset |
+      | Cualquiera de Steam | color-wash — la URL remota no carga sin internet |
+
+      Y los chips: `AÑO` en `"Sin Información"` donde `releaseYear` es `0`,
+      `FORMATO` con `PCB`/`GD-ROM` desde `x-formato` — nunca desde
+      `mediaFor()`, que se equivoca en 4 de 5 (`docs/mapeo-mockup-pegasus.md`).
 
 ## 4 · Librería
 

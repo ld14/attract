@@ -41,6 +41,10 @@ FocusScope {
     property int idx: 0
     property var juego: api.allGames.count > 0 ? api.allGames.get(idx) : null
 
+    // Cual de los dos botones tiene el foco. Es el mismo mecanismo que va a
+    // usar DetailScreen para recorrer sus targets, probado en chico.
+    property int botonIdx: 0
+
     GameData {
         id: ricos
         game: root.juego
@@ -127,13 +131,101 @@ FocusScope {
                     text: root.diagnostico()
                 }
 
+                Rectangle {
+                    width: parent.width; height: 1
+                    color: Theme.glassBorder
+                }
+
+                // --- chequeo de los atomos de ui/ ---
+                // La caratula de aca ejercita la cadena de fallback de
+                // CONVENCION #2.2 con datos reales: dino cae en boxFront,
+                // mok no tiene boxFront y tiene que caer en poster, y TEST
+                // MULTIFILE no tiene ningun asset y tiene que mostrar el
+                // color-wash con el accent. Recorriendo los juegos se ven los
+                // tres eslabones sin escribir un solo caso de prueba.
+                Row {
+                    spacing: 18
+
+                    Item {
+                        width: 100; height: 126
+                        CoverImage {
+                            id: portada
+                            anchors.fill: parent
+                            game: root.juego
+                            accent: ricos.accent
+                            accent2: ricos.accent2
+                            variacion: root.idx
+                        }
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 10
+
+                        SectionLabel {
+                            text: "CHEQUEO DE ATOMOS"
+                            activo: true
+                            accent: root.accent
+                        }
+
+                        Text {
+                            color: Theme.textFaint
+                            font.family: Theme.fontMono
+                            font.pixelSize: Theme.sizeMonoSm
+                            text: "caratula: " + (portada.mostrandoPlaceholder
+                                  ? "color-wash (sin assets que carguen)"
+                                  : "imagen (eslabon " + (portada._idx + 1) + " de la cadena)")
+                        }
+
+                        Row {
+                            spacing: 8
+                            Chip {
+                                clave: "AÑO"
+                                // releaseYear vuelve 0 cuando no hay release:
+                                // (medido 2026-08-02). El 0 es "sin dato", no
+                                // el año cero - misma colision que rating.
+                                valor: (root.juego && root.juego.releaseYear > 0)
+                                       ? String(root.juego.releaseYear) : ""
+                                accent: root.accent
+                            }
+                            Chip {
+                                clave: "FORMATO"
+                                // Desde x-formato, NUNCA desde mediaFor():
+                                // esa funcion mira la coleccion y se equivoca
+                                // en 4 de 5 (docs/mapeo-mockup-pegasus.md).
+                                valor: (root.juego && root.juego.extra["formato"])
+                                       ? String(root.juego.extra["formato"][0]) : ""
+                                accent: root.accent
+                            }
+                        }
+
+                        Row {
+                            spacing: 12
+                            Boton {
+                                texto: "JUGAR"
+                                glifo: "▶"
+                                variant: "accent"
+                                accent: root.accent
+                                activo: root.botonIdx === 0
+                            }
+                            Boton {
+                                texto: "VER DETALLE"
+                                glifo: "▤"
+                                variant: "glass"
+                                accent: root.accent
+                                activo: root.botonIdx === 1
+                            }
+                        }
+                    }
+                }
+
                 Text {
                     width: parent.width
                     color: Theme.textFaint
                     font.family: Theme.fontMono
                     font.pixelSize: Theme.sizeMonoSm
                     font.letterSpacing: Theme.trackingLabel * Theme.sizeMonoSm
-                    text: "◄ ►  RECORRER JUEGOS"
+                    text: "◄ ►  RECORRER JUEGOS        ▲ ▼  MOVER EL FOCO"
                 }
             }
         }
@@ -142,27 +234,13 @@ FocusScope {
     function diagnostico() {
         var out = [];
 
-        // Si esta funcion corre, las dos cosas de abajo ya son verdad: el
-        // singleton resolvio (se leyo Theme.canvasWidth) y la subcarpeta
-        // resolvio (se instancio Background). No hace falta chequearlas, hace
-        // falta DECIRLAS, para que quede anotado que se verificaron.
-        out.push("singleton Theme (qmldir) : OK");
-        out.push("import \"ui\" (subcarpeta): OK");
-        out.push("");
-        out.push("lienzo   : " + Theme.canvasWidth + "x" + Theme.canvasHeight
-                 + "  escala " + stage.scale.toFixed(3));
-        out.push("ventana  : " + Math.round(root.width) + "x" + Math.round(root.height));
-        out.push("");
-
-        if (Theme.fuentesPropias) {
-            out.push("fuentes  : propias (fonts/*.ttf cargaron)");
-        } else {
-            out.push("fuentes  : DEL SISTEMA - falta bajar los .ttf");
-            out.push("           ver fonts/README.md");
-        }
-        out.push("  display: " + Theme.fontDisplay);
-        out.push("  body   : " + Theme.fontBody);
-        out.push("  mono   : " + Theme.fontMono);
+        // El singleton, el import de subcarpeta y el escalado del lienzo ya se
+        // confirmaron el 2026-07-29 y quedaron anotados en
+        // spec/features/005-theme-base/tasks.md #1. Repetirlos en pantalla
+        // solo gasta alto: si esta funcion corre, los tres andan.
+        out.push("lienzo " + Theme.canvasWidth + "x" + Theme.canvasHeight
+                 + " esc " + stage.scale.toFixed(2)
+                 + "   fuentes: " + (Theme.fuentesPropias ? "propias" : "del sistema"));
         out.push("");
         // De aca para abajo es el chequeo de Paths.qml y GameData.qml. En QML
         // no hay framework de tests: la verificacion es recorrer los juegos y
@@ -221,6 +299,11 @@ FocusScope {
     }
 
     Keys.onPressed: {
+        if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
+            root.botonIdx = 1 - root.botonIdx;
+            event.accepted = true;
+            return;
+        }
         if (api.allGames.count === 0) return;
         if (event.key === Qt.Key_Right) {
             root.idx = (root.idx + 1) % api.allGames.count;
