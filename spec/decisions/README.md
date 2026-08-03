@@ -47,8 +47,9 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 | [0015](0015-contrato-data-json.md) | Contrato completo de `data.json`, con nombres de campo explícitos | accepted | 2026-07-29 |
 | [0016](0016-canvas-fijo-escalado.md) | El theme se dibuja en un canvas fijo de 1280×720 y se escala entero | accepted | 2026-07-29 |
 | [0017](0017-providers-pegasus.md) | Los providers de Pegasus que no son de ATTRACT se apagan por config, no se filtran en el theme | accepted | 2026-07-29 |
+| [0018](0018-launch-ruta-absoluta.md) | El `launch:` usa la ruta absoluta del emulador, resuelta por máquina | accepted | 2026-08-03 |
 
-**17 ADR en total, 16 vigentes** (0008 quedó superseded por 0010 — no se
+**18 ADR en total, 17 vigentes** (0008 quedó superseded por 0010 — no se
 edita, se reemplaza). El razonamiento original de 0006-0009 está en
 [`docs/decisiones/2026-07-23.md`](../../docs/decisiones/2026-07-23.md), que
 puede archivarse ahora que su contenido vive formalizado acá. 0010 salió de
@@ -73,3 +74,10 @@ antes de escribir el theme de producción, no durante.
 Steam del autor — o sea que `api.allGames` no es la librería de ATTRACT, es
 todo lo que Pegasus encontró con todos sus providers. Es el tipo de cosa que
 no aparece leyendo documentación, solo abriendo el programa.
+
+**0018 también salió de abrir el programa**, y de un error que no tenía nada
+que ver con el theme: `Could not launch 'mame'` estando MAME instalado. Una
+app de GUI en macOS no hereda el PATH del shell, y el gabinete arranca Pegasus
+solo. La salida no fue un mecanismo nuevo sino usar una decisión que ya estaba
+tomada: el metadata es artefacto de build (ADR-0002), así que la ruta absoluta
+del emulador puede ser distinta en cada máquina sin romper nada.

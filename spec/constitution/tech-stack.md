@@ -29,7 +29,7 @@
 | `themes/attract/` | Theme de producción (feature 005). Tres capas según quién sabe de qué: `core/` datos y rutas, `ui/` dibuja, `screens/`+`overlays/` componen. Un solo singleton (`Theme`, el archivo es `Tokens.qml` — ver su encabezado) |
 | `themes/attract-debug/` | Theme QML de debug: harness del Bloque 3, dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no se pisa |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. No las instala `make theme` |
-| `spec/decisions/` | Decisiones de arquitectura. 0001-0017, 16 vigentes (0008 superseded por 0010) |
+| `spec/decisions/` | Decisiones de arquitectura. 0001-0018, 17 vigentes (0008 superseded por 0010) |
 | `spec/features/001-synopsis/` | Primera feature con spec/plan/tasks — `attract synopsis`, implementada |
 | `spec/features/002-attract-skill/` | `.claude/skills/attract/SKILL.md`, implementada |
 | `spec/features/003-attract-mcp/` | Servidor MCP, implementada |
@@ -120,6 +120,15 @@ página de información por familia, variantes como `file:` múltiples).
   mano ni se versiona como fuente ([`ADR-0002`](../decisions/0002-metadata-fuente-o-artefacto.md),
   accepted). Excepción: los de `docs/` y `fixtures/` son entradas de test
   escritas a mano, no artefactos reales.
+- **El `launch:` lleva la ruta ABSOLUTA del emulador**, resuelta por máquina
+  ([`ADR-0018`](../decisions/0018-launch-ruta-absoluta.md), accepted). Una app
+  de GUI en macOS no hereda el PATH del shell, y el gabinete arranca Pegasus
+  solo: con `mame` pelado no lo encuentra. No rompe cross-platform porque el
+  metadata es artefacto de build y no va a git (ADR-0002). **Excepción: los de
+  `fixtures/` se quedan con `mame` pelado** — son entradas de test versionadas
+  que nunca se lanzan. Descartado: `{env.VAR}` (mismo problema una capa más
+  abajo), arrancar desde una terminal (el gabinete no tiene), symlink en el
+  PATH mínimo (SIP lo impide).
 - **Mac y Windows deben correr exactamente la misma versión de MAME** — si no,
   hay dos `-listxml` distintos y bugs recién visibles en semana 8 ([`ADR-0005`](../decisions/0005-runtime-mame-vanilla.md)).
 - **UTF-8, NFC y LF son obligatorios** en todo archivo de texto — un solo byte
