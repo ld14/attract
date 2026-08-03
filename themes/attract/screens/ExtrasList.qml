@@ -64,8 +64,12 @@ Column {
                 readonly property bool enfocada: root.foco === index
                 readonly property bool disponible: modelData.hay
 
-                y: enfocada ? -3 : 0
-                Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                // Por transform y no por `y`: un Row tambien escribe la y de
+                // sus hijos. Mismo motivo que en ui/Boton.qml.
+                transform: Translate {
+                    y: tarjeta.enfocada ? -3 : 0
+                    Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                }
 
                 Rectangle {
                     anchors.fill: parent

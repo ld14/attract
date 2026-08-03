@@ -33,8 +33,20 @@ Item {
     implicitHeight: 48
 
     // El "lift" del diseno: el boton enfocado sube unos pixeles.
-    y: activo ? -2 : 0
-    Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+    //
+    // VA POR transform Y NO POR `y`, y no es un detalle de estilo: un Column
+    // posiciona a sus hijos ESCRIBIENDOLES la y. Un binding sobre `y` pelea
+    // con eso, gana el binding, y el boton se va a la posicion 0 - encima de
+    // lo que tenga arriba. Pasa de a ratos, segun el orden en que se resuelva,
+    // que es lo que lo hace dificil de ver. Se vio en Pegasus el 2026-08-03:
+    // el boton JUGAR del detalle saltaba arriba de la caratula.
+    //
+    // Un transform no participa del layout, asi que el Column mantiene el
+    // control y el efecto visual es el mismo.
+    transform: Translate {
+        y: root.activo ? -2 : 0
+        Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+    }
 
     Rectangle {
         id: fondo

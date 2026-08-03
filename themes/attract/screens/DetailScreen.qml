@@ -113,9 +113,13 @@ FocusScope {
             Text {
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                 anchors.margins: 16
-                height: 90                   // tres renglones a 30px
+                height: 108                  // hasta cuatro renglones
                 wrapMode: Text.WordWrap
-                maximumLineCount: 3
+                // Cuatro y no tres: con tres, "Street Fighter II': Champion
+                // Edition" achicaba hasta el minimo y aun asi perdia la
+                // ultima palabra (visto en Pegasus el 2026-08-03). El panel
+                // tiene 288px de alto, hay lugar de sobra para el cuarto.
+                maximumLineCount: 4
                 color: Theme.textBright
                 font.family: Theme.fontDisplay
                 font.bold: true
@@ -125,7 +129,7 @@ FocusScope {
                 // MAME son largos y a tamano fijo se cortan con elipsis.
                 fontSizeMode: Text.Fit
                 font.pixelSize: Theme.sizePanelTitle
-                minimumPixelSize: 17
+                minimumPixelSize: 14
                 text: root.game ? root.game.title.toUpperCase() : ""
             }
         }

@@ -317,6 +317,24 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
 - [ ] Foco: `[JUGAR] → [extras]` con izquierda/derecha; Escape/B vuelve a la
       librería.
 
+## 5 · Bugs encontrados mirando la pantalla
+
+_Ninguno de estos aparece leyendo el codigo. Salieron de abrir Pegasus._
+
+- [x] **El boton JUGAR se iba arriba de la carátula** (2026-08-03). `Boton`
+      hacía el "lift" del foco con un binding sobre `y`, y está dentro de un
+      `Column` — **el positioner posiciona a sus hijos escribiéndoles la `y`**,
+      así que el binding peleaba con él. Ganaba el binding y el botón saltaba a
+      la posición 0. Pasaba de a ratos, según el orden en que se resolviera,
+      que es justo lo que lo hacía difícil de ver.
+      El "lift" va por `transform: Translate`, que **no participa del layout**.
+      `GameCard` ya lo hacía bien; `Boton` y `ExtrasList` no. Los tres usan
+      ahora el mismo mecanismo.
+- [x] **El título sobre el panel de carátula perdía la última palabra.** Con
+      `maximumLineCount: 3`, `Street Fighter II': Champion Edition` achicaba
+      hasta el mínimo y aun así no entraba. Pasa a 4 líneas: el panel tiene
+      288px de alto, hay lugar de sobra.
+
 ## 6 · Cierre
 
 - [ ] Los 7 casos de la tabla de `spec.md` §"Contra qué se verifica",
