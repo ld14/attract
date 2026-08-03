@@ -84,11 +84,19 @@ FocusScope {
             width: parent.width
             height: 288
 
-            CoverImage {
+            // La sombra va ANTES que el panel: se dibuja debajo.
+            Sombra { fuente: panelCaratula }
+
+            Item {
+                id: panelCaratula
                 anchors.fill: parent
-                game: root.game
-                accent: datos.accent
-                accent2: datos.accent2
+
+                CoverImage {
+                    anchors.fill: parent
+                    game: root.game
+                    accent: datos.accent
+                    accent2: datos.accent2
+                }
             }
 
             Rectangle {

@@ -26,7 +26,34 @@
 // declarado. Si NO está, el síntoma va a ser el mismo que con PDF: Pegasus ni
 // carga el theme ("Theme loading failed :("), porque el import no resuelve.
 //
-// RESULTADO OBSERVADO: <PENDIENTE — correr contra Pegasus real y anotar acá>
+// RESULTADO OBSERVADO: ✅ EXISTE Y FUNCIONA — desenlace (b). Corrido contra
+// Pegasus real el 2026-08-03: `import QtGraphicalEffects 1.0` resuelve, el
+// theme carga, y los TRES efectos se dibujan bien:
+//
+//   1. Glow        — el cuadrado verde con su halo alrededor.
+//   2. DropShadow  — el cuadrado gris con la sombra grande debajo.
+//   3. FastBlur    — la cuadricula de colores borroneada de verdad, no
+//                    nitida ni negra. Y es el caso mas exigente: borronea
+//                    otro Item con textura, no un color plano, que es lo que
+//                    haria falta detras del visor de documentos.
+//
+// O sea que el modulo SI viene en el binario oficial de Pegasus aunque no
+// figure en sus dependencias de build declaradas — al reves que PDF, que no
+// estaba (ADR-0007). La conclusion practica: no hace falta aproximar los
+// efectos del diseno con rectangulos planos.
+//
+// CONSECUENCIAS, ya aplicadas:
+//   - ui/FocusRing.qml pasa de dos rectangulos concentricos a un Glow real.
+//     Estaba escrito a proposito como el unico lugar donde hacer este
+//     upgrade, para no tener que buscar veinte rectangulos repartidos.
+//   - Las sombras grandes de los paneles elevados dejan de ser una deuda.
+//   - El "backdrop-filter: blur" del visor de la feature 006 es viable con
+//     FastBlur; era la aproximacion que mas se iba a notar.
+//
+// CUIDADO AL USARLOS: cada efecto es una pasada de GPU extra. El glow del
+// foco esta bien porque hay uno o dos en pantalla a la vez (FocusRing solo
+// se dibuja cuando `activo`), pero un DropShadow por tarjeta del rail seria
+// uno por delegate visible. Medir antes de repartirlos.
 //
 // Cómo leer el resultado — hay TRES desenlaces distintos, no dos:
 //   a) "Theme loading failed"        -> el módulo NO existe. Sin blur ni glow.

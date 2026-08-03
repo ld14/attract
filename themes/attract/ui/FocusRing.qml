@@ -1,19 +1,19 @@
 // El anillo de foco del diseno: un borde de accent mas un resplandor.
 //
-// Vive en su propio archivo aunque sean tres rectangulos, por una razon
-// concreta: el resplandor de verdad necesita QtGraphicalEffects, y todavia no
-// sabemos si ese modulo existe en este binario de Pegasus (ver
-// themes/experimentos/graphical-effects.qml, sin correr). Cuando se responda,
-// el upgrade se hace ACA y lo heredan todos los estados de foco del theme, en
-// vez de haber que buscar veinte rectangulos repartidos.
+// Vive en su propio archivo aunque sea poca cosa, y esa decision se pago sola:
+// el resplandor de verdad necesita QtGraphicalEffects, que no se sabia si
+// existia en este binario de Pegasus. Se escribio primero como dos rectangulos
+// concentricos, con el upgrade concentrado ACA. Cuando el experimento
+// confirmo el modulo (themes/experimentos/graphical-effects.qml, 2026-08-03),
+// el cambio fue este archivo y nada mas — no hubo que buscar veinte
+// rectangulos repartidos por el theme.
 //
-// ponytail: aproximacion plana mientras tanto - dos rectangulos concentricos
-// con opacidad decreciente en vez de un blur real. Se ve mas duro que el
-// "box-shadow: 0 0 40px accent" del CSS, pero no cuesta GPU en el gabinete y
-// no depende de ningun modulo. Si graphical-effects.qml resuelve, reemplazar
-// el halo por un Glow.
+// Cuesta GPU: cada Glow es una pasada extra. Se banca porque FocusRing solo
+// se DIBUJA cuando `activo` (opacity 0 -> visible false), asi que hay uno o
+// dos en pantalla a la vez, no uno por tarjeta del rail.
 
 import QtQuick 2.0
+import QtGraphicalEffects 1.0
 import ".."
 
 Item {
@@ -29,26 +29,29 @@ Item {
     opacity: activo ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: 180 } }
 
-    // halo exterior (la aproximacion al glow)
+    // El anillo. visible:false porque solo alimenta al Glow; el que se ve es
+    // la copia de abajo.
     Rectangle {
+        id: anillo
         anchors.fill: parent
-        anchors.margins: -6
-        radius: root.radio + 6
+        radius: root.radio
         color: "transparent"
-        border.width: 6
-        border.color: Theme.alpha(root.accent, 0.18)
+        border.width: root.grosor
+        border.color: root.accent
+        visible: false
     }
 
-    Rectangle {
-        anchors.fill: parent
-        anchors.margins: -2
-        radius: root.radio + 2
-        color: "transparent"
-        border.width: 2
-        border.color: Theme.alpha(root.accent, 0.40)
+    // "box-shadow: 0 0 40px <accent>" del diseno.
+    Glow {
+        anchors.fill: anillo
+        source: anillo
+        radius: 16
+        samples: 17          // 2*radius+1 acotado: mas no se nota y cuesta
+        spread: 0.2
+        color: root.accent
+        transparentBorder: true
     }
 
-    // el anillo propiamente dicho
     Rectangle {
         anchors.fill: parent
         radius: root.radio

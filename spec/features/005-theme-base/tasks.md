@@ -23,9 +23,26 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       3. **Un juego de Steam devuelve `steam:255710`** — un URI sin ninguna
          barra, no una ruta. `Paths` lo detecta y devuelve `""`, que es la
          degradación de §2.3, no una ruta inválida.
-- [ ] **`graphical-effects.qml`** — ¿resuelve `import QtGraphicalEffects 1.0`?
-      Hecho cuando: sabemos cuál de los tres desenlaces del encabezado pasó.
-      **Bloquea las sombras, el glow y el blur de todo el theme.**
+- [x] **`graphical-effects.qml` — cerrado 2026-08-03: EXISTE y funciona.**
+      Desenlace (b): el import resuelve y los tres efectos se dibujan bien,
+      incluido `FastBlur` sobre un `Item` con textura, que era el caso más
+      exigente. **El módulo sí viene en el binario oficial de Pegasus aunque
+      no figure en sus dependencias de build declaradas** — al revés que PDF,
+      que no estaba (ADR-0007).
+
+      Consecuencias, ya aplicadas: `ui/FocusRing.qml` pasa de dos rectángulos
+      concéntricos a un `Glow` real, y **el cambio fue ese archivo y nada
+      más** — la decisión de darle archivo propio se pagó sola. Nuevo
+      `ui/Sombra.qml` para las sombras grandes de los paneles elevados, que
+      eran una deuda anotada en `Tokens.qml`. Y el `backdrop-filter: blur` del
+      visor de la 006 es viable, que era la aproximación que más se iba a
+      notar.
+
+      **Cuidado anotado:** cada efecto es una pasada de GPU. El glow del foco
+      se banca porque `FocusRing` solo se dibuja cuando está activo (uno o dos
+      en pantalla); un `DropShadow` por tarjeta del rail sería uno por
+      delegate visible, y el rail se mueve todo el tiempo. `Sombra` va en los
+      paneles grandes y quietos, no ahí.
 - [ ] **`multimedia-loop.qml`** — bloquea la 006, no esta. Se corre igual de
       paso, contra `library/` (los fixtures son de 0 bytes, no hay `.mp4`).
 - [ ] Bajar los `.ttf` de Chakra Petch, Sora y JetBrains Mono a
