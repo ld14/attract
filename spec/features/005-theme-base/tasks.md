@@ -133,10 +133,31 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       | `sf2ce`, los dos `mok` | por `x-set` | `…/media/<set>/` |
       | `TEST MULTIFILE` | `test-multifile` | `…/media/test-multifile/` aunque no tenga **ningún** asset |
       | Cualquiera de Steam | `steam:NNNNN` | **vacía** — `path` es un URI, no una ruta. Degradar acá es lo correcto |
-- [ ] `core/GameData.qml` — XHR de `data.json`, expone `accent`/`accent2`/
-      `review`/`cheats`/`manual`/`mags` + `estado`. Hecho cuando: `mok` (sin
-      archivo) cae a `sin-datos` sin crashear, un JSON corrupto también, y el
-      set ya leído no se vuelve a pedir.
+- [x] `core/GameData.qml` — escrito. XHR de `data.json`, expone
+      `accent`/`accent2`/`review`/`cheats`/`manual`/`mags`, el `estado`, los
+      flags `hayRevistas`/`hayCheats`/`hayManual`/`hayReview` y `catDe()` para
+      los dos niveles de "sin dato" de §2.3. El `accent` pasa por
+      `Theme.accentDe()`, así que la degradación de ADR-0013 vive en un solo
+      lugar.
+
+      **Tercera regla, que no estaba en el plan y sí hacía falta: las
+      respuestas pueden llegar desordenadas.** Mover el foco rápido por el rail
+      dispara una petición por juego, y la del juego 3 puede llegar después de
+      la del 5 — la ficha mostraría los datos del juego equivocado. Es un bug
+      silencioso y difícil de reproducir a mano. Cada respuesta se compara
+      contra la URL vigente antes de aplicarse, y la petición anterior se
+      aborta al empezar una nueva.
+- [ ] **Verificar `GameData` en Pegasus** (mismo panel, misma pasada que
+      `Paths`). Recorriendo los juegos con ← →, el fondo cambia de color con
+      el accent real de cada `data.json`. Hecho cuando:
+
+      | Juego | Esperado |
+      |---|---|
+      | `EXPERIMENTO` (dino) | `listo`, accent `#ffb020` de `data.json`, 1 revista, 4 combos + 2 trucos, review con `score=94` y las seis categorías en `-` (reseña parcial) |
+      | `sf2ce` | `listo`, accent `#ff5a3c`, 1 revista con el `ref` colgado, manual de 4 págs, sin cheats, sin review |
+      | `mok` (fixtures y library) | `sin-datos` — no tienen `data.json`. Accent neutro. **Sin crash** |
+      | `TEST MULTIFILE` | `sin-datos` con la base bien resuelta, aunque no tenga ningún asset |
+      | Cualquiera de Steam | `sin-datos` con base vacía |
 
 ## 3 · Átomos (`ui/`)
 
