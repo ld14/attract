@@ -1,14 +1,16 @@
 // Pantalla de detalle: barra superior, columna izquierda (panel de caratula +
 // JUGAR) y columna de informacion (titulo, chips, box art, sinopsis).
 //
-// INCOMPLETA A PROPOSITO. Falta lo que va abajo de la sinopsis: el bloque
-// NOTA DE LA CRITICA (ReviewCard) y las tarjetas de CONTENIDO EXTRA
-// (ExtrasList). Y el panel de caratula muestra la imagen estatica: el video
-// de gameplay llega con la feature 006 y se enchufa ahi sin rehacer el
-// layout.
+// La columna de la derecha (190px) NO es un detalle de layout: el handoff la
+// pide asi, con el box art, el badge de FORMATO y la resena apilados. Por eso
+// FORMATO no es un chip mas junto a AÑO/SISTEMA/GENERO — se me habia colado
+// como chip en la primera version y se corrigio el 2026-08-02.
+//
+// FALTA, de la feature 006: el carrusel de revistas en la columna izquierda y
+// el video de gameplay en el panel de caratula. El layout ya los espera.
 //
 // El orden de foco sale del prototipo (detailTargets): [JUGAR] y despues cada
-// extra. El carrusel de revistas se mete en el medio cuando llegue la 006.
+// extra. El carrusel se mete en el medio cuando llegue la 006.
 
 import QtQuick 2.0
 import ".."
@@ -111,14 +113,19 @@ FocusScope {
             Text {
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                 anchors.margins: 16
+                height: 90                   // tres renglones a 30px
                 wrapMode: Text.WordWrap
                 maximumLineCount: 3
-                elide: Text.ElideRight
                 color: Theme.textBright
                 font.family: Theme.fontDisplay
                 font.bold: true
-                font.pixelSize: Theme.sizePanelTitle
                 lineHeight: 1.0
+                verticalAlignment: Text.AlignBottom
+                // Mismo motivo que el titulo del hero: los titulos reales de
+                // MAME son largos y a tamano fijo se cortan con elipsis.
+                fontSizeMode: Text.Fit
+                font.pixelSize: Theme.sizePanelTitle
+                minimumPixelSize: 17
                 text: root.game ? root.game.title.toUpperCase() : ""
             }
         }
@@ -138,20 +145,25 @@ FocusScope {
     Column {
         anchors { top: barra.bottom; topMargin: 30 }
         anchors { left: izquierda.right; leftMargin: 48 }
-        anchors { right: parent.right; rightMargin: Theme.gutter }
+        anchors { right: derecha.left; rightMargin: 32 }
         spacing: 18
 
         Text {
             width: Math.min(parent.width, 600)
+            height: 102                      // dos renglones a 51px
             wrapMode: Text.WordWrap
             maximumLineCount: 2
-            elide: Text.ElideRight
             color: Theme.textBright
             font.family: Theme.fontDisplay
             font.bold: true
-            // clamp(34px, 4vw, 60px) sobre el lienzo fijo de 1280 = 51px.
-            font.pixelSize: 51
             lineHeight: 1.0
+            verticalAlignment: Text.AlignBottom
+            // clamp(34px, 4vw, 60px): sobre el lienzo fijo el termino del
+            // medio da 51px, y el 34 es el PISO del clamp - el diseno ya
+            // contemplaba que el titulo achicara.
+            fontSizeMode: Text.Fit
+            font.pixelSize: 51
+            minimumPixelSize: 34
             text: root.game ? root.game.title : ""
         }
 
@@ -190,15 +202,6 @@ FocusScope {
                 accent: root.accent
                 valor: (root.game && root.game.developer) ? root.game.developer : ""
             }
-            Chip {
-                // Siempre desde x-formato, NUNCA desde mediaFor(): esa funcion
-                // mira la coleccion y no el juego, y se equivoca en 4 de 5
-                // (docs/mapeo-mockup-pegasus.md).
-                clave: "FORMATO"
-                accent: root.accent
-                valor: (root.game && root.game.extra["formato"])
-                       ? String(root.game.extra["formato"][0]) : ""
-            }
         }
 
         SectionLabel {
@@ -219,17 +222,124 @@ FocusScope {
         }
     }
 
+    // ------------------------------------------- columna derecha (190px)
+    // Box art + badge de FORMATO + resena, apilados. Es lo que pide el
+    // handoff; no es una variante.
+    Column {
+        id: derecha
+        anchors { top: barra.bottom; topMargin: 30 }
+        anchors { right: parent.right; rightMargin: Theme.gutter }
+        width: 190
+        spacing: 14
+
+        Item {
+            width: parent.width
+            height: 144
+
+            CoverImage {
+                id: boxart
+                width: 108; height: 144
+                anchors.horizontalCenter: parent.horizontalCenter
+                game: root.game
+                accent: datos.accent
+                accent2: datos.accent2
+            }
+
+            // El badge en la esquina. Es TEXTO y no un icono por medio:
+            // x-formato es un dato libre (PCB, GD-ROM, Diskette, Cartucho...)
+            // y dibujar un icono por cada valor posible obligaria a mantener
+            // un mapa que se desactualiza solo. Decidido en el LAB 0.3.
+            Rectangle {
+                anchors { right: boxart.right; bottom: boxart.bottom }
+                anchors { rightMargin: -7; bottomMargin: -7 }
+                width: badge.width + 14
+                height: 22
+                radius: Theme.radiusChip
+                color: "#0e1016"
+                border.width: 1
+                border.color: Theme.alpha(Theme.textBright, 0.18)
+                visible: badge.text !== ""
+
+                Text {
+                    id: badge
+                    anchors.centerIn: parent
+                    color: root.accent
+                    font.family: Theme.fontMono
+                    font.pixelSize: 9
+                    font.letterSpacing: 0.06 * 9
+                    text: (root.game && root.game.extra["formato"])
+                          ? String(root.game.extra["formato"][0]) : ""
+                }
+            }
+        }
+
+        Column {
+            width: parent.width
+            spacing: 2
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "FORMATO"
+                color: Theme.textFaint
+                font.family: Theme.fontMono
+                font.pixelSize: 8
+                font.letterSpacing: Theme.trackingLabel * 8
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                // Sin x-formato el renglon no desaparece (§2.3).
+                text: (root.game && root.game.extra["formato"])
+                      ? String(root.game.extra["formato"][0]) : "Sin Informacion"
+                color: (root.game && root.game.extra["formato"])
+                       ? Theme.textPrimary : Theme.textFaint
+                font.family: Theme.fontMono
+                font.pixelSize: 10
+            }
+        }
+
+        ReviewCard {
+            width: parent.width
+            datos: datos
+            accent: root.accent
+        }
+    }
+
+    // ------------------------------------------------- contenido extra
+    // Anclado abajo, como el margin-top:auto del diseno.
+    ExtrasList {
+        id: extras
+        anchors { left: izquierda.right; leftMargin: 48 }
+        anchors { bottom: parent.bottom; bottomMargin: 72 }
+        datos: datos
+        accent: root.accent
+        // foco 0 = JUGAR; de ahi en mas, las tarjetas.
+        foco: root.foco - 1
+        onAbrir: root.abrirExtra(tipo)
+    }
+
     // ---------------------------------------------------------------- foco
-    // Por ahora solo JUGAR. Cuando entren ExtrasList y el carrusel, esto pasa
-    // a recorrer [JUGAR] -> [carrusel] -> [cada extra], como detailTargets.
+    // [JUGAR] -> [Hacks] -> [Manual], el orden de detailTargets. Cuando llegue
+    // la 006, el carrusel de revistas se mete entre JUGAR y los extras.
     property int foco: 0
+    readonly property int _targets: 3
+
+    signal abrirExtra(string tipo)
 
     Keys.onPressed: {
         if (api.keys.isCancel(event)) {
             root.volver();
             event.accepted = true;
+        } else if (event.key === Qt.Key_Right) {
+            root.foco = Math.min(root._targets - 1, root.foco + 1);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Left) {
+            root.foco = Math.max(0, root.foco - 1);
+            event.accepted = true;
         } else if (api.keys.isAccept(event)) {
-            root.lanzar(root.game);
+            if (root.foco === 0) root.lanzar(root.game);
+            else if (root.foco === 1 && datos.hayCheats) root.abrirExtra("cheats");
+            else if (root.foco === 2 && datos.hayManual) root.abrirExtra("manual");
             event.accepted = true;
         }
     }

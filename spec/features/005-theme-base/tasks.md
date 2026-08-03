@@ -286,14 +286,32 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
 - [ ] Badge de formato desde `x-formato`. Hecho cuando: `mok` muestra
       `GD-ROM` y `sf2ce` muestra `PCB` — que es justo donde `mediaFor()` del
       prototipo se equivoca (`docs/mapeo-mockup-pegasus.md`).
-- [ ] `ReviewCard.qml` — los dos niveles de §2.3. Hecho cuando: `mok` (sin
-      `data.json`) muestra el bloque entero en "Sin Información", y `dino`
-      (`{"review": {"score": 94}}`) muestra el 94 con las seis categorías en
-      `"-"`.
-- [ ] `ExtrasList.qml` — tarjetas de CONTENIDO EXTRA. En 005 solo puede
-      aparecer la del manual; sin extras, `"No Disponible"`. **Ningún bloque
-      desaparece** (§2.3 le gana al handoff — anotarlo como divergencia
-      consciente en el componente).
+- [x] `ReviewCard.qml` — escrita. Los dos niveles de §2.3 viven ahí: sin
+      `review` el bloque se muestra entero con "Sin Información"; con reseña
+      parcial, cada categoría faltante va con `-` y su barra vacía. **Nunca
+      lee el `rating` nativo de Pegasus** para decidir si hay nota: ese campo
+      no distingue "sin nota" de "nota cero" (default `0.0`). Lee `review` de
+      `data.json`, que sí puede ser `null` de verdad.
+- [x] `ExtrasList.qml` — escrita. **Divergencia consciente anotada en el
+      componente:** el handoff omite la tarjeta cuando falta el contenido y
+      pone una fila punteada solo si no hay ninguno; §2.3 gana, así que las
+      dos tarjetas están siempre y la vacía dice "No Disponible". Consecuencia:
+      la fila punteada del handoff no existe, porque su caso nunca se da.
+      Las revistas **no** están acá a propósito — el handoff es explícito en
+      que viven solo en el carrusel de la izquierda, que llega con la 006.
+- [x] **Corregido un error de fidelidad, 2026-08-02:** `FORMATO` no es un chip
+      junto a AÑO/SISTEMA/GÉNERO. El handoff lo pone en una columna de 190px
+      arriba a la derecha, apilado con el box art y la reseña. Se había colado
+      como chip en la primera versión de la pantalla.
+- [x] **Los títulos largos se cortaban.** El prototipo tenía títulos cortos e
+      inventados (`Striker`); MAME devuelve
+      `Street Fighter II': Champion Edition (World 920513)`, y a tamaño fijo
+      se cortaba con elipsis en el hero y sobre el panel de carátula (visto en
+      Pegasus). El arreglo es **fiel al diseño, no un parche**: el CSS dice
+      `clamp(44px, 6.4vw, 104px)` y ese `44` es el **piso** — el diseño ya
+      contemplaba que el título achicara. Al colapsar el `clamp()` a un número
+      por el lienzo fijo (ADR-0016) se había perdido ese piso. `Text.Fit` con
+      `minimumPixelSize` lo devuelve.
 - [ ] El panel de carátula queda listo para recibir el video de la 006 sin
       rehacer el layout.
 - [ ] Foco: `[JUGAR] → [extras]` con izquierda/derecha; Escape/B vuelve a la

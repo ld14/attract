@@ -166,16 +166,28 @@ FocusScope {
 
         Text {
             width: parent.width
+            height: 151                  // dos renglones a 82px con lineHeight .92
             wrapMode: Text.WordWrap
             maximumLineCount: 2
-            elide: Text.ElideRight
             color: Theme.textBright
             font.family: Theme.fontDisplay
             font.bold: true
-            // clamp(44px, 6.4vw, 104px) con el lienzo fijo de 1280 colapsa a
-            // 6.4% de 1280 = 82px (ADR-0016).
-            font.pixelSize: 82
             lineHeight: 0.92
+            verticalAlignment: Text.AlignBottom
+
+            // clamp(44px, 6.4vw, 104px). Con el lienzo fijo de 1280 el termino
+            // del medio colapsa a 82px (ADR-0016), pero el 44 es el PISO del
+            // clamp, no decoracion: el diseno ya contemplaba que el titulo
+            // achicara. Text.Fit lo reproduce.
+            //
+            // Hace falta de verdad, no es defensivo: los titulos del prototipo
+            // eran cortos e inventados ("Striker"), y MAME devuelve
+            // "Street Fighter II': Champion Edition (World 920513)". A 82px
+            // fijos se corta con elipsis, visto en Pegasus el 2026-08-02.
+            fontSizeMode: Text.Fit
+            font.pixelSize: 82
+            minimumPixelSize: 44
+
             text: root.juego ? root.juego.title : ""
         }
 
