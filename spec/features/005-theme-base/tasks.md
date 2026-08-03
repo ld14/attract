@@ -43,8 +43,19 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       en pantalla); un `DropShadow` por tarjeta del rail sería uno por
       delegate visible, y el rail se mueve todo el tiempo. `Sombra` va en los
       paneles grandes y quietos, no ahí.
-- [ ] **`multimedia-loop.qml`** — bloquea la 006, no esta. Se corre igual de
-      paso, contra `library/` (los fixtures son de 0 bytes, no hay `.mp4`).
+- [x] **`multimedia-loop.qml` — corrido 2026-08-03.** Bloqueaba la 006, no
+      esta. No se podía correr porque no había ningún `.mp4`; se generó uno
+      sintético con ffmpeg (`testsrc` + tono de 440 Hz) en `library/preview/`,
+      con el comando para regenerarlo en el encabezado del experimento.
+      El import de `QtMultimedia 5.9` resuelve, el transporte responde en vivo
+      y **`loops: MediaPlayer.Infinite` reengancha solo**.
+
+      **Hallazgo para la 006: `onStopped` NO se dispara nunca** en un loop
+      continuo. El contador que lo usaba quedó en 0 mientras el video
+      reenganchaba delante nuestro — el theme no puede colgar nada de esa
+      señal. Fue además un error de **medición**: el contador no distinguía
+      "no loopea" de "loopea bien", así que no medía nada. Mismo error que el
+      `eslabon N` de `CoverImage`.
 - [ ] Bajar los `.ttf` de Chakra Petch, Sora y JetBrains Mono a
       `themes/attract/fonts/`. El gabinete es offline: no se pueden pedir en
       runtime. Sin esto el theme carga igual, con las fuentes del sistema.

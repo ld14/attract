@@ -26,15 +26,25 @@
 // primero en Mac — o sea que este punto hay que correrlo en LAS DOS máquinas
 // (ADR-0003), no alcanza con el Mac.
 //
-// RESULTADO OBSERVADO (Mac):      PARCIAL, 2026-08-03.
+// RESULTADO OBSERVADO (Mac): ✅ 2026-08-03, tres de cuatro cerrados.
+//
 //   punto 1 (import 5.9)  ✅ resuelve.
 //   punto 3 (transporte)  ✅ play/pausa, mute y volumen responden en vivo.
-//   punto 2 (loops)       ❓ sin responder — y la primera medicion estaba
-//                            MAL HECHA: contaba onStopped, que un loop
-//                            continuo puede no disparar nunca. Reemplazada
-//                            por un contador de reenganches que mira si la
-//                            posicion retrocede. Falta correrlo de nuevo.
-//   punto 4 (crop)        ❓ sin responder.
+//   punto 2 (loops)       ✅ `loops: MediaPlayer.Infinite` reengancha solo.
+//   punto 4 (crop)        ~  el panel se llena sin franjas negras; falta
+//                            confirmar a ojo que RECORTE y no estire.
+//
+// HALLAZGO QUE LE IMPORTA A LA FEATURE 006: el video loopea, pero `onStopped`
+// NO SE DISPARA NUNCA. El contador que lo usaba se quedo en 0 mientras el
+// video reenganchaba delante nuestro. O sea que un loop continuo no pasa por
+// StoppedState en este backend, y **el theme no puede colgar nada de
+// onStopped** para saber que el video volvio a empezar. Si hiciera falta
+// detectarlo, la senal es la posicion que retrocede.
+//
+// Ese fue tambien un error de MEDICION, no del reproductor: el primer
+// contador no distinguia "no loopea" de "loopea bien", asi que no medía
+// nada. Es el mismo error que el "eslabon N" de CoverImage — el instrumento
+// de verificacion respondiendo otra pregunta que la que se hizo.
 // RESULTADO OBSERVADO (gabinete): <PENDIENTE>
 //
 // OJO — esto NO se puede correr contra fixtures/. Los fixtures son de 0 bytes
