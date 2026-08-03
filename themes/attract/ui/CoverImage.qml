@@ -40,16 +40,37 @@ Item {
     property int fillMode: Image.PreserveAspectCrop
     readonly property bool mostrandoPlaceholder: _idx >= _candidatos.length
 
+    // Que eslabon de la cadena se esta viendo: "boxFront" | "poster" |
+    // "marquee" | "color-wash". Se expone con NOMBRE y no con un indice
+    // porque un indice miente: los assets ausentes no entran en la lista, asi
+    // que el "1" de un juego sin boxFront es en realidad el poster. Ese
+    // mismo error se colo en el panel de diagnostico y se vio en Pegasus el
+    // 2026-08-02 — el instrumento de verificacion reportando mal.
+    readonly property string origen:
+        mostrandoPlaceholder ? "color-wash" : _nombres[_idx]
+
     // --- la cadena --------------------------------------------------------
+
+    // El orden ES el contrato (CONVENCION #2.2). No reordenar sin cambiar ese
+    // documento primero.
+    readonly property var _cadena: ["boxFront", "poster", "marquee"]
 
     readonly property var _candidatos: {
         if (!game || !game.assets) return [];
         var out = [];
-        // El orden ES el contrato (CONVENCION #2.2). No reordenar sin cambiar
-        // ese documento primero.
-        var cadena = [game.assets.boxFront, game.assets.poster, game.assets.marquee];
-        for (var i = 0; i < cadena.length; i++)
-            if (cadena[i]) out.push(cadena[i]);
+        for (var i = 0; i < _cadena.length; i++) {
+            var v = game.assets[_cadena[i]];
+            if (v) out.push(v);
+        }
+        return out;
+    }
+
+    // Los nombres de los que SI entraron, en el mismo orden que _candidatos.
+    readonly property var _nombres: {
+        if (!game || !game.assets) return [];
+        var out = [];
+        for (var i = 0; i < _cadena.length; i++)
+            if (game.assets[_cadena[i]]) out.push(_cadena[i]);
         return out;
     }
 

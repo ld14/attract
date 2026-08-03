@@ -172,9 +172,14 @@ FocusScope {
                             color: Theme.textFaint
                             font.family: Theme.fontMono
                             font.pixelSize: Theme.sizeMonoSm
-                            text: "caratula: " + (portada.mostrandoPlaceholder
-                                  ? "color-wash (sin assets que carguen)"
-                                  : "imagen (eslabon " + (portada._idx + 1) + " de la cadena)")
+                            // Se reporta el NOMBRE del asset, no un indice: el
+                            // indice cuenta sobre la lista ya filtrada, asi
+                            // que un juego sin boxFront reportaba "eslabon 1"
+                            // cuando en realidad habia cargado el poster.
+                            // Visto en Pegasus el 2026-08-02 con mok.
+                            text: "caratula: " + portada.origen
+                                  + (portada.mostrandoPlaceholder
+                                     ? "  (ningun asset cargo)" : "")
                         }
 
                         Row {

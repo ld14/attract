@@ -220,6 +220,27 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       —la fuente que usan los frontends retro— resolvió 2 de 3. Maze of the
       Kings no está en ese set (es NAOMI GD-ROM), y queda bien así: es el caso
       real de un juego sin carátula, que tiene que caer al color-wash.
+- [x] **Verificado contra Pegasus real, 2026-08-02.** Los tres eslabones y los
+      **tres niveles de reseña** de §2.1 nota 3, que hasta acá solo se habían
+      visto de a uno:
+
+      | Juego | Reseña | Carátula |
+      |---|---|---|
+      | Cadillacs (preview) | `score=88` + **las seis con número** — completa | arte real, `boxFront` |
+      | Street Fighter II' (preview) | `score=95`, `graf=92 adic=98`, las otras cuatro en `-` — parcial | arte real, `boxFront` |
+      | dino (fixtures) | solo `score=94`, las seis en `-` — mínima | `boxFront` generado |
+      | mok (fixtures) | sin reseña | `poster` — **cae bien**, no tiene `boxFront` |
+      | mok (preview), sf2ce (fixtures) | sin reseña | `color-wash` |
+- [x] **Bug encontrado y arreglado en esa misma corrida — en el panel, no en
+      el theme.** El panel decía `eslabon 1` para `mok`, que en realidad
+      había cargado su `poster` (el eslabón **2** del contrato). `CoverImage`
+      se comportó bien; lo que mentía era el reporte: el índice cuenta sobre
+      la lista ya **filtrada**, y los assets ausentes no entran, así que el
+      "1" de un juego sin `boxFront` es el poster. El instrumento de
+      verificación reportando mal es peor que no tenerlo — alguien leyendo
+      eso habría concluido que `boxFront` cargó.
+      `CoverImage` ahora expone `origen` con el **nombre** del asset
+      (`boxFront`/`poster`/`marquee`/`color-wash`), no un índice.
 
 ## 4 · Librería
 
