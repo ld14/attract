@@ -31,14 +31,29 @@
 //
 // OJO — esto NO se puede correr contra fixtures/. Los fixtures son de 0 bytes
 // a propósito (CLAUDE.md §Reglas de trabajo) y no hay ningún .mp4 real ahí.
-// Hay que correrlo contra library/, con un juego que tenga assets.video de
-// verdad. El reporte de abajo avisa cuando el juego que estás mirando no
-// tiene video, para que no confundas "no hay archivo" con "no funciona".
+//
+// EL VIDEO DE PRUEBA YA ESTÁ, en `library/preview/media/dino/video.mp4` —
+// gitignored, igual que las carátulas reales y por el mismo criterio. Son 4
+// segundos generados con ffmpeg: patrón `testsrc` (que trae un contador de
+// cuadros bien visible, así se ve al toque cuando el loop reengancha) más un
+// tono de 440 Hz, que es lo que hace audible el control de volumen y de mute.
+//
+// Se regenera con:
+//
+//   ffmpeg -y -f lavfi -i "testsrc=size=640x480:rate=30:duration=4" \
+//          -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=4" \
+//          -c:v libx264 -pix_fmt yuv420p -profile:v baseline -level 3.0 \
+//          -c:a aac -b:a 96k -shortest library/preview/media/dino/video.mp4
+//
+// Es a propósito un video SINTÉTICO y no una captura de gameplay: para lo que
+// este experimento mide (¿loopea? ¿responde el volumen? ¿recorta bien?) un
+// contador y un tono dicen más que una partida real, y no pesa nada.
 //
 // Cómo correrlo:
 //   1. cp multimedia-loop.qml <themes de Pegasus>/attract-debug/theme.qml
-//   2. abrí Pegasus apuntando a library/ (NO a fixtures/)
-//   3. flechas para buscar un juego con video; espacio/M/+/- para el transporte
+//   2. abrí Pegasus (el video está en la colección Preview, juego "Cadillacs
+//      and Dinosaurs")
+//   3. flechas para llegar a ese juego; espacio/M/+/- para el transporte
 //   4. dejalo llegar al final del video y mirá si vuelve a empezar solo
 //   5. anotá arriba los dos resultados (Mac y gabinete)
 //

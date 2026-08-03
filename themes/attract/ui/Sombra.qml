@@ -17,6 +17,15 @@
 // quietos (el de caratula, el box art), NO en cada tarjeta del rail — ahi
 // serian tantas como delegates visibles y el rail se mueve todo el tiempo.
 // Si algun dia hace falta ahi, medir primero.
+//
+// ponytail: SIN MEDIR — mirando el detalle en Pegasus (2026-08-03) no se
+// distingue si la sombra del panel de caratula hace algo. Es negro al 55%
+// sobre un fondo casi negro y encima en la zona mas oscura de la vineta: por
+// definicion no puede aportar mucho ahi. Se deja porque es `cached` sobre un
+// panel quieto (se calcula una vez, no por frame) y porque donde SI va a
+// servir es en la hoja del visor de documentos de la 006, que es clara sobre
+// un scrim oscuro. Si al comparar contra el prototipo sigue sin notarse en el
+// detalle, sacarla de ahi y dejarla solo para el visor.
 
 import QtQuick 2.0
 import QtGraphicalEffects 1.0
