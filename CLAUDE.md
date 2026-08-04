@@ -51,6 +51,7 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 | `themes/attract-debug/` | Harness de debug: dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no lo reemplaces, agregá al lado |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. `make theme` no las instala |
 | `docs/` | SETUP, CONVENCION (plantilla), baseline, mapeo |
+| `docs/plataforma-pegasus.md` | **Hechos verificados de Pegasus/Qt 5.15**, cada uno con su evidencia. Leelo antes de tocar el theme: la documentación oficial no siempre coincide con el binario |
 | `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía |
 | `spec/constitution/` | Reglas estables: misión, stack, roadmap |
 | `spec/decisions/` | ADRs. 0001-0018, 17 vigentes (0008 superseded por 0010) |

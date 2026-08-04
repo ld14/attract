@@ -29,6 +29,7 @@
 | `themes/attract/` | Theme de producción (feature 005). Tres capas según quién sabe de qué: `core/` datos y rutas, `ui/` dibuja, `screens/`+`overlays/` componen. Un solo singleton (`Theme`, el archivo es `Tokens.qml` — ver su encabezado) |
 | `themes/attract-debug/` | Theme QML de debug: harness del Bloque 3, dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no se pisa |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. No las instala `make theme` |
+| `docs/plataforma-pegasus.md` | Hechos verificados de Pegasus/Qt, consolidados con puntero a su evidencia. No duplica los ADR: ahí van decisiones, acá qué hace la plataforma |
 | `spec/decisions/` | Decisiones de arquitectura. 0001-0018, 17 vigentes (0008 superseded por 0010) |
 | `spec/features/001-synopsis/` | Primera feature con spec/plan/tasks — `attract synopsis`, implementada |
 | `spec/features/002-attract-skill/` | `.claude/skills/attract/SKILL.md`, implementada |

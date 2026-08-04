@@ -1,0 +1,198 @@
+# Lo que sabemos del terreno: Pegasus + Qt 5.15
+
+Referencia de **hechos verificados** sobre la plataforma donde corre el theme.
+Todo lo que está acá se comprobó abriendo Pegasus, no leyendo documentación —
+y donde la documentación decía otra cosa, está anotado.
+
+## Cómo usar este documento
+
+- **Acá van hechos, no decisiones.** Por qué el proyecto eligió una cosa u
+  otra vive en `spec/decisions/`. Acá va qué hace la plataforma.
+- **Cada hecho apunta a su evidencia.** Si necesitás el razonamiento completo,
+  seguí el puntero; no está copiado acá para que no se desincronice.
+- **Si algo contradice esto, gana lo que se vea en pantalla.** Este archivo es
+  un resumen de mediciones, no una autoridad.
+
+Contexto fijo: Pegasus `alpha16-82-gc3462e68`, **Qt 5.15.10**, macOS para
+desarrollo y Windows en el gabinete ([`ADR-0006`](../spec/decisions/0006-version-politica-pegasus.md),
+[`ADR-0003`](../spec/decisions/0003-cross-platform.md)).
+
+---
+
+## 1 · Qué módulos existen en este binario
+
+**La lista de dependencias de build declaradas de Pegasus NO es confiable, ni
+para afirmar ni para negar.** Es el hallazgo más útil de todos: se probó en las
+dos direcciones y falló en las dos.
+
+| Módulo | ¿Está? | Declarado en el build | Evidencia |
+|---|---|---|---|
+| `QtQuick` 2.x, `QtQuick.Layouts` | sí | sí | todo el theme |
+| `QtMultimedia` (5.9) | **sí** | sí | `themes/experimentos/multimedia-loop.qml` |
+| `QtGraphicalEffects` (1.0) | **sí** | **no** | `themes/experimentos/graphical-effects.qml` |
+| `QtQuick.Pdf` | **no** | no | `themes/experimentos/pdf-qtquick.qml`, [`ADR-0007`](../spec/decisions/0007-paginas-revista-imagenes-no-pdf.md) |
+| `Qt5Compat`, `MultiEffect` | no | — | son de Qt 6; acá es Qt 5.15 |
+
+**Si un import no resuelve, Pegasus no carga el theme entero** y muestra
+`Theme loading failed :(`. No hay degradación parcial: es todo o nada. Por eso
+los experimentos de import se corren **antes** de escribir nada encima.
+
+---
+
+## 2 · La API: las formas reales de los datos
+
+Lo que la documentación no dice, o dice distinto.
+
+### `game.extra` — los campos `x-`
+
+- **Siempre es una lista** (`QStringList`), nunca un string. Incluso
+  `x-simple: valor` vuelve como `["valor"]`. No es un `Array` de JS
+  (`Array.isArray()` da `false`) pero el acceso por índice funciona.
+- Las claves conservan el guión: `extra["con-guion"]`.
+- Evidencia: `themes/attract-debug/theme.qml`,
+  [`ADR-0001`](../spec/decisions/0001-transporte-datos-ricos.md).
+
+### `game.files` — los archivos lanzables
+
+- Es un **modelo de Qt**: tiene `count` y `get(i)`. `length` da `undefined`.
+- **`files[i].path` viene SIN esquema** (`/Users/…/dino.zip`), al revés que
+  los assets, que sí traen `file:///`. Esa asimetría es una trampa: un
+  `XMLHttpRequest` necesita el esquema.
+- **`files[i].name` ya viene sin extensión** (`dino`, no `dino.zip`).
+- **`path` no siempre es una ruta de disco.** Un juego del provider de Steam
+  devuelve `steam:255710` — un URI sin ninguna barra.
+- Un `game:` con varios `file:` es **un** juego con `files.count > 1`, no
+  varios juegos ([`ADR-0004`](../spec/decisions/0004-identidad-set-merged.md)).
+- Evidencia: `themes/experimentos/rutas-relativas.qml`.
+
+### `game.assets`
+
+- Devuelven URLs **con** esquema (`file:///…`).
+- **Pueden ser remotas.** Un juego de Steam devuelve `boxFront` como
+  `https://shared.akamai.steamstatic.com/…`. En un gabinete offline eso nunca
+  carga, así que la única señal confiable de que un asset sirve es
+  `Image.Error`, no que el string esté lleno.
+- Evidencia: `themes/attract/ui/CoverImage.qml`, `005/tasks.md`.
+
+### Campos nativos con valores centinela
+
+- **`releaseYear` vuelve `0`** cuando no hay `release:`. No distingue "sin
+  dato" de "año cero".
+- **`rating` vuelve `0.0`** por default. Misma colisión — por eso el bloque de
+  reseña **no lo lee** y usa `data.json → review`, que sí puede ser `null` de
+  verdad (`docs/CONVENCION.md` §2.3).
+- **`players` vuelve `1`** por default. Acá la colisión se acepta: un `1` en
+  un juego retro casi nunca es una mentira dañina.
+
+### `api.allGames`
+
+- **No es la librería de ATTRACT.** Es la unión de lo que encontraron **todos**
+  los providers activos de Pegasus (Steam, es2, logiqx, skraper…). Un juego que
+  entra por otro provider no tiene `x-set`, ni `data.json`, ni carpeta de
+  colección.
+- Se resuelve apagando los providers, no filtrando en el theme
+  ([`ADR-0017`](../spec/decisions/0017-providers-pegasus.md)).
+
+### Lanzar
+
+- Solo existe `game.launch()`. **El comando resuelto no está expuesto.**
+- **No hay ninguna señal de éxito ni de fallo**: la documentación dice que un
+  fallo "se loguea" y punto. Cualquier overlay de "iniciando" necesita su
+  propia salida o se cuelga para siempre.
+- `metadata.pegasus.txt` soporta `launch`/`command`, `workdir`/`cwd`, las
+  variables `{file.*}` y `{env.*}`. **No hay `launch:` por sistema operativo.**
+- Evidencia: `themes/attract/overlays/LaunchOverlay.qml`,
+  [`ADR-0018`](../spec/decisions/0018-launch-ruta-absoluta.md).
+
+### Leer archivos desde el theme
+
+- `XMLHttpRequest` sobre `file://` **funciona**, y encadenado dos veces
+  también (leer un JSON, sacar una ref, leer otro).
+- Con `file://` el `status` llega **`0`** aunque haya salido bien.
+- Evidencia: `themes/experimentos/json-chain-test.qml`,
+  [`ADR-0001`](../spec/decisions/0001-transporte-datos-ricos.md).
+
+### QtMultimedia
+
+- `loops: MediaPlayer.Infinite` **reengancha solo**.
+- **`onStopped` NO se dispara nunca** en un loop continuo. Un contador colgado
+  de ahí se queda en cero mientras el video loopea perfecto. Si hace falta
+  detectar el reenganche, la señal es que **la posición retroceda**.
+- Evidencia: `themes/experimentos/multimedia-loop.qml`.
+
+---
+
+## 3 · Trampas de QML que ya nos mordieron
+
+Tres bugs de la misma familia, todos encontrados **mirando la pantalla** y
+ninguno leyendo el código. La regla que dejan:
+
+> Si estás escribiendo una resta de píxeles para ubicar algo, o peleándole al
+> sistema de layout, va a funcionar hasta que cambie algo que no controlás.
+
+| Trampa | Qué pasó | Dónde |
+|---|---|---|
+| **Un binding sobre `y` dentro de un positioner** | `Column`/`Row` posicionan escribiendo la `y` de sus hijos. El binding pelea y gana: el botón saltaba encima de la carátula. Se veía bien en 3 de 4 capturas. El "lift" va por `transform: Translate`, que no participa del layout | `ui/Boton.qml` |
+| **Altos calculados a mano** | Un espaciador de `parent.height - 14 - 44`, donde `44` asumía tres renglones de título. Al cambiar la fuente dejó de ser cierto y el texto se salió | `screens/GameCard.qml` |
+| **Crecer hacia arriba sin tope** | El hero anclado abajo creció más que el espacio disponible y se metió en la barra. La solución es que un bloque ceda calculando cuánto entra, no fijar constantes | `screens/LibraryScreen.qml` |
+
+### Y una trampa que no es de layout
+
+**`Theme.qml` y `theme.qml` son el mismo archivo** en macOS y Windows
+(filesystems case-insensitive). Pegasus exige `theme.qml` como entrada, así que
+un singleton no puede llamarse `Theme.qml`: crear uno **pisa al otro en
+silencio**. El `qmldir` permite exponerlo con otro nombre — el archivo se llama
+`Tokens.qml` y en el código se sigue escribiendo `Theme.algo`.
+
+### Cosas de CSS que Qt Quick 5.15 no tiene
+
+| CSS | Qué se hizo |
+|---|---|
+| `radial-gradient` | `Canvas` (`Rectangle` solo hace gradientes verticales). **Ojo:** `130% 100%` es una **elipse**; `createRadialGradient` solo hace círculos, hay que escalar el contexto |
+| `conic-gradient` | No existe, ni en `Rectangle` ni en `Canvas`. Se dejó afuera |
+| `mix-blend-mode` | Sin equivalente. Se aproxima con `opacity` |
+| `clamp(min, val, max)` | Con el lienzo fijo colapsa a un número — **pero el `min` es un piso real**, no decoración. Se recupera con `fontSizeMode: Text.Fit` + `minimumPixelSize` |
+| `backdrop-filter: blur` | `FastBlur` (existe, ver §1) |
+
+---
+
+## 4 · El entorno, no el código
+
+- **Una app de GUI en macOS no hereda el PATH del shell.** Arranca con
+  `/usr/bin:/bin:/usr/sbin:/sbin` (`getconf PATH`), y `/usr/local/bin` no está
+  ahí. Por eso Pegasus no encontraba `mame`. Las variables de entorno tienen el
+  mismo problema, así que `{env.VAR}` tampoco salva
+  ([`ADR-0018`](../spec/decisions/0018-launch-ruta-absoluta.md)).
+- **Pegasus verifica que los archivos existan** (`general.verify-files: true`)
+  y descarta los juegos cuyo `file:` no esté. Un `.zip` de 0 bytes alcanza para
+  que aparezcan.
+- **La config vive fuera del repo**, en
+  `~/Library/Preferences/pegasus-frontend/`: `game_dirs.txt`, `settings.txt`
+  (providers, theme, teclas). `attract doctor` no puede validar nada de eso.
+- **Los themes se leen al arrancar.** Cambiar un `.qml` instalado exige cerrar
+  Pegasus del todo (⌘Q) y volver a abrirlo.
+- **`mame -listxml` lee la base de datos interna de MAME, no el archivo.** Por
+  eso `attract ingest` se puede probar con ROMs de 0 bytes.
+
+---
+
+## 5 · Lo que sigue sin saberse
+
+- **Nada de esto se verificó en el gabinete (Windows).** Todo se midió en el
+  Mac. Lo que más riesgo tiene de comportarse distinto es `loops` de
+  QtMultimedia, que históricamente varía entre backends de plataforma.
+- Si `PreserveAspectCrop` **recorta** o **estira**: se vio que llena el panel
+  sin franjas negras, falta distinguir cuál de las dos.
+- El prototipo del handoff **no se puede renderizar**: le falta el
+  `support.js` que trae su runtime, así que la comparación visual contra el
+  diseño sigue pendiente.
+
+---
+
+## Referencias
+
+- Experimentos con su resultado anotado: `themes/experimentos/`.
+- Bitácora de verificación por feature: `spec/features/NNN-*/tasks.md`.
+- Decisiones y sus alternativas descartadas: `spec/decisions/`.
+- Documentación oficial: `pegasus-frontend.org/docs/themes/api` y
+  `…/docs/user-guide/meta-files`.
