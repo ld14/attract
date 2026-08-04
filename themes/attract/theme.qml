@@ -62,7 +62,7 @@ FocusScope {
             id: libreria
             anchors.fill: parent
             paths: paths
-            visible: root.pantalla === "library" && !lanzando.active && !visor.active
+            visible: root.pantalla === "library" && !lanzando.active && !visor.active && !trucos.active
             focus: root.pantalla === "library" && !lanzando.active && !visor.active
             // Sin esto, el rail sigue comiendose las flechas desde atras
             // mientras el detalle esta arriba.
@@ -81,13 +81,16 @@ FocusScope {
             paths: paths
             game: root.juegoDetalle
             visible: root.pantalla === "detail" && !lanzando.active
-            focus: root.pantalla === "detail" && !lanzando.active && !visor.active
+            focus: root.pantalla === "detail" && !lanzando.active && !visor.active && !trucos.active
             enabled: visible
 
             onVolver: root.pantalla = "library"
             onLanzar: root.lanzar(game)
             onAbrirRevista: root.abrirRevista(i)
-            onAbrirExtra: if (tipo === "manual") root.abrirManual()
+            onAbrirExtra: {
+                if (tipo === "manual") root.abrirManual();
+                else if (tipo === "cheats") trucos.active = true;
+            }
         }
 
         // --- el visor de documentos: revistas Y manual, el mismo ---
@@ -117,6 +120,22 @@ FocusScope {
                 focus: true
                 onCerrar: root.cerrarVisor()
                 onCambiarRevista: root.abrirRevista(i)
+            }
+        }
+
+        Loader {
+            id: trucos
+            anchors.fill: parent
+            active: false
+            focus: active
+
+            sourceComponent: CheatsOverlay {
+                datos: detalle.datosDelJuego
+                titulo: root.juegoDetalle ? root.juegoDetalle.title : ""
+                accent: root.accent
+                fondo: detalle
+                focus: true
+                onCerrar: trucos.active = false
             }
         }
 
