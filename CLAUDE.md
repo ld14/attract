@@ -55,8 +55,8 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 | `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía |
 | `spec/constitution/` | Reglas estables: misión, stack, roadmap |
 | `spec/decisions/` | ADRs. 0001-0018, 17 vigentes (0008 superseded por 0010) |
-| `spec/features/NNN-*/` | spec + plan + tasks por feature. `001-synopsis`, `002-attract-skill` y `003-attract-mcp` implementadas |
-| `spec/features/004-attract-ingest/` | Última feature planeada en `cli.py` — implementada, verificación contra `mame` real pendiente |
+| `spec/features/NNN-*/` | spec + plan + tasks por feature. `001`-`006` implementadas; `007-theme-trucos` es la que falta |
+| `themes/attract/` (feature 005-006) | Librería, detalle, video, carrusel de revistas y visor de documentos. Verificado contra Pegasus real |
 
 ## Reglas de trabajo
 

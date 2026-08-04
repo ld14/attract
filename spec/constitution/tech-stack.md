@@ -34,7 +34,9 @@
 | `spec/features/001-synopsis/` | Primera feature con spec/plan/tasks — `attract synopsis`, implementada |
 | `spec/features/002-attract-skill/` | `.claude/skills/attract/SKILL.md`, implementada |
 | `spec/features/003-attract-mcp/` | Servidor MCP, implementada |
-| `spec/features/004-attract-ingest/` | `attract ingest`, implementada (verificación contra `mame` real pendiente) |
+| `spec/features/004-attract-ingest/` | `attract ingest`, implementada y verificada contra `mame` real |
+| `spec/features/005-theme-base/` | Theme de producción: librería y detalle. Implementada y verificada |
+| `spec/features/006-theme-documentos/` | Video, carrusel de revistas y visor paginado. Implementada y verificada |
 
 ## Comandos
 

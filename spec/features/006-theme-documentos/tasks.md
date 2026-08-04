@@ -104,25 +104,34 @@ carátula en la 005 y se resuelve igual.
       `startPage: 0`, que es el error probable de quien asuma que los índices
       son offsets de array.
 
-## 6 · Verificación contra Pegasus real
+## 6 · Verificación contra Pegasus real — ✅ pasada 2026-08-03
 
-| Caso | Fixture | Qué tiene que pasar |
+| Caso | Fixture | Resultado |
 |---|---|---|
-| Artículo del juego | `dino` → `micromania-16` | Abre en la **3**, se hojean las 8, las del artículo (3,4,5,7,8) marcadas |
-| Página salteada | la 6 es `publicidad` | Se puede hojear a la 6: el visor recorre la revista entera |
-| `ref` colgado | `sf2ce` | El carrusel dice que la revista no está. **Sin crash** |
-| Manual | `sf2ce` → `_manual/` | El **mismo** visor, 4 páginas |
-| Sin nada | `mok` | Los dos bloques con su mensaje de §2.3 |
-| Video | `library/preview` → `dino` | Loopea; el transporte responde; en mute al abrir |
-| Sin video | el resto | Carátula en el panel, sin hueco |
+| Artículo del juego | `dino` → `micromania-16` | ✅ abre en la **3**, `PÁG. 3 / 8`, con 3,4,5,7,8 marcadas y la 6 no |
+| Página salteada | la 6 es `publicidad` | ✅ se hojea igual: el modelo es la revista entera |
+| Cuatro revistas | `dino` | ✅ dos tapas, flechas, puntos, `1–2 / 4`, pestañas en el visor |
+| Sin `color` | `hobby-consolas-01` | ✅ cae al accent del juego |
+| `name` sucio | `se-micro80` | ✅ se lee `se micro80` — **primera verificación de la regla de ADR-0010**, escrita el 2026-07-28 y hasta hoy sin fixture |
+| Sin artículo del juego | `se-micro80` | ✅ abre en la página 1 |
+| `ref` colgado | `sf2ce` (fixtures) | ✅ "Revista no disponible", **sin crash** — y distinto de "Sin cobertura en revistas", que es otro caso |
+| Manual | `sf2ce` → `_manual/` | ✅ el **mismo** visor, 4 páginas |
+| Sin nada | `mok` | ✅ los tres bloques con su mensaje de §2.3, nada desaparece |
+| Video | `library/preview` → `dino` | ✅ loopea, el transporte responde, arranca en mute |
+| Zoom y paneo | cualquiera | ✅ hasta 240%, con ▲▼ moviendo la hoja |
+
+**Dos bugs encontrados en esta verificación, los dos por el autor mirando la
+pantalla:** el carrusel chocando con JUGAR (cuarta repetición de la trampa de
+layout) y la última revista inalcanzable (dos estados en una variable). Los dos
+corregidos y anotados en `docs/plataforma-pegasus.md` §3.
 
 ## 7 · Cierre
 
 - [x] `make test` (72) y `make doctor` en verde.
 - [x] Anotado en `docs/plataforma-pegasus.md`: la cuarta repetición de la
       trampa de layout, y la de mezclar dos estados en una variable.
-- [ ] Mover `006` a "Hecho" en `../../constitution/roadmap.md` y actualizar el
-      mapa del repo.
-- [ ] **Lo que sigue sin verificarse en el gabinete (Windows)**: `loops` de
-      QtMultimedia es el candidato más probable a comportarse distinto. Dejarlo
-      anotado, no darlo por hecho.
+- [x] Movida a "Hecho" en `../../constitution/roadmap.md`; mapa del repo
+      actualizado.
+- [x] **Anotado: nada de esto se verificó en el gabinete (Windows).** `loops`
+      de QtMultimedia sigue siendo el candidato más probable a comportarse
+      distinto entre backends. Está en `docs/plataforma-pegasus.md` §5.

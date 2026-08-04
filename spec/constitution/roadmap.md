@@ -225,6 +225,48 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
        `rating: 0.8500000238418579` confirma que la precisión de float ya
        queda resuelta con `Math.round(rating * 100)`.
 
+22. **`006-theme-documentos` — implementada y verificada, 2026-08-03.** Video
+    de gameplay, carrusel de revistas y visor de documentos paginado. Con esto
+    el theme hace todo lo que el diseño de referencia pide, salvo el overlay
+    de trucos (feature 007).
+
+    **Lo que le da sentido a todo el modelo de datos de revistas**, y que el
+    prototipo no podía hacer porque no tenía el concepto de artículo: se entra
+    **directo a la nota** del juego, pero el modelo son **todas** las páginas
+    de la revista. La nota es la puerta de entrada, no un límite. Verificado:
+    `dino` abre `micromania-16` en la página 3, con las páginas del artículo
+    (3,4,5,7,8) marcadas en las miniaturas y la 6 —que es publicidad— no.
+
+    **Un solo visor para revistas y manual.** No sabe cuál de los dos le
+    tocó: recibe un modelo de `core/DocModel` y dibuja páginas. Es la decisión
+    de [`ADR-0014`](../decisions/0014-manual-digitalizado.md) —darle a
+    `manual.pages[]` la forma de `magazine.pages[]`— cobrándose sola: un solo
+    zoom, un solo paneo, una sola tira de miniaturas.
+
+    **Se cerró una ambigüedad de ADR-0010:** `startPage` es un índice
+    **1-based** sobre `pages[]`. No es preferencia, se deduce del fixture, y
+    pasó a ser chequeo de `attract doctor` — antes un artículo fuera de rango
+    pasaba el validador y explotaba recién en el visor.
+
+    **Regla de navegación nueva**, que el handoff pedía sin resolver:
+    *izquierda/derecha mueve entre targets, arriba/abajo actúa dentro del
+    target enfocado*. Es una generalización de lo que el prototipo ya hacía
+    como caso especial para el carrusel; escrita como regla, el carrusel deja
+    de ser una excepción y los controles del video se vuelven alcanzables sin
+    agregar nada.
+
+    **Los fixtures crecieron para poder verificar:** 4 revistas donde cada una
+    cubre un camino distinto del contrato (sin `color`, `name` sucio, sin
+    artículo sobre el juego), y 30 páginas generadas **con el número impreso**
+    — sin número no se puede comprobar que hojear avance ni que `startPage`
+    abra donde debe. Entre eso y las páginas del manual, ~70 KB.
+
+    **Dos bugs, los dos encontrados por el autor mirando la pantalla:** el
+    carrusel chocando con JUGAR —cuarta repetición de la misma trampa de
+    layout, que por eso subió a `docs/plataforma-pegasus.md`— y la última
+    revista inalcanzable, que no era un off-by-one sino dos estados metidos en
+    una misma variable.
+
 ## Siguiente 🔜
 
 0. **El theme de producción — `005` / `006` / `007`.** Es el trabajo grande
@@ -241,11 +283,7 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
      Pegasus real**: subcarpetas y singleton vía `qmldir` funcionan, el árbol
      del plan va tal como está. Faltan `Paths`, `GameData`, los átomos
      restantes y las dos pantallas.
-   - **`006-theme-documentos`** — **especificada** (spec + plan + tasks).
-     Video, carrusel de revistas y visor de documentos paginado. Resuelve de
-     paso una ambigüedad que ADR-0010 había dejado abierta: `startPage` es un
-     índice **1-based** sobre `pages[]` — se deduce del propio fixture, no es
-     una preferencia, y pasa a ser un chequeo de `attract doctor`.
+   - **`006-theme-documentos`** — implementada y verificada (ver punto 22).
    - **`007-theme-trucos`** — sin especificar. Tokenizer de inputs y overlay
      de trucos & combos.
 
