@@ -376,7 +376,12 @@ FocusScope {
             id: pie
             anchors { bottom: parent.bottom; bottomMargin: 16 }
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "— PRESIONÁ B PARA VOLVER —"
+            // Nombrar UNA tecla es mentira la mitad del tiempo: este Pegasus
+            // mapea `keys.cancel: Esc,Backspace,GamepadB` — la B es la del
+            // gamepad, en teclado no existe. El gabinete va a tener joystick
+            // y el Mac de desarrollo no, asi que se nombran las dos.
+            // (El diseno asumia joystick y decia solo "B".)
+            text: "— B · ESC PARA VOLVER —"
             color: Theme.textFaint
             font.family: Theme.fontMono
             font.pixelSize: Theme.sizeMonoSm
