@@ -77,28 +77,27 @@ FocusScope {
         width: 280
         spacing: 16
 
-        // Panel de caratula. En la 006 esto pasa a mostrar el video de
-        // gameplay cuando hay assets.video, con la caratula de fondo cuando
-        // no (CONVENCION §2.1 nota 2: nunca queda un hueco).
+        // El panel de caratula: video de gameplay cuando lo hay, caratula
+        // cuando no. Se apaga al salir del detalle para que el gabinete no
+        // acumule decoders.
         Item {
             width: parent.width
             height: 288
 
-            // La sombra va ANTES que el panel: se dibuja debajo.
             Sombra { fuente: panelCaratula }
 
-            Item {
+            VideoPanel {
                 id: panelCaratula
                 anchors.fill: parent
-
-                CoverImage {
-                    anchors.fill: parent
-                    game: root.game
-                    accent: datos.accent
-                    accent2: datos.accent2
-                }
+                game: root.game
+                accent: datos.accent
+                accent2: datos.accent2
+                activo: root.foco === 1
+                encendido: root.visible
             }
 
+            // Redondeo: se aproxima con un marco del color del fondo, igual
+            // que en las tarjetas del rail.
             Rectangle {
                 anchors.fill: parent
                 radius: Theme.radiusCard
@@ -107,38 +106,10 @@ FocusScope {
                 border.color: Theme.screen
             }
 
-            // Vineta para que el titulo se lea sobre cualquier caratula.
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 3
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: "transparent" }
-                    GradientStop { position: 0.55; color: "transparent" }
-                    GradientStop { position: 1.0; color: Theme.alpha(Theme.screen, 0.92) }
-                }
-            }
-
-            Text {
-                anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-                anchors.margins: 16
-                height: 108                  // hasta cuatro renglones
-                wrapMode: Text.WordWrap
-                // Cuatro y no tres: con tres, "Street Fighter II': Champion
-                // Edition" achicaba hasta el minimo y aun asi perdia la
-                // ultima palabra (visto en Pegasus el 2026-08-03). El panel
-                // tiene 288px de alto, hay lugar de sobra para el cuarto.
-                maximumLineCount: 4
-                color: Theme.textBright
-                font.family: Theme.fontDisplay
-                font.bold: true
-                lineHeight: 1.0
-                verticalAlignment: Text.AlignBottom
-                // Mismo motivo que el titulo del hero: los titulos reales de
-                // MAME son largos y a tamano fijo se cortan con elipsis.
-                fontSizeMode: Text.Fit
-                font.pixelSize: Theme.sizePanelTitle
-                minimumPixelSize: 14
-                text: root.game ? root.game.title.toUpperCase() : ""
+            FocusRing {
+                accent: root.accent
+                activo: root.foco === 1
+                radio: Theme.radiusCard
             }
         }
 
@@ -325,20 +296,42 @@ FocusScope {
         anchors { bottom: parent.bottom; bottomMargin: 72 }
         datos: datos
         accent: root.accent
-        // foco 0 = JUGAR; de ahi en mas, las tarjetas.
-        foco: root.foco - 1
+        // 0 = JUGAR, 1 = video; de ahi en mas, las tarjetas.
+        foco: root.foco - 2
         onAbrir: root.abrirExtra(tipo)
     }
 
     // ---------------------------------------------------------------- foco
-    // [JUGAR] -> [Hacks] -> [Manual], el orden de detailTargets. Cuando llegue
-    // la 006, el carrusel de revistas se mete entre JUGAR y los extras.
+    //
+    // LA REGLA DEL DETALLE, que el prototipo tenia solo para el carrusel y aca
+    // se generaliza porque hacia falta:
+    //
+    //     IZQUIERDA/DERECHA mueve ENTRE targets.
+    //     ARRIBA/ABAJO actua DENTRO del target enfocado.
+    //
+    // El handoff pide que los controles del video se revelen "por foco de
+    // D-pad" pero no dice como se llega ahi sin romper el recorrido. Esta
+    // regla lo resuelve y ademas le da al carrusel su comportamiento sin un
+    // caso especial: el carrusel pasa de pagina con arriba/abajo porque es lo
+    // que hace "actuar dentro" de un carrusel.
+    //
+    // Orden: [JUGAR] -> [video] -> [Hacks] -> [Manual]. JUGAR primero aunque
+    // el video este arriba en pantalla: la accion principal se enfoca al
+    // entrar, no un control secundario. El orden no es estrictamente espacial
+    // en el prototipo tampoco (el carrusel esta a la izquierda y los extras a
+    // la derecha).
     property int foco: 0
-    readonly property int _targets: 3
+    readonly property int _targets: 4
 
     signal abrirExtra(string tipo)
 
     Keys.onPressed: {
+        // El target enfocado tiene la primera oportunidad con las verticales.
+        if (root.foco === 1 && panelCaratula.manejarTecla(event)) {
+            event.accepted = true;
+            return;
+        }
+
         if (api.keys.isCancel(event)) {
             root.volver();
             event.accepted = true;
@@ -350,8 +343,8 @@ FocusScope {
             event.accepted = true;
         } else if (api.keys.isAccept(event)) {
             if (root.foco === 0) root.lanzar(root.game);
-            else if (root.foco === 1 && datos.hayCheats) root.abrirExtra("cheats");
-            else if (root.foco === 2 && datos.hayManual) root.abrirExtra("manual");
+            else if (root.foco === 2 && datos.hayCheats) root.abrirExtra("cheats");
+            else if (root.foco === 3 && datos.hayManual) root.abrirExtra("manual");
             event.accepted = true;
         }
     }

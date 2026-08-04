@@ -37,19 +37,29 @@ carátula en la 005 y se resuelve igual.
 
 ## 2 · Video
 
-- [ ] `screens/VideoPanel.qml` — `MediaPlayer` + `VideoOutput`
-      (`PreserveAspectCrop`), con la carátula de fondo.
-- [ ] Transporte: play/pausa, volumen en pasos de 0.2, `ui/MedidorVolumen.qml`
-      de 5 barras, mute.
-- [ ] **Se revela por FOCO, no por hover** — el gabinete no tiene mouse.
-- [ ] **`source: ""` al desactivarse.** Hecho cuando: entrar y salir del
-      detalle veinte veces no degrada nada.
-- [ ] **Arranca en mute.** Un gabinete que suena solo al mover el foco es
-      insoportable.
-- [ ] **Nada colgado de `onStopped`** — no se dispara en un loop continuo
-      (`docs/plataforma-pegasus.md` §2).
-- [ ] Sin `assets.video`, el panel muestra la carátula y no un hueco
-      (`CONVENCION.md` §2.1 nota 2).
+- [x] `screens/VideoPanel.qml` — escrito. `MediaPlayer` + `VideoOutput`
+      (`PreserveAspectCrop`) sobre la carátula, viñeta, pill `● GAMEPLAY` con
+      el latido de 1.6s, y el transporte completo.
+- [x] Transporte: play/pausa, volumen en pasos de 0.2, `ui/MedidorVolumen.qml`
+      de 5 barras, mute. Subir el volumen desmutea y desmutear con el volumen
+      en cero lo sube — es lo que espera cualquiera que aprieta esos botones.
+- [x] **Se revela por FOCO, no por hover.** El `translateY` de 8px del diseño
+      se conserva; el hover no, porque no existe en el gabinete.
+- [x] **`source: ""` al desactivarse** (`encendido: root.visible`). No alcanza
+      con pausar: hay que soltar el archivo.
+- [x] **Arranca en mute.**
+- [x] **Nada colgado de `onStopped`.**
+- [x] Sin `assets.video` se ve la carátula con su cadena de fallback, no un
+      color-wash: es mejor dato y ya lo teníamos.
+- [x] **Regla de navegación nueva, generalizada:** el handoff pide revelar los
+      controles "por foco de D-pad" pero no dice cómo llegar ahí sin romper el
+      recorrido. Queda: **izquierda/derecha mueve ENTRE targets, arriba/abajo
+      actúa DENTRO del target enfocado.** Eso le da al carrusel su
+      comportamiento sin un caso especial —pasar de página *es* actuar dentro
+      de un carrusel— y hace alcanzables los controles del video.
+      Orden: `[JUGAR] → [video] → [Hacks] → [Manual]`, con JUGAR primero
+      aunque el video esté más arriba en pantalla: al entrar se enfoca la
+      acción principal, no un control secundario.
 
 ## 3 · Carrusel
 
