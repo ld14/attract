@@ -34,6 +34,19 @@ Item {
 
     signal abrir(int i)
 
+    // Lo que el visor necesita para sus pestañas: nombre limpio y color de
+    // marca de cada revista. Se publica desde acá porque el carrusel YA tiene
+    // un MagazineData por revista; que el visor los cargue de nuevo seria
+    // pedir los mismos archivos dos veces.
+    property var etiquetas: []
+
+    function _registrar(i, nombre, color) {
+        var copia = etiquetas.slice();
+        while (copia.length <= i) copia.push({ etiqueta: "", color: "" });
+        copia[i] = { etiqueta: nombre, color: color };
+        etiquetas = copia;          // reasignar, no mutar: si no, no notifica
+    }
+
     readonly property int total: mags.length
     readonly property int _maxIndice: Math.max(0, total - 2)
     readonly property bool hay: total > 0
@@ -90,6 +103,14 @@ Item {
                         game: root.game
                         paths: root.paths
                         ref: modelData.ref ? modelData.ref : ""
+
+                        // Al resolverse, le pasa al carrusel el nombre limpio
+                        // y el color. Con el ref colgado queda el ref, que es
+                        // lo unico que se sabe de esa revista.
+                        onEstadoChanged: root._registrar(
+                            index,
+                            displayName !== "" ? displayName : (modelData.ref || "?"),
+                            colorMarca)
                     }
 
                     Rectangle {

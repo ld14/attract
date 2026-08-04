@@ -143,14 +143,10 @@ FocusScope {
     property int magIdx: 0             // cual de las revistas del juego
     property var modeloDoc: null
 
-    readonly property var pestanasRevistas: {
-        var out = [];
-        if (!detalle.datosDelJuego) return out;
-        var ms = detalle.datosDelJuego.mags;
-        for (var i = 0; i < ms.length; i++)
-            out.push({ etiqueta: ms[i].ref || "?", color: "" });
-        return out;
-    }
+    // El carrusel ya cargo cada revista, asi que las pestañas salen de ahi con
+    // el nombre limpio y el color de marca. Cargarlas de nuevo aca seria pedir
+    // los mismos archivos dos veces.
+    readonly property var pestanasRevistas: detalle.etiquetasRevistas
 
     function abrirRevista(i) {
         var ms = detalle.datosDelJuego ? detalle.datosDelJuego.mags : [];

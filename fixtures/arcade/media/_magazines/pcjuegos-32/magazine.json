@@ -1,0 +1,32 @@
+{
+  "name": "PC JUEGOS",
+  "issue": "32",
+  "year": 1993,
+  "color": "#1466b8",
+  "cover": "cover.png",
+  "key_id": "pcjuegos-032",
+  "pages": [
+    "p001.png",
+    "p002.png",
+    "p003.png",
+    "p004.png",
+    "p005.png",
+    "p006.png"
+  ],
+  "articles": [
+    {
+      "type": "review",
+      "game": "dino",
+      "title": "Cadillacs and Dinosaurs",
+      "startPage": 2,
+      "pages": [
+        2,
+        3
+      ],
+      "confidence": 0.91,
+      "cheats": false,
+      "walkthrough": true,
+      "tips": false
+    }
+  ]
+}

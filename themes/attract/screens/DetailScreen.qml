@@ -29,6 +29,9 @@ FocusScope {
     // QUE se pidio abrir; DocModel sabe COMO se arma.
     readonly property var datosDelJuego: datos
 
+    // Las pestañas del visor salen de acá: el carrusel ya cargó cada revista.
+    readonly property var etiquetasRevistas: carrusel.etiquetas
+
     signal volver()
     signal lanzar(var game)
 

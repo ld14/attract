@@ -1,0 +1,25 @@
+{
+  "name": "se-micro80.pdf",
+  "issue": null,
+  "year": null,
+  "color": "#c0392b",
+  "cover": "cover.png",
+  "key_id": "semicro-080",
+  "pages": [
+    "p001.png",
+    "p002.png",
+    "p003.png",
+    "p004.png",
+    "p005.png"
+  ],
+  "articles": [
+    {
+      "type": "publicidad",
+      "startPage": 1,
+      "pages": [
+        1
+      ],
+      "confidence": 0.99
+    }
+  ]
+}

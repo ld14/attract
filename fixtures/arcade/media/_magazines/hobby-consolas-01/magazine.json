@@ -1,0 +1,26 @@
+{
+  "name": "HOBBY CONSOLAS",
+  "issue": "1",
+  "year": 1991,
+  "color": null,
+  "cover": "cover.png",
+  "key_id": "hobbyconsolas-001",
+  "pages": [
+    "p001.png",
+    "p002.png",
+    "p003.png",
+    "p004.png"
+  ],
+  "articles": [
+    {
+      "type": "especial",
+      "game": "dino",
+      "title": "Los mejores beat em up",
+      "startPage": 4,
+      "pages": [
+        4
+      ],
+      "confidence": 0.72
+    }
+  ]
+}

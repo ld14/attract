@@ -2,21 +2,50 @@
   "accent": "#ffb020",
   "accent2": "#4d3608",
   "mags": [
-    { "ref": "micromania-16" }
+    {
+      "ref": "micromania-16"
+    },
+    {
+      "ref": "pcjuegos-32"
+    },
+    {
+      "ref": "hobby-consolas-01"
+    },
+    {
+      "ref": "se-micro80"
+    }
   ],
   "review": {
     "score": 94
   },
   "cheats": {
     "combos": [
-      { "name": "Patada giratoria", "input": "↓ ↘ → + K" },
-      { "name": "Golpe ascendente", "input": "→ ↓ ↘ + P" },
-      { "name": "Super · Embestida", "input": "↓ ↙ ← ↓ ↙ ← + PP" },
-      { "name": "Agarre", "input": "acercate y toca P dos veces seguidas" }
+      {
+        "name": "Patada giratoria",
+        "input": "↓ ↘ → + K"
+      },
+      {
+        "name": "Golpe ascendente",
+        "input": "→ ↓ ↘ + P"
+      },
+      {
+        "name": "Super · Embestida",
+        "input": "↓ ↙ ← ↓ ↙ ← + PP"
+      },
+      {
+        "name": "Agarre",
+        "input": "acercate y toca P dos veces seguidas"
+      }
     ],
     "codes": [
-      { "name": "Modo 3 jugadores", "input": "En el test menu: PLAYERS 3" },
-      { "name": "Empezar con arma", "input": "↑ ↑ ↓ ↓ START" }
+      {
+        "name": "Modo 3 jugadores",
+        "input": "En el test menu: PLAYERS 3"
+      },
+      {
+        "name": "Empezar con arma",
+        "input": "↑ ↑ ↓ ↓ START"
+      }
     ]
   }
 }
