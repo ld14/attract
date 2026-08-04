@@ -29,8 +29,26 @@ Item {
     property color accent: Theme.accentNeutro
     property bool activo: false
 
-    // Primera tapa visible. El diseno muestra dos y desliza de a una.
-    property int indice: 0
+    // DOS ESTADOS DISTINTOS, y confundirlos fue un bug: con una sola variable
+    // la ULTIMA revista no se podia seleccionar nunca.
+    //
+    //   seleccion  cual esta elegida.        va de 0 a total-1
+    //   indice     desde cual se muestra.    va de 0 a total-2 (se ven dos)
+    //
+    // El scroll se topa antes que la seleccion, a proposito: sirve para que
+    // siempre se vean dos tapas. Si la seleccion usara ese mismo tope, la
+    // ultima revista quedaria visible pero inalcanzable — que es exactamente
+    // lo que pasaba (visto en Pegasus el 2026-08-03, con 4 revistas).
+    property int seleccion: 0
+    readonly property int indice: {
+        // El scroll SIGUE a la seleccion: la mantiene a la vista moviendose lo
+        // menos posible, que es lo que hace que el carrusel no salte de golpe.
+        var i = _scroll;
+        if (seleccion < i) i = seleccion;
+        else if (seleccion > i + 1) i = seleccion - 1;
+        return Math.max(0, Math.min(_maxIndice, i));
+    }
+    property int _scroll: 0
 
     signal abrir(int i)
 
@@ -96,7 +114,7 @@ Item {
                     height: 178
 
                     readonly property bool enfocada:
-                        root.activo && index === root.indice
+                        root.activo && index === root.seleccion
 
                     MagazineData {
                         id: revista
@@ -199,7 +217,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            root.indice = Math.min(root._maxIndice, index);
+                            root.seleccion = index;
                             root.abrir(index);
                         }
                     }
@@ -218,7 +236,7 @@ Item {
         accent: root.accent
         implicitWidth: 30
         implicitHeight: 30
-        opacity: root.indice > 0 ? 1 : 0.3
+        opacity: root.seleccion > 0 ? 1 : 0.3
         onActivado: root.pasar(-1)
     }
 
@@ -231,7 +249,7 @@ Item {
         accent: root.accent
         implicitWidth: 30
         implicitHeight: 30
-        opacity: root.indice < root._maxIndice ? 1 : 0.3
+        opacity: root.seleccion < root.total - 1 ? 1 : 0.3
         onActivado: root.pasar(1)
     }
 
@@ -248,14 +266,18 @@ Item {
             Repeater {
                 model: root.total
                 Rectangle {
-                    // El punto de las visibles es una pastilla ancha; el resto,
-                    // un punto. Se lee de un vistazo cuantas hay y donde estas.
+                    // Pastilla ancha para las dos visibles, punto para el
+                    // resto, y la ELEGIDA a full color: se lee de un vistazo
+                    // cuantas hay, cuales se ven y en cual estas parado.
                     readonly property bool visibleAhora:
                         index >= root.indice && index < root.indice + 2
+                    readonly property bool elegida: index === root.seleccion
                     width: visibleAhora ? 16 : 6
                     height: 6
                     radius: 3
-                    color: visibleAhora ? root.accent : Theme.alpha(Theme.textBright, 0.25)
+                    color: elegida ? root.accent
+                           : (visibleAhora ? Theme.alpha(root.accent, 0.45)
+                                           : Theme.alpha(Theme.textBright, 0.25))
                     Behavior on width { NumberAnimation { duration: 250 } }
                     Behavior on color { ColorAnimation { duration: 250 } }
                 }
@@ -280,7 +302,8 @@ Item {
     // --- teclas -----------------------------------------------------------
 
     function pasar(d) {
-        indice = Math.max(0, Math.min(_maxIndice, indice + d));
+        seleccion = Math.max(0, Math.min(total - 1, seleccion + d));
+        _scroll = indice;          // deja fijado a donde siguio el scroll
     }
 
     // Devuelve true si consumio la tecla. Arriba/abajo pasan de pagina
@@ -291,7 +314,7 @@ Item {
 
         if (event.key === Qt.Key_Down) { pasar(1); return true; }
         if (event.key === Qt.Key_Up) { pasar(-1); return true; }
-        if (api.keys.isAccept(event)) { root.abrir(indice); return true; }
+        if (api.keys.isAccept(event)) { root.abrir(seleccion); return true; }
         return false;
     }
 }
