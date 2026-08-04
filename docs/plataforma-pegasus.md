@@ -124,8 +124,8 @@ Lo que la documentación no dice, o dice distinto.
 
 ## 3 · Trampas de QML que ya nos mordieron
 
-Tres bugs de la misma familia, todos encontrados **mirando la pantalla** y
-ninguno leyendo el código. La regla que dejan:
+Cuatro bugs de la misma familia, todos encontrados **mirando la pantalla**
+y ninguno leyendo el código. La regla que dejan:
 
 > Si estás escribiendo una resta de píxeles para ubicar algo, o peleándole al
 > sistema de layout, va a funcionar hasta que cambie algo que no controlás.
