@@ -91,6 +91,12 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
     Estos dos hacen observables los tres eslabones — `dino` tiene `boxFront`
     (eslabón 1), `mok` **no** lo tiene y cae a `poster` (eslabón 2), `sf2ce`
     queda en 0 bytes (eslabón 3). No son arte y no pretenden serlo.
+  - Las **páginas** de `_magazines/micromania-16/` y de `sf2ce/_manual/` son
+    PNG generados (~2 KB cada uno) **con el número impreso grande**. El número
+    es el punto: sin él no se puede verificar que hojear avance, que
+    `startPage` abra donde debe, ni que una miniatura salte a la página
+    correcta. Con todo en 0 bytes el visor no muestra nada y no hay nada que
+    comprobar.
 - **Las carátulas de verdad van en `library/`, nunca en `fixtures/`.** Son
   arte con copyright y `fixtures/` se versiona. `library/preview/` es una
   colección desechable para mirar el theme con arte real y compararlo contra

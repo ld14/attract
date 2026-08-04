@@ -8,12 +8,16 @@ Las páginas de revista y de manual de `fixtures/` pesan **0 bytes**, así que e
 visor no tendría contra qué probarse. Es el mismo agujero que tuvo la cadena de
 carátula en la 005 y se resuelve igual.
 
-- [ ] Generar las 8 páginas de `_magazines/micromania-16/` y las 4 de
-      `sf2ce/_manual/` como PNG con stdlib, **con el número impreso grande**.
-      Sin número no se puede verificar que hojear avance, que `startPage` abra
-      donde debe, ni que las miniaturas salten bien.
-- [ ] Generar también `cover.jpg` → la tapa que usa el carrusel.
-- [ ] Anotar la excepción en `CLAUDE.md`, al lado de las dos que ya están.
+- [x] **Hecho 2026-08-03.** 13 PNG generados con stdlib (`zlib` + `struct` +
+      una fuente de dígitos de 5×7 dibujada a mano, porque no hay forma de
+      escribir texto en una imagen sin dependencias): las 8 páginas de
+      `_magazines/micromania-16/`, su `cover`, y las 4 de `sf2ce/_manual/`.
+      **28 KB en total**, ~2 KB cada una.
+- [x] Los contratos apuntan a los archivos nuevos: `magazine.json` (`cover` y
+      `pages[]`) y `sf2ce/data.json` (`manual.pages[]`) pasan de `.jpg` a
+      `.png`. Los `.jpg` de 0 bytes se borran: dos archivos por página
+      confunden.
+- [x] Excepción anotada en `CLAUDE.md`, al lado de las dos que ya estaban.
 
 ## 1 · Datos
 
