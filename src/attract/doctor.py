@@ -396,6 +396,11 @@ def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
         falla("articles", "obligatorio, lista")
         return
 
+    # Cuantas paginas tiene la revista, para chequear que los articulos no
+    # apunten afuera. Si pages estaba mal ya se reporto arriba; aca se usa 0
+    # para no encadenar errores confusos.
+    total_paginas = len(pages) if isinstance(pages, list) else 0
+
     for i, art in enumerate(articles):
         prefijo = f"articles[{i}]"
         if not isinstance(art, dict):
@@ -424,10 +429,22 @@ def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
                     f"{prefijo}.{campo_str_opc}: si esta presente tiene que ser string",
                 )
 
-        if not isinstance(art.get("startPage"), int) or isinstance(art.get("startPage"), bool):
+        # startPage y articles[].pages son indices 1-BASED sobre pages[].
+        # No es una interpretacion: se deduce del contrato. Un articulo que
+        # apunte fuera de rango hoy pasaba el validador y explotaba recien en
+        # el visor del theme, que es el peor lugar para enterarse.
+        # Ver spec/features/006-theme-documentos/spec.md.
+        sp = art.get("startPage")
+        if not isinstance(sp, int) or isinstance(sp, bool):
             rep.error(
                 "magazine-contrato", path,
                 f"{prefijo}.startPage: obligatorio, number",
+            )
+        elif total_paginas and not (1 <= sp <= total_paginas):
+            rep.error(
+                "magazine-contrato", path,
+                f"{prefijo}.startPage={sp} fuera de rango: pages[] tiene "
+                f"{total_paginas} paginas, el indice va de 1 a {total_paginas}",
             )
 
         art_pages = art.get("pages")
@@ -438,6 +455,15 @@ def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
                 "magazine-contrato", path,
                 f"{prefijo}.pages: obligatorio, lista de numbers",
             )
+        elif total_paginas:
+            fuera = [n for n in art_pages if not (1 <= n <= total_paginas)]
+            if fuera:
+                rep.error(
+                    "magazine-contrato", path,
+                    f"{prefijo}.pages tiene indices fuera de rango: {fuera} "
+                    f"(pages[] tiene {total_paginas} paginas, van de 1 a "
+                    f"{total_paginas})",
+                )
 
         conf = art.get("confidence")
         if (

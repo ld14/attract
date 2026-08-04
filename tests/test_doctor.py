@@ -302,3 +302,45 @@ def test_mags_sin_ref_es_error(tmp_path):
     # formada, no apunta a nada. Sin ref no hay degradacion posible.
     _escribir_data(tmp_path, {"mags": [{"nombre": "micromania-16"}]})
     assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+# --- indices de articles[] en rango (006) ---------------------------------
+
+def test_startpage_fuera_de_rango_es_error(tmp_path):
+    # Una revista de 2 paginas con un articulo que abre en la 5. Hasta la 006
+    # esto pasaba el validador y explotaba recien en el visor del theme.
+    datos = _magazine_valida()
+    datos["pages"] = ["p001.jpg", "p002.jpg"]
+    datos["articles"][0]["startPage"] = 5
+    datos["articles"][0]["pages"] = [1]
+    _escribir_magazine(tmp_path, datos)
+    assert "magazine-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_startpage_cero_es_error(tmp_path):
+    # Los indices son 1-BASED: el 0 no existe. Es el error probable de quien
+    # asuma que son offsets de array.
+    datos = _magazine_valida()
+    datos["articles"][0]["startPage"] = 0
+    _escribir_magazine(tmp_path, datos)
+    assert "magazine-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_articles_pages_fuera_de_rango_es_error(tmp_path):
+    datos = _magazine_valida()
+    datos["pages"] = ["p001.jpg", "p002.jpg"]
+    datos["articles"][0]["startPage"] = 1
+    datos["articles"][0]["pages"] = [1, 7]
+    _escribir_magazine(tmp_path, datos)
+    assert "magazine-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_indices_en_el_limite_son_validos(tmp_path):
+    # 1 y el total son los dos extremos VALIDOS. Es el caso que un chequeo de
+    # rango mal escrito rompe.
+    datos = _magazine_valida()
+    datos["pages"] = ["p001.jpg", "p002.jpg", "p003.jpg"]
+    datos["articles"][0]["startPage"] = 3
+    datos["articles"][0]["pages"] = [1, 3]
+    _escribir_magazine(tmp_path, datos)
+    assert revisar(tmp_path).ok

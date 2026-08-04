@@ -21,16 +21,19 @@ carátula en la 005 y se resuelve igual.
 
 ## 1 · Datos
 
-- [ ] `core/MagazineData.qml` — XHR de `magazine.json`, expone `pages`,
-      `articles`, `estado` y `displayName`. Reusa `core/DataCache.js`.
-      Hecho cuando: `micromania-16` carga, el `ref` colgado de `sf2ce` cae en
-      `sin-datos` sin crashear, y `displayName` limpia un `name` sucio
-      (`"se-micro80.pdf"` → `"se micro80"`) según la regla de ADR-0010.
-- [ ] `MagazineData.articuloDe(set)` — busca por `game === set`. Sin artículo,
-      el visor abre en la página 1: la revista existe igual.
-- [ ] `core/DocModel.qml` — normaliza revista y manual a una sola lista.
-      **Los índices 1-based del contrato se convierten a 0-based UNA vez, acá.**
-      Mezclar las dos convenciones es de donde salen los off-by-one.
+- [x] `core/MagazineData.qml` — escrito. XHR de `magazine.json`, expone
+      `pages`, `articles`, `estado`, `displayName`, `colorMarca` y las urls ya
+      resueltas. Reusa `core/DataCache.js`, que acá importa más que en
+      `GameData`: una misma revista cubre **varios** juegos, así que el mismo
+      archivo se pide desde fichas distintas.
+- [x] `articuloDe` / `inicioDe` / `paginasDe` — **la conversión 1-based →
+      0-based pasa acá y en ningún otro lado**, con clamp a los extremos.
+      Verificada la aritmética contra el fixture: `startPage 3 → índice 2`,
+      `pages [3,4,5,7,8] → [2,3,4,6,7]`, y los fuera de rango se clampean o se
+      descartan en vez de romper.
+- [x] `core/DocModel.qml` — normaliza revista y manual a una sola lista de
+      urls. Es la pieza que hace que el visor sea **uno solo**: recibe un
+      modelo y no sabe cuál de los dos le tocó.
 
 ## 2 · Video
 
@@ -76,10 +79,14 @@ carátula en la 005 y se resuelve igual.
 
 ## 5 · Doctor
 
-- [ ] `chk_magazine_contrato`: `startPage` y cada valor de `articles[].pages`
-      dentro de `1..pages.length`. Hoy un artículo fuera de rango pasa el
-      validador y explota recién en el visor.
-- [ ] Tests en `tests/test_doctor.py`, nombrados por el bug que reproducen.
+- [x] **Hecho.** `chk_magazine_contrato` valida que `startPage` y cada valor de
+      `articles[].pages` caigan en `1..pages.length`. Antes un artículo fuera
+      de rango pasaba el validador y explotaba recién en el visor, que es el
+      peor lugar para enterarse.
+- [x] 4 tests nuevos, incluido el de los **límites** (1 y el total son válidos)
+      — es el caso que rompe un chequeo de rango mal escrito — y el de
+      `startPage: 0`, que es el error probable de quien asuma que los índices
+      son offsets de array.
 
 ## 6 · Verificación contra Pegasus real
 
