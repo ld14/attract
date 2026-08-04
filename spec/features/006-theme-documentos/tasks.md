@@ -63,29 +63,35 @@ carátula en la 005 y se resuelve igual.
 
 ## 3 · Carrusel
 
-- [ ] `screens/MagazineCarousel.qml` — viewport de 178, dos tapas de 133×178,
-      pasos de 143px, contador `1–2 / N`, puntos, y flechas solo con más de dos.
-- [ ] El nombre sale de `displayName`, no de `name` crudo.
-- [ ] Una tapa que no carga muestra **que esa revista no está**. No se dibuja
-      una tapa falsa. Fixture: el `ref` colgado de `sf2ce`.
-- [ ] Arriba/abajo pasan página **solo con el carrusel enfocado**; si no,
-      mueven el foco entre los targets del detalle.
-- [ ] El carrusel entra en el orden de foco del detalle, entre JUGAR y los
-      extras: `[JUGAR] → [carrusel] → [Hacks] → [Manual]`.
+- [x] `screens/MagazineCarousel.qml` — escrito. Viewport de 178, dos tapas de
+      133×178, pasos de 143px, contador `1–2 / N`, puntos (pastilla ancha para
+      las visibles), flechas solo con más de dos.
+- [x] El nombre sale de `displayName`.
+- [x] **Una tapa que no carga muestra que esa revista no está.** El prototipo
+      inventaba una tapa entera con cabecera y código de barras en CSS; una
+      tapa falsa miente sobre qué hay escaneado.
+- [x] Arriba/abajo pasan página **solo con el carrusel enfocado**.
+- [x] Orden final: `[JUGAR] → [video] → [carrusel] → [Hacks] → [Manual]`.
 
 ## 4 · Visor
 
-- [ ] `overlays/DocumentViewer.qml` — scrim con `FastBlur` (confirmado
-      disponible), hoja de 560×760 / 540×760 al 88% del alto máximo.
-- [ ] Abre en `startPage` del artículo del juego y **recorre la revista
-      entera** — el requisito de `docs/decisiones/2026-07-23.md` §5.
-- [ ] Miniaturas abajo, con las páginas del artículo **marcadas en accent**.
-- [ ] Pestañas arriba con más de una revista, para cambiar sin salir.
-- [ ] Zoom en 4 pasos (1, 1.4, 1.85, 2.4) y **paneo con D-pad**, no solo mouse.
-- [ ] Rendimiento: `sourceSize` atado al zoom, precarga **±1**,
-      `asynchronous: true`.
-- [ ] Una página que no carga no rompe el visor.
-- [ ] Escape/B cierra y devuelve el foco al detalle.
+- [x] `overlays/DocumentViewer.qml` — escrito. Scrim con `FastBlur` sobre el
+      detalle (que se deja **visible** detrás justamente para que el desenfoque
+      tenga qué desenfocar), hoja de 560×760 / 540×760.
+- [x] Abre en `startPage` del artículo y **recorre la revista entera**.
+      **Divergencia deliberada del handoff**, que decía abrir en la tapa: el
+      prototipo no tenía el concepto de artículo y por eso no podía hacer otra
+      cosa.
+- [x] Miniaturas con las páginas del artículo **marcadas**, en borde y número.
+- [x] Pestañas con más de una revista.
+- [x] Zoom en 4 pasos y **paneo vertical con D-pad**. Solo vertical, y con
+      motivo: a 2.4× una hoja de 560 mide 1344 sobre un lienzo de 1280 —
+      horizontalmente casi no sobra nada. Lo que se sale de pantalla es el alto
+      (760 → 1824). Un paneo horizontal sería un control que no mueve nada.
+- [x] `sourceSize` atado al zoom, precarga **±1** invisible, `asynchronous`.
+- [x] Una página que no carga se muestra como lo que es, con su número.
+- [x] Cambiar de página **recentra el paneo**: quedar perdido a mitad de la
+      hoja anterior desorienta.
 
 ## 5 · Doctor
 

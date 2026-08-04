@@ -25,6 +25,10 @@ FocusScope {
 
     readonly property color accent: datos.accent
 
+    // Lo que el root necesita para armar el modelo del visor. El detalle sabe
+    // QUE se pidio abrir; DocModel sabe COMO se arma.
+    readonly property var datosDelJuego: datos
+
     signal volver()
     signal lanzar(var game)
 
@@ -288,6 +292,23 @@ FocusScope {
         }
     }
 
+    // ------------------------------------------------------- carrusel
+    // Anclado al pie de la columna izquierda, como el margin-top:auto del
+    // diseno. No va dentro del Column de arriba: ese crece desde el tope y
+    // este tiene que quedarse abajo.
+    MagazineCarousel {
+        id: carrusel
+        anchors { left: parent.left; leftMargin: Theme.gutter }
+        anchors { bottom: parent.bottom; bottomMargin: 62 }
+        width: 280
+        game: root.game
+        paths: root.paths
+        mags: datos.mags
+        accent: root.accent
+        activo: root.foco === 2
+        onAbrir: root.abrirRevista(i)
+    }
+
     // ------------------------------------------------- contenido extra
     // Anclado abajo, como el margin-top:auto del diseno.
     ExtrasList {
@@ -296,8 +317,8 @@ FocusScope {
         anchors { bottom: parent.bottom; bottomMargin: 72 }
         datos: datos
         accent: root.accent
-        // 0 = JUGAR, 1 = video; de ahi en mas, las tarjetas.
-        foco: root.foco - 2
+        // 0 = JUGAR, 1 = video, 2 = carrusel; de ahi, las tarjetas.
+        foco: root.foco - 3
         onAbrir: root.abrirExtra(tipo)
     }
 
@@ -315,19 +336,25 @@ FocusScope {
     // caso especial: el carrusel pasa de pagina con arriba/abajo porque es lo
     // que hace "actuar dentro" de un carrusel.
     //
-    // Orden: [JUGAR] -> [video] -> [Hacks] -> [Manual]. JUGAR primero aunque
-    // el video este arriba en pantalla: la accion principal se enfoca al
-    // entrar, no un control secundario. El orden no es estrictamente espacial
-    // en el prototipo tampoco (el carrusel esta a la izquierda y los extras a
-    // la derecha).
+    // Orden: [JUGAR] -> [video] -> [carrusel] -> [Hacks] -> [Manual]. JUGAR
+    // primero aunque el video este arriba en pantalla: la accion principal se
+    // enfoca al entrar, no un control secundario. El orden no es estrictamente
+    // espacial en el prototipo tampoco (el carrusel esta a la izquierda y los
+    // extras a la derecha).
     property int foco: 0
-    readonly property int _targets: 4
+    readonly property int _targets: 5
 
     signal abrirExtra(string tipo)
+    signal abrirRevista(int i)
 
     Keys.onPressed: {
         // El target enfocado tiene la primera oportunidad con las verticales.
+        // Si no la usa, cae al recorrido horizontal de abajo.
         if (root.foco === 1 && panelCaratula.manejarTecla(event)) {
+            event.accepted = true;
+            return;
+        }
+        if (root.foco === 2 && carrusel.manejarTecla(event)) {
             event.accepted = true;
             return;
         }
@@ -343,8 +370,8 @@ FocusScope {
             event.accepted = true;
         } else if (api.keys.isAccept(event)) {
             if (root.foco === 0) root.lanzar(root.game);
-            else if (root.foco === 2 && datos.hayCheats) root.abrirExtra("cheats");
-            else if (root.foco === 3 && datos.hayManual) root.abrirExtra("manual");
+            else if (root.foco === 3 && datos.hayCheats) root.abrirExtra("cheats");
+            else if (root.foco === 4 && datos.hayManual) root.abrirExtra("manual");
             event.accepted = true;
         }
     }

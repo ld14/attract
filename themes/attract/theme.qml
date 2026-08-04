@@ -62,8 +62,8 @@ FocusScope {
             id: libreria
             anchors.fill: parent
             paths: paths
-            visible: root.pantalla === "library" && !lanzando.active
-            focus: root.pantalla === "library" && !lanzando.active
+            visible: root.pantalla === "library" && !lanzando.active && !visor.active
+            focus: root.pantalla === "library" && !lanzando.active && !visor.active
             // Sin esto, el rail sigue comiendose las flechas desde atras
             // mientras el detalle esta arriba.
             enabled: visible
@@ -81,11 +81,43 @@ FocusScope {
             paths: paths
             game: root.juegoDetalle
             visible: root.pantalla === "detail" && !lanzando.active
-            focus: root.pantalla === "detail" && !lanzando.active
+            focus: root.pantalla === "detail" && !lanzando.active && !visor.active
             enabled: visible
 
             onVolver: root.pantalla = "library"
             onLanzar: root.lanzar(game)
+            onAbrirRevista: root.abrirRevista(i)
+            onAbrirExtra: if (tipo === "manual") root.abrirManual()
+        }
+
+        // --- el visor de documentos: revistas Y manual, el mismo ---
+        //
+        // El modelo lo arma DocModel; el visor no sabe cual de los dos le
+        // toco. La revista se lee ACA y no en el carrusel porque el visor
+        // necesita TODAS sus paginas, no solo la tapa.
+        MagazineData {
+            id: revistaAbierta
+            game: root.juegoDetalle
+            paths: paths
+            ref: root.refAbierta
+        }
+
+        Loader {
+            id: visor
+            anchors.fill: parent
+            active: false
+            focus: active
+
+            sourceComponent: DocumentViewer {
+                modelo: root.modeloDoc
+                accent: root.accent
+                fondo: detalle
+                revistas: root.pestanasRevistas
+                revistaActual: root.magIdx
+                focus: true
+                onCerrar: root.cerrarVisor()
+                onCambiarRevista: root.abrirRevista(i)
+            }
         }
 
         // Los overlays van en un Loader: cerrados no cuestan nada, y al
@@ -104,6 +136,58 @@ FocusScope {
                 onCerrar: lanzando.active = false
             }
         }
+    }
+
+    // --- estado del visor ---
+    property string refAbierta: ""      // que revista esta leyendo MagazineData
+    property int magIdx: 0             // cual de las revistas del juego
+    property var modeloDoc: null
+
+    readonly property var pestanasRevistas: {
+        var out = [];
+        if (!detalle.datosDelJuego) return out;
+        var ms = detalle.datosDelJuego.mags;
+        for (var i = 0; i < ms.length; i++)
+            out.push({ etiqueta: ms[i].ref || "?", color: "" });
+        return out;
+    }
+
+    function abrirRevista(i) {
+        var ms = detalle.datosDelJuego ? detalle.datosDelJuego.mags : [];
+        if (i < 0 || i >= ms.length) return;
+        root.magIdx = i;
+        root.refAbierta = ms[i].ref || "";
+        // Si la revista ya estaba en cache, MagazineData ya esta "listo" y el
+        // modelo se puede armar de una; si no, lo arma el onEstadoChanged.
+        root.armarModeloRevista();
+    }
+
+    function armarModeloRevista() {
+        if (revistaAbierta.estado !== "listo") return;
+        var set = paths.setDe(root.juegoDetalle);
+        root.modeloDoc = docModel.desdeRevista(revistaAbierta, set);
+        visor.active = true;
+    }
+
+    function abrirManual() {
+        if (!detalle.datosDelJuego || !detalle.datosDelJuego.hayManual) return;
+        root.modeloDoc = docModel.desdeManual(detalle.datosDelJuego, paths,
+                                              root.juegoDetalle);
+        visor.active = true;
+    }
+
+    function cerrarVisor() {
+        visor.active = false;
+        root.refAbierta = "";
+        root.modeloDoc = null;
+    }
+
+    // Solo para llamar a los constructores; no dibuja nada.
+    DocModel { id: docModel }
+
+    Connections {
+        target: revistaAbierta
+        onEstadoChanged: if (revistaAbierta.estado === "listo") root.armarModeloRevista()
     }
 
     property var juegoLanzado: null
