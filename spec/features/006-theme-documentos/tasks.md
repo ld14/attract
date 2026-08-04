@@ -118,8 +118,9 @@ carátula en la 005 y se resuelve igual.
 
 ## 7 · Cierre
 
-- [ ] `make test` y `make doctor` en verde.
-- [ ] Anotar en `docs/plataforma-pegasus.md` lo que se aprenda de nuevo.
+- [x] `make test` (72) y `make doctor` en verde.
+- [x] Anotado en `docs/plataforma-pegasus.md`: la cuarta repetición de la
+      trampa de layout, y la de mezclar dos estados en una variable.
 - [ ] Mover `006` a "Hecho" en `../../constitution/roadmap.md` y actualizar el
       mapa del repo.
 - [ ] **Lo que sigue sin verificarse en el gabinete (Windows)**: `loops` de

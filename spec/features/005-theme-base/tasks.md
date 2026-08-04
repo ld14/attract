@@ -56,7 +56,7 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       señal. Fue además un error de **medición**: el contador no distinguía
       "no loopea" de "loopea bien", así que no medía nada. Mismo error que el
       `eslabon N` de `CoverImage`.
-- [ ] Bajar los `.ttf` de Chakra Petch, Sora y JetBrains Mono a
+- [x] Bajar los `.ttf` de Chakra Petch, Sora y JetBrains Mono a
       `themes/attract/fonts/`. El gabinete es offline: no se pueden pedir en
       runtime. Sin esto el theme carga igual, con las fuentes del sistema.
 
@@ -138,7 +138,7 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       degradación de ADR-0013 en un solo lugar. `fonts/README.md` dice qué
       `.ttf` bajar y qué pasa si faltan (el theme carga igual, con las fuentes
       del sistema, y el panel de diagnóstico lo dice en pantalla).
-- [ ] `theme.qml` — canvas de 1280×720 con
+- [x] `theme.qml` — canvas de 1280×720 con
       `scale: Math.min(w/1280, h/720)`, centrado (ADR-0016). Estado: `screen`,
       `selected`, `launching`. Overlays en `Loader { active: ... }`.
 - [x] `core/Paths.qml` — escrito. `setDe`, `baseDe`, `dataJsonDe`,
@@ -325,10 +325,10 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
 
 ## 5 · Detalle
 
-- [ ] `screens/DetailScreen.qml` — barra superior con "◄ GALERÍA", columna
+- [x] `screens/DetailScreen.qml` — barra superior con "◄ GALERÍA", columna
       izquierda (panel de carátula + botón JUGAR) y columna de información
       (título, chips, box art + badge, sinopsis).
-- [ ] Badge de formato desde `x-formato`. Hecho cuando: `mok` muestra
+- [x] Badge de formato desde `x-formato`. Hecho cuando: `mok` muestra
       `GD-ROM` y `sf2ce` muestra `PCB` — que es justo donde `mediaFor()` del
       prototipo se equivoca (`docs/mapeo-mockup-pegasus.md`).
 - [x] `ReviewCard.qml` — escrita. Los dos niveles de §2.3 viven ahí: sin
@@ -357,9 +357,9 @@ encabezado de cada archivo — el mismo patrón que usaron `pdf-qtquick.qml` y
       contemplaba que el título achicara. Al colapsar el `clamp()` a un número
       por el lienzo fijo (ADR-0016) se había perdido ese piso. `Text.Fit` con
       `minimumPixelSize` lo devuelve.
-- [ ] El panel de carátula queda listo para recibir el video de la 006 sin
+- [x] El panel de carátula queda listo para recibir el video de la 006 sin
       rehacer el layout.
-- [ ] Foco: `[JUGAR] → [extras]` con izquierda/derecha; Escape/B vuelve a la
+- [x] Foco: `[JUGAR] → [extras]` con izquierda/derecha; Escape/B vuelve a la
       librería.
 
 ## 5 · Bugs encontrados mirando la pantalla
@@ -415,7 +415,7 @@ _Ninguno de estos aparece leyendo el codigo. Salieron de abrir Pegasus._
       | Los `clamp()` de los títulos conservan su **piso** vía `Text.Fit` | Al colapsarlos por el lienzo fijo se había perdido; los títulos reales de MAME son largos |
 - [ ] Anotar en `plan.md` qué aproximaciones a CSS hicieron falta de verdad,
       una vez que el experimento de `QtGraphicalEffects` haya respondido.
-- [ ] `make test` y `make doctor` en verde.
-- [ ] Mover `005-theme-base` a "Hecho" en `../../constitution/roadmap.md`, y
+- [x] `make test` y `make doctor` en verde.
+- [x] Mover `005-theme-base` a "Hecho" en `../../constitution/roadmap.md`, y
       agregar `themes/attract/` al mapa de `CLAUDE.md` y a
       `../../constitution/tech-stack.md`.

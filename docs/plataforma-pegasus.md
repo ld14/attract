@@ -135,6 +135,23 @@ ninguno leyendo el código. La regla que dejan:
 | **Un binding sobre `y` dentro de un positioner** | `Column`/`Row` posicionan escribiendo la `y` de sus hijos. El binding pelea y gana: el botón saltaba encima de la carátula. Se veía bien en 3 de 4 capturas. El "lift" va por `transform: Translate`, que no participa del layout | `ui/Boton.qml` |
 | **Altos calculados a mano** | Un espaciador de `parent.height - 14 - 44`, donde `44` asumía tres renglones de título. Al cambiar la fuente dejó de ser cierto y el texto se salió | `screens/GameCard.qml` |
 | **Crecer hacia arriba sin tope** | El hero anclado abajo creció más que el espacio disponible y se metió en la barra. La solución es que un bloque ceda calculando cuánto entra, no fijar constantes | `screens/LibraryScreen.qml` |
+| **Dos bloques anclados a bordes opuestos** | El carrusel anclado al fondo crecía hacia arriba; la columna crecía hacia abajo. Cada uno correcto por su cuenta, cruzándose por diez píxeles. Se arregla metiéndolos en el **mismo** positioner con un espaciador calculado en un solo lugar y con piso | `screens/DetailScreen.qml` |
+
+**Las cuatro son la misma frase, y por eso está escrita acá y no solo en un
+comentario:** cuando el layout lo calcula uno en vez de dejárselo al sistema,
+funciona hasta que cambia algo que no controlaba — el orden de resolución de
+los bindings, la fuente, el largo de un título, el alto de una tapa. Ninguna
+de las cuatro se vio leyendo el código; las cuatro salieron de mirar la
+pantalla.
+
+### Una trampa que no es de layout pero se le parece
+
+**Mezclar dos estados en una variable.** El carrusel de revistas usaba
+`indice` para "cuál está elegida" y "desde cuál se muestra" a la vez. Tienen
+topes distintos —la selección llega a `total-1`, el scroll se topa en
+`total-2` para que siempre se vean dos tapas— así que la última revista
+quedaba visible pero **inalcanzable**. No es un off-by-one: es que eran dos
+cosas.
 
 ### Y una trampa que no es de layout
 
