@@ -124,7 +124,7 @@ Lo que la documentación no dice, o dice distinto.
 
 ## 3 · Trampas de QML que ya nos mordieron
 
-Cuatro bugs de la misma familia, todos encontrados **mirando la pantalla**
+Cinco bugs de la misma familia, todos encontrados **mirando la pantalla**
 y ninguno leyendo el código. La regla que dejan:
 
 > Si estás escribiendo una resta de píxeles para ubicar algo, o peleándole al
@@ -136,13 +136,29 @@ y ninguno leyendo el código. La regla que dejan:
 | **Altos calculados a mano** | Un espaciador de `parent.height - 14 - 44`, donde `44` asumía tres renglones de título. Al cambiar la fuente dejó de ser cierto y el texto se salió | `screens/GameCard.qml` |
 | **Crecer hacia arriba sin tope** | El hero anclado abajo creció más que el espacio disponible y se metió en la barra. La solución es que un bloque ceda calculando cuánto entra, no fijar constantes | `screens/LibraryScreen.qml` |
 | **Dos bloques anclados a bordes opuestos** | El carrusel anclado al fondo crecía hacia arriba; la columna crecía hacia abajo. Cada uno correcto por su cuenta, cruzándose por diez píxeles. Se arregla metiéndolos en el **mismo** positioner con un espaciador calculado en un solo lugar y con piso | `screens/DetailScreen.qml` |
+| **Un hijo de `Row` cuyo ancho depende del `Row`** | Un `Row` calcula su ancho **a partir del de sus hijos**. Un hijo con `width: parent.width - 240` cierra el círculo: QML no lo resuelve y dibuja **todo encimado en la misma coordenada**. Se arregla anclando contra un contenedor de ancho propio, no contra el positioner | `overlays/CheatsOverlay.qml` |
 
-**Las cuatro son la misma frase, y por eso está escrita acá y no solo en un
+**Las cinco son la misma frase, y por eso está escrita acá y no solo en un
 comentario:** cuando el layout lo calcula uno en vez de dejárselo al sistema,
 funciona hasta que cambia algo que no controlaba — el orden de resolución de
 los bindings, la fuente, el largo de un título, el alto de una tapa. Ninguna
-de las cuatro se vio leyendo el código; las cuatro salieron de mirar la
+de las cinco se vio leyendo el código; las cinco salieron de mirar la
 pantalla.
+
+**El corolario que sirve para revisar código**, y que costó las cinco veces:
+antes de escribir `width:` o `height:` en función de `parent`, preguntarse
+**quién le da el tamaño al padre**. Si el padre es un `Row`, `Column`, `Flow`
+o `Grid` **sin tamaño explícito**, lo toma de sus hijos y la dependencia es
+circular. Si tiene `width` propio (o anchors a los dos lados), no lo es.
+
+Y qué positioner escribe qué, que es lo que decide si un `anchors` en un hijo
+es idioma o pelea:
+
+| Positioner | Escribe | Se le puede anclar al hijo |
+|---|---|---|
+| `Row` | solo `x` | sí, el eje vertical (`verticalCenter`, `top`, `bottom`) |
+| `Column` | solo `y` | sí, el eje horizontal |
+| `Flow`, `Grid` | `x` **e** `y` | **no**, ningún eje |
 
 ### Una trampa que no es de layout pero se le parece
 

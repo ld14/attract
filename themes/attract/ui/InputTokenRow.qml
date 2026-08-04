@@ -23,7 +23,11 @@ Flow {
         model: root.tokens
 
         Loader {
-            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+            // SIN anchors: un Flow posiciona a sus hijos escribiendoles x E y.
+            // Anclarlos es pelearle al positioner - la misma trampa que ya
+            // aparecio cuatro veces en este theme (ver
+            // docs/plataforma-pegasus.md #3). Las fichas tienen alturas
+            // parecidas, asi que alinean bien sin ayuda.
             sourceComponent: {
                 switch (modelData.tipo) {
                 case "direccion": return cDireccion;

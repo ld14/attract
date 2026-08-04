@@ -245,9 +245,20 @@ FocusScope {
 
                     Repeater {
                         model: root.combos
+                        // Con ANCHORS sobre la tarjeta, no con un Row.
+                        //
+                        // Un Row calcula su ancho a partir del de sus hijos.
+                        // Meterle un hijo cuyo ancho dependa del Row -que es
+                        // lo que hacia falta para que la fila de tokens ocupe
+                        // el resto- es una dependencia CIRCULAR: QML no la
+                        // puede resolver y dibuja cualquier cosa, todo
+                        // encimado. Se vio en Pegasus el 2026-08-04.
+                        //
+                        // La tarjeta si tiene ancho propio (el de la columna),
+                        // asi que anclando contra ELLA no hay circulo.
                         Rectangle {
                             width: parent.width
-                            height: Math.max(56, filaCombo.height + 24)
+                            height: Math.max(56, tokensCombo.height + 24)
                             color: Theme.alpha(root.accent, 0.05)
                             border.width: 1
                             border.color: Theme.alpha(Theme.textBright, 0.07)
@@ -259,45 +270,45 @@ FocusScope {
                                 color: root.accent
                             }
 
-                            Row {
-                                id: filaCombo
-                                anchors { left: parent.left; right: parent.right }
-                                anchors { leftMargin: 16; rightMargin: 16 }
+                            Rectangle {
+                                id: numCombo
+                                anchors { left: parent.left; leftMargin: 16 }
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: 14
-
-                                Rectangle {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 30; height: 30
-                                    color: Theme.alpha(root.accent, 0.14)
-                                    border.width: 1
-                                    border.color: Theme.alpha(root.accent, 0.45)
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: ("0" + (index + 1)).slice(-2)
-                                        color: root.accent
-                                        font.family: Theme.fontMono
-                                        font.pixelSize: 12
-                                        font.bold: true
-                                    }
-                                }
-
+                                width: 30; height: 30
+                                color: Theme.alpha(root.accent, 0.14)
+                                border.width: 1
+                                border.color: Theme.alpha(root.accent, 0.45)
                                 Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 210
-                                    wrapMode: Text.WordWrap
-                                    text: modelData.name || ""
-                                    color: Theme.textPrimary
-                                    font.family: Theme.fontBody
-                                    font.pixelSize: 14
+                                    anchors.centerIn: parent
+                                    text: ("0" + (index + 1)).slice(-2)
+                                    color: root.accent
+                                    font.family: Theme.fontMono
+                                    font.pixelSize: 12
+                                    font.bold: true
                                 }
+                            }
 
-                                InputTokenRow {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: parent.width - 30 - 210 - 28
-                                    accent: root.accent
-                                    tokens: Tokens.partir(modelData.input || "", "combo")
-                                }
+                            Text {
+                                id: nomCombo
+                                anchors { left: numCombo.right; leftMargin: 14 }
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 200
+                                wrapMode: Text.WordWrap
+                                maximumLineCount: 2
+                                elide: Text.ElideRight
+                                text: modelData.name || ""
+                                color: Theme.textPrimary
+                                font.family: Theme.fontBody
+                                font.pixelSize: 14
+                            }
+
+                            InputTokenRow {
+                                id: tokensCombo
+                                anchors { left: nomCombo.right; leftMargin: 14 }
+                                anchors { right: parent.right; rightMargin: 16 }
+                                anchors.verticalCenter: parent.verticalCenter
+                                accent: root.accent
+                                tokens: Tokens.partir(modelData.input || "", "combo")
                             }
                         }
                     }
@@ -320,37 +331,38 @@ FocusScope {
                         model: root.codigos
                         Item {
                             width: parent.width
-                            height: Math.max(44, filaCodigo.height + 16)
+                            height: Math.max(44, tokensCod.height + 16)
 
-                            Row {
-                                id: filaCodigo
-                                anchors { left: parent.left; right: parent.right }
+                            Text {
+                                id: estrella
+                                anchors { left: parent.left }
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: 14
+                                text: "★"
+                                color: root.accent
+                                font.pixelSize: 14
+                            }
 
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: "★"
-                                    color: root.accent
-                                    font.pixelSize: 14
-                                }
+                            Text {
+                                id: nomCod
+                                anchors { left: estrella.right; leftMargin: 14 }
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 200
+                                wrapMode: Text.WordWrap
+                                maximumLineCount: 2
+                                elide: Text.ElideRight
+                                text: modelData.name || ""
+                                color: Theme.textPrimary
+                                font.family: Theme.fontBody
+                                font.pixelSize: 14
+                            }
 
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 210
-                                    wrapMode: Text.WordWrap
-                                    text: modelData.name || ""
-                                    color: Theme.textPrimary
-                                    font.family: Theme.fontBody
-                                    font.pixelSize: 14
-                                }
-
-                                InputTokenRow {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: parent.width - 14 - 210 - 28
-                                    accent: root.accent
-                                    tokens: Tokens.partir(modelData.input || "", "codigo")
-                                }
+                            InputTokenRow {
+                                id: tokensCod
+                                anchors { left: nomCod.right; leftMargin: 14 }
+                                anchors { right: parent.right }
+                                anchors.verticalCenter: parent.verticalCenter
+                                accent: root.accent
+                                tokens: Tokens.partir(modelData.input || "", "codigo")
                             }
                         }
                     }
