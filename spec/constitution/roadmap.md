@@ -241,8 +241,11 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
      Pegasus real**: subcarpetas y singleton vía `qmldir` funcionan, el árbol
      del plan va tal como está. Faltan `Paths`, `GameData`, los átomos
      restantes y las dos pantallas.
-   - **`006-theme-documentos`** — sin especificar. Video (QtMultimedia),
-     carrusel de revistas y visor de documentos paginado.
+   - **`006-theme-documentos`** — **especificada** (spec + plan + tasks).
+     Video, carrusel de revistas y visor de documentos paginado. Resuelve de
+     paso una ambigüedad que ADR-0010 había dejado abierta: `startPage` es un
+     índice **1-based** sobre `pages[]` — se deduce del propio fixture, no es
+     una preferencia, y pasa a ser un chequeo de `attract doctor`.
    - **`007-theme-trucos`** — sin especificar. Tokenizer de inputs y overlay
      de trucos & combos.
 
