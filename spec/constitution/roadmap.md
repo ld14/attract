@@ -284,8 +284,15 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
      del plan va tal como está. Faltan `Paths`, `GameData`, los átomos
      restantes y las dos pantallas.
    - **`006-theme-documentos`** — implementada y verificada (ver punto 22).
-   - **`007-theme-trucos`** — sin especificar. Tokenizer de inputs y overlay
-     de trucos & combos.
+   - **`007-theme-trucos`** — **especificada** (spec + plan + tasks). Tokenizer
+     de inputs y overlay de trucos & combos. Es la última: con ella, todo lo
+     que el handoff describe queda implementado.
+
+     Tiene una particularidad que ordena su plan: **el tokenizer es la única
+     pieza del theme que se puede verificar sin abrir Pegasus**, porque es una
+     función pura de string a lista de tokens. Y es justo donde un error cuesta
+     ver a ojo — que `PP` salga como dos botones en vez de uno no salta en una
+     captura. Por eso la gramática vive en un archivo aparte, sin UI.
 
    **Ya no hay experimentos bloqueando:** los cuatro corrieron contra Pegasus
    real (ver punto 21 de "Hecho"). Lo que queda de la 005 son dos cosas que
