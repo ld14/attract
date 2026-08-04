@@ -85,6 +85,7 @@ FocusScope {
         // cuando no. Se apaga al salir del detalle para que el gabinete no
         // acumule decoders.
         Item {
+            id: cajaPanel
             width: parent.width
             height: 288
 
@@ -118,6 +119,7 @@ FocusScope {
         }
 
         Boton {
+            id: btnJugar
             width: parent.width
             texto: "JUGAR"
             glifo: "▶"
@@ -125,6 +127,36 @@ FocusScope {
             accent: root.accent
             activo: root.foco === 0
             onActivado: root.lanzar(root.game)
+        }
+
+        // El "margin-top:auto" del diseno: empuja el carrusel al pie de la
+        // columna. Se calcula EN UN SOLO LUGAR y con un piso, para que el
+        // carrusel no pueda treparse encima de JUGAR pase lo que pase con las
+        // fuentes o con el alto de sus tapas.
+        //
+        // Antes el carrusel estaba anclado al fondo de la pantalla, aparte de
+        // esta columna: dos bloques posicionados por separado que se cruzaban
+        // por unos pixeles (visto en Pegasus el 2026-08-03, "NOTAS EN
+        // REVISTAS" encima del boton). Es el mismo error que el espaciador de
+        // GameCard y el hero de la libreria — cuando el layout lo calculo yo,
+        // funciona hasta que cambia algo que no controlo.
+        Item {
+            width: 1
+            height: Math.max(18,
+                root.height - 62 - izquierda.y
+                - cajaPanel.height - btnJugar.height - carrusel.implicitHeight
+                - izquierda.spacing * 3)
+        }
+
+        MagazineCarousel {
+            id: carrusel
+            width: parent.width
+            game: root.game
+            paths: root.paths
+            mags: datos.mags
+            accent: root.accent
+            activo: root.foco === 2
+            onAbrir: root.abrirRevista(i)
         }
     }
 
@@ -290,23 +322,6 @@ FocusScope {
             datos: datos
             accent: root.accent
         }
-    }
-
-    // ------------------------------------------------------- carrusel
-    // Anclado al pie de la columna izquierda, como el margin-top:auto del
-    // diseno. No va dentro del Column de arriba: ese crece desde el tope y
-    // este tiene que quedarse abajo.
-    MagazineCarousel {
-        id: carrusel
-        anchors { left: parent.left; leftMargin: Theme.gutter }
-        anchors { bottom: parent.bottom; bottomMargin: 62 }
-        width: 280
-        game: root.game
-        paths: root.paths
-        mags: datos.mags
-        accent: root.accent
-        activo: root.foco === 2
-        onAbrir: root.abrirRevista(i)
     }
 
     // ------------------------------------------------- contenido extra
