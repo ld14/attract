@@ -890,9 +890,21 @@ FocusScope {
     // prototipo (:345). Las listas son las suyas (:758-759) — incluida la
     // decision de NO nombrar B en los estantes: volver a la barra es ▲, y
     // gastar un renglon de leyenda en un atajo redundante es ruido.
+    //
+    // ALTO DERIVADO DEL CONTENIDO, no un numero fijo. El prototipo define
+    // este bloque con `padding:12px` (:345) — el alto sale de lo que mida el
+    // contenido MAS 12px arriba y abajo, nunca al reves. Antes esto era
+    // `height: 52`, un numero elegido a ojo que no salia de esa cuenta —
+    // corregido el 2026-08-09. Con el texto real (~13px + line-height del
+    // keycap) el resultado ronda los ~46px sobre el canvas de 1280×720, pero
+    // el numero exacto lo decide la fuente en tiempo real, no una constante
+    // — es EL MISMO bloque de codigo que usan las otras pantallas (o lo
+    // usaran: Buscar es la 010, todavia no existe), asi que tiene que
+    // funcionar igual sin importar que fuente termine cargando cada una.
     Rectangle {
+        id: footerLeyenda
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-        height: 52
+        height: leyenda.height + 24    // 12px arriba + 12px abajo
         gradient: Gradient {
             GradientStop { position: 0.0; color: "transparent" }
             GradientStop { position: 1.0; color: Theme.alpha("#06070c", 0.92) }
@@ -906,6 +918,7 @@ FocusScope {
         // memoria "abajo dice Navegar/Detalle/Orden/Buscar" no quiere que la
         // frase le cambie el significado al mover el foco un casillero.
         Leyenda {
+            id: leyenda
             anchors.centerIn: parent
             accent: root.accent
             atajos: [{ k: "◄ ► ▲ ▼", l: "Navegar" }, { k: "A", l: "Detalle" },

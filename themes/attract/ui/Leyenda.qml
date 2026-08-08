@@ -26,6 +26,17 @@ Row {
 
     spacing: 26
 
+    // Altura EXPLICITA via childrenRect, no la implicitHeight del Row.
+    // BrowseScreen.qml calcula el alto de su footer como `leyenda.height +
+    // 24` (padding:12px del prototipo) — si `height` quedara en su default
+    // (la implicitHeight de un Row cuyos hijos visibles vienen de un
+    // Repeater, no declarados directo), cualquier duda sobre esa
+    // propagacion se traduce directo en un footer mal alto. childrenRect es
+    // la medida REAL del rectangulo que ocupan los hijos, sin depender de
+    // esa cadena. Bug real reportado el 2026-08-09: un espacio negro grande
+    // aparecia debajo de la leyenda, con margen de sobra hasta el borde.
+    height: childrenRect.height
+
     Repeater {
         model: root.atajos
 
