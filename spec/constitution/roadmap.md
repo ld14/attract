@@ -190,7 +190,8 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     cambiar de máquina. Ahora **fuerza** la ausencia (`PATH` a un
     directorio vacío) en vez de asumirla, y sigue ejercitando el
     `FileNotFoundError` real de `subprocess`, sin mock. **68 tests en
-    total** (34 `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`).
+    total** (34 `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`) — conteo
+    de ese momento; hoy son 72 (`doctor` creció a 38), ver más abajo.
 
 20. **`004-attract-ingest` cerrada del todo, y el esqueleto del theme
     verificado — 2026-07-29.** Dos cosas en una sola sesión de Pegasus real,
@@ -225,7 +226,7 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
        `rating: 0.8500000238418579` confirma que la precisión de float ya
        queda resuelta con `Math.round(rating * 100)`.
 
-22. **`006-theme-documentos` — implementada y verificada, 2026-08-03.** Video
+21. **`006-theme-documentos` — implementada y verificada, 2026-08-03.** Video
     de gameplay, carrusel de revistas y visor de documentos paginado. Con esto
     el theme hace todo lo que el diseño de referencia pide, salvo el overlay
     de trucos (feature 007).
@@ -301,6 +302,40 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
    a verse bastante distinto) y la comparación final contra el prototipo
    abierto al lado, que se hace contra `library/preview/` porque tiene
    carátulas reales.
+
+- **`008-theme-ayuda`** — código escrito contra un diseño de referencia de
+  alta fidelidad (`design_handoff_help/`), sin verificar contra Pegasus real
+  todavía. Overlay "Cómo cargar un juego nuevo" de dos columnas (nav de 8
+  pasos + contenido), disparado con un ícono `?` junto al reloj/año en
+  Librería y Detalle — mismo componente en las dos pantallas, mismo
+  mecanismo `Loader` que `007-theme-trucos`. Ver
+  `spec/features/008-theme-ayuda/tasks.md` §4 para lo que falta chequear
+  con el gabinete o el Mac con Pegasus corriendo.
+
+- **`009-theme-estantes` / `010-theme-buscar` / `011-theme-ediciones`** —
+  especificada la primera, las otras dos solo nombradas. Salen de un handoff
+  **nuevo** (`design_handoff_home/`) para la pantalla principal: librería con
+  estantes tipo Netflix sobre 1200+ juegos, orden/filtro por
+  letra/año/nota/jugados, búsqueda con teclado en pantalla, y selector de
+  plataforma/edición en el detalle. No es un retoque visual: reemplaza la
+  estructura de navegación entera de la librería.
+
+  **El prototipo de este handoff tampoco se puede renderizar** — le falta
+  `support.js`, igual que el anterior (`docs/plataforma-pegasus.md` §5). La
+  fuente 1:1 es el `<script type="text/x-dc">` del `.dc.html`, que trae la
+  máquina de estados completa.
+
+  Tres decisiones tomadas al especificarla: las ediciones se agrupan por
+  `sortBy` (necesita ADR propio, feature `011`), el `DetailScreen` existente
+  se **extiende** en vez de reemplazarse por el del handoff —conserva video,
+  revistas, trucos y reseña, que este handoff no tiene—, y el control de
+  orden pasa a un panel navegable en `X`, porque en el prototipo es
+  clickeable puro y en un gabinete sin mouse no existe.
+
+  **Bloqueada por tres experimentos** (`teclas-xy`, `estantes-perf`,
+  `memoria`, en `themes/experimentos/`), escritos y sin correr. El primero es
+  el portón: si `api.keys.isDetails`/`isFilters` no disparan en este binario,
+  no hay acceso al orden y la feature cambia de forma.
 
 1. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
    de verdad (`mcp.json` real, tools visibles en la UI). El protocolo en

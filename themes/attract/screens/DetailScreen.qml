@@ -34,6 +34,7 @@ FocusScope {
 
     signal volver()
     signal lanzar(var game)
+    signal abrirAyuda()
 
     GameData {
         id: datos
@@ -59,7 +60,7 @@ FocusScope {
         }
 
         Text {
-            anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+            anchors { right: botonAyuda.left; rightMargin: 18; verticalCenter: parent.verticalCenter }
             color: root.accent
             font.family: Theme.fontMono
             font.pixelSize: Theme.sizeMono
@@ -73,6 +74,14 @@ FocusScope {
                 var p = [col, anio].filter(function(s) { return s !== ""; });
                 return p.length ? p.join("  ·  ") : "Sin Informacion";
             }
+        }
+
+        Boton {
+            id: botonAyuda
+            anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+            texto: ""; glifo: "?"; variant: "glass"; accent: root.accent
+            implicitWidth: 30; implicitHeight: 30
+            onActivado: root.abrirAyuda()
         }
     }
 

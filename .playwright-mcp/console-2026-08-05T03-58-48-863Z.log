@@ -1,0 +1,3 @@
+[     120ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8899/support.js:0
+[     432ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8899/.image-slots.state.json:0
+[     696ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8899/favicon.ico:0

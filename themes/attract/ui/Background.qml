@@ -41,7 +41,13 @@ Item {
     Canvas {
         id: glow
         anchors.fill: parent
-        opacity: 0.55
+
+        // 0.22 y no 0.55: con 0.55 el accent no era un halo, era un lavado —
+        // la mitad superior de la pantalla quedaba del color del juego y se
+        // comia el contraste de la barra y del titulo. Comparado contra el
+        // diseño de referencia el 2026-08-06: ahi el tinte apenas se insinua
+        // en la esquina superior derecha.
+        opacity: 0.22
         renderStrategy: Canvas.Cooperative
 
         // Repintar al cambiar de juego: el glow es del color del juego enfocado.
@@ -63,7 +69,10 @@ Item {
             // la primera corrida contra Pegasus real.
             var cx = width * 0.72;
             var cy = height * 0.08;
-            var rx = width * 1.30;
+            // 1.0 y no 1.30: con 1.30 el halo llegaba hasta el borde izquierdo
+            // y dejaba de leerse como "arriba a la derecha". El centro sigue
+            // en 72%/8% como el CSS; lo que se achico es el alcance.
+            var rx = width * 1.00;
             var ry = height * 1.00;
             var k = ry / rx;             // factor de achatamiento
 
@@ -111,7 +120,18 @@ Item {
         }
     }
 
-    // --- CAPA 3: vineta. Mantiene legible el texto de la columna izquierda
+    // --- CAPA 3: vineta.
+    //
+    // DIVERGE A PROPOSITO del gradiente vertical unico del prototipo
+    // (4 paradas: 0%→.55, 26%→.2, 62%→.78, 100%→.97 — Pegasus Home.dc.html:35).
+    // Aca son DOS gradientes, horizontal + vertical, porque el proposito es
+    // otro: la columna izquierda (hero) tiene que leerse por encima de
+    // CUALQUIER caratula clara de estante que quede detras, y un solo
+    // gradiente vertical no protege esa columna en particular. Los colores
+    // base coinciden (~#06070c); la forma no. Auditoria de fidelidad,
+    // 2026-08-08.
+    //
+    // Mantiene legible el texto de la columna izquierda
     // por encima de cualquier arte mas claro que haya detras.
     Canvas {
         anchors.fill: parent

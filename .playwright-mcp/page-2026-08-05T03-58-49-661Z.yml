@@ -1,0 +1,150 @@
+- generic [ref=e3]:
+  - generic:
+    - generic:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - generic [ref=e9]:
+            - generic [ref=e10]: SHINBOX ARCADE
+            - 'button "{{ tab.name }} {{ tab.countTxt }}" [ref=e15]'
+          - generic [ref=e16]:
+            - generic [ref=e17]:
+              - 'button "{{ modeLabel }}" [ref=e18]'
+              - 'button "{{ critLabel }}" [ref=e19]'
+              - 'button "{{ dirGlyph }}" [ref=e21]'
+              - generic [ref=e22]:
+                - 'button "{{ valueLabel }}" [ref=e23]'
+                - generic [ref=e24]: "{{ az.ch }}"
+              - 'button "✕ {{ filterLabel }}" [ref=e28]'
+            - button [ref=e29]
+            - generic [ref=e32]: "{{ clock }}"
+            - button "?" [ref=e33] [cursor=pointer]
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - generic [ref=e36]: "{{ chip.txt }}"
+            - generic [ref=e37]: "{{ fgPlatCount }} EDICIONES"
+          - generic [ref=e39]: "{{ fgTitle }}"
+          - generic [ref=e40]:
+            - generic [ref=e41]: "{{ fgGenre }}"
+            - generic [ref=e42]: "{{ fgYear }}"
+            - generic [ref=e43]: "{{ fgPlayers }}"
+            - generic [ref=e44]: "{{ fgRating }}"
+          - generic [ref=e46]: "{{ fgSynopsis }}"
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - text: VER DETALLE
+              - generic [ref=e49]: A
+            - generic [ref=e50]: "{{ fgPlatNote }}"
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]: "{{ shelf.label }}"
+            - generic [ref=e57]: "{{ shelf.countTxt }}"
+            - generic [ref=e58]: "⇅ {{ critLabel }}"
+          - generic [ref=e64]:
+            - generic [ref=e66]:
+              - generic [ref=e67]: "+{{ item.moreCount }}"
+              - generic [ref=e68]: CARGAR MÁS
+            - generic [ref=e69]:
+              - generic [ref=e70]:
+                - generic [ref=e71]: "{{ item.coverAlt }}"
+                - generic:
+                  - button "Replace"
+                  - button "Remove"
+              - generic: "{{ item.rankTxt }}"
+              - generic [ref=e80]: "{{ item.year }}"
+              - generic [ref=e82]:
+                - generic [ref=e83]: "{{ ch.txt }}"
+                - generic [ref=e85]: "{{ item.title }}"
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - generic [ref=e91]: GUÍA RÁPIDA
+          - 'button "{{ st.num }}. {{ st.short }}" [ref=e93]'
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - generic [ref=e97]: Cómo cargar un juego nuevo
+              - generic [ref=e98]: "Paso {{ helpPageNum }} de {{ helpPageTotal }}"
+            - button "✕" [ref=e99] [cursor=pointer]
+          - generic [ref=e100]:
+            - generic [ref=e101]: "{{ helpTitle }}"
+            - generic [ref=e102]: "{{ helpIntro }}"
+            - generic [ref=e105]:
+              - generic [ref=e106]: ▸
+              - generic [ref=e107]: "{{ b.t }}"
+            - generic [ref=e108]: "{{ helpCode }}"
+          - generic [ref=e110]:
+            - button "‹ Anterior" [ref=e111]
+            - button "Siguiente ›" [ref=e112]
+      - generic [ref=e113]:
+        - generic [ref=e114]:
+          - generic [ref=e117]: "{{ qDisplay }}"
+          - generic [ref=e120]: "{{ resultCountTxt }}"
+          - button "CERRAR B" [ref=e121] [cursor=pointer]:
+            - text: CERRAR
+            - generic [ref=e122]: B
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - 'button "{{ key.label }}" [ref=e128]'
+            - generic [ref=e129]:
+              - generic [ref=e130]: ◄ ► ▲ ▼ mover
+              - generic [ref=e131]: A escribir
+              - generic [ref=e132]: ► a resultados
+          - generic [ref=e133]:
+            - generic [ref=e134]: "{{ resultsHead }}"
+            - generic [ref=e136]:
+              - generic [ref=e138]:
+                - generic [ref=e139]:
+                  - generic [ref=e140]: ↻
+                  - text: "{{ res.title }} {{ res.meta }}"
+                - generic [ref=e141]:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - button "Replace"
+                        - button "Remove"
+                  - generic [ref=e146]:
+                    - generic [ref=e147]: "{{ res.title }}"
+                    - generic [ref=e148]: "{{ res.meta }}"
+              - generic [ref=e149]: "— Sin coincidencias para “{{ qPlain }}” —"
+      - generic [ref=e151]:
+        - generic [ref=e152]:
+          - button "◄ VOLVER B" [ref=e153] [cursor=pointer]:
+            - text: ◄ VOLVER
+            - generic [ref=e154]: B
+          - generic [ref=e155]: "{{ dGenre }} · {{ dYear }}"
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - generic [ref=e158]:
+              - generic [ref=e159]:
+                - generic [ref=e160]: Portada — arrastrá la caja del juego
+                - generic:
+                  - button "Replace"
+                  - button "Remove"
+              - generic [ref=e168]: "{{ dTitle }}"
+            - 'button "▶ {{ dPlayLabel }} A" [ref=e169] [cursor=pointer]':
+              - text: "▶ {{ dPlayLabel }}"
+              - generic [ref=e170]: A
+            - generic [ref=e171]: "{{ dMedia }}"
+          - generic [ref=e172]:
+            - generic [ref=e173]: "{{ dTitle }}"
+            - generic [ref=e174]:
+              - generic [ref=e176]:
+                - generic [ref=e177]: "{{ chip.k }}"
+                - text: "{{ chip.v }}"
+              - generic [ref=e178]: "{{ dRating }}"
+            - generic [ref=e180]:
+              - generic [ref=e181]: SINOPSIS
+              - generic [ref=e182]: "{{ dSynopsis }}"
+            - generic [ref=e183]:
+              - generic [ref=e184]: "{{ dEditionsLabel }}"
+              - 'button "{{ ed.short }} {{ ed.name }} {{ ed.media }}" [ref=e187]':
+                - text: "{{ ed.short }}"
+                - generic [ref=e188]:
+                  - generic [ref=e189]: "{{ ed.name }}"
+                  - generic [ref=e190]: "{{ ed.media }}"
+      - generic [ref=e193]:
+        - generic [ref=e194]: INICIANDO
+        - generic [ref=e195]: "{{ launchTitle }}"
+        - generic [ref=e196]: "{{ launchSub }}"
+      - generic [ref=e199]:
+        - generic [ref=e200]: "{{ lg.k }}"
+        - generic [ref=e201]: "{{ lg.l }}"

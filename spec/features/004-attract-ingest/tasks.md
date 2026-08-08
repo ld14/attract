@@ -117,9 +117,10 @@ estaba probado contra XML sintético o contra una salida pegada a mano._
 
 ## Cierre
 
-- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (68 tests: 34
-      `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`; 2 `mcp` y —sin
-      `mame` instalado— 3 `ingest` se saltean).
+- [x] `PYTHONPATH=src python3 -m pytest tests/ -q` en verde (72 tests: 38
+      `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`; cuántos se saltean
+      depende del entorno — 2 `mcp` si el SDK `mcp` no está instalado, más
+      los `ingest` que dependen de `mame` si no está en el PATH).
 - [x] `attract doctor` sobre todo el repo en 0 errores.
 - [x] Verificación de arriba corrida contra `mame` real — cerrada
       2026-07-29 (ver sección de arriba). Solo queda el punto menor de

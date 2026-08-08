@@ -24,10 +24,31 @@ FocusScope {
     focus: true
     anchors.fill: parent
 
-    // Se instancia UNA vez y baja por propiedad. No es singleton a proposito:
-    // uno en subcarpeta necesita su propio qmldir y es el mecanismo del que
-    // menos se sabe contra este binario (ver plan.md).
+    // Se instancian UNA vez y bajan por propiedad. No son singletons a
+    // proposito: uno en subcarpeta necesita su propio qmldir y es el mecanismo
+    // del que menos se sabe contra este binario (ver plan.md).
     Paths { id: paths }
+    Teclas { id: teclas }
+
+    // El catalogo vive ACA y no dentro de la libreria porque Buscar (010) va a
+    // recorrer el mismo pool: dos duenos del mismo catalogo serian dos
+    // ordenamientos de 1200 juegos y dos verdades sobre que esta filtrado.
+    Catalog { id: catalogo }
+
+    // Alias con OTRO nombre, no `catalogo`/`teclas` a secas. Bug real visto
+    // en Pegasus el 2026-08-09 (log: "QML SortPanel: Binding loop detected
+    // for property catalogo/teclas", theme.qml:182): el Loader `orden` de
+    // mas abajo escribe `sourceComponent: SortPanel { catalogo: catalogo }`,
+    // y como `sourceComponent` con un objeto inline lo envuelve en un
+    // Component implicito, ahi el nombre de la PROPIEDAD de SortPanel
+    // (tambien `catalogo`) le gana al `id: catalogo` de aca arriba — se
+    // autorreferencia en vez de apuntar a este objeto, y SortPanel se queda
+    // con `catalogo: null` para siempre. `BrowseScreen { catalogo: catalogo }`
+    // no tiene el problema porque es un hijo directo, no vive dentro de un
+    // Loader.sourceComponent. Con un alias de nombre DISTINTO la ambiguedad
+    // no puede pasar, sea cual sea el mecanismo exacto de scoping.
+    readonly property var catalogoInstancia: catalogo
+    readonly property var teclasInstancia: teclas
 
     // "library" | "detail"
     property string pantalla: "library"
@@ -58,21 +79,40 @@ FocusScope {
             crtScanlines: true
         }
 
-        LibraryScreen {
+        BrowseScreen {
             id: libreria
             anchors.fill: parent
             paths: paths
-            visible: root.pantalla === "library" && !lanzando.active && !visor.active && !trucos.active
-            focus: root.pantalla === "library" && !lanzando.active && !visor.active
-            // Sin esto, el rail sigue comiendose las flechas desde atras
+            teclas: teclas
+            catalogo: catalogo
+            // `orden` (el popover de valor) NO va en `visible`: a diferencia
+            // de ayuda/trucos/visor —modales de verdad, que tapan la pantalla
+            // a proposito— este es un popover flotante, y el spec lo pide
+            // explicito: "Sin scrim: el prototipo no oscurece nada detras del
+            // popover" (overlays/SortPanel.qml). Con `!orden.active` tambien
+            // en `visible`, Home se apagaba ENTERA en vez de quedar dibujada
+            // detras — bug real visto en Pegasus el 2026-08-09. `enabled` y
+            // `focus` SI se quedan con `orden.active`: Home se sigue viendo,
+            // pero deja de reaccionar al teclado mientras el popover esta
+            // arriba.
+            visible: root.pantalla === "library" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active
+            focus: root.pantalla === "library" && !lanzando.active && !visor.active && !ayuda.active && !orden.active
+            // Sin esto, los estantes siguen comiendose las flechas desde atras
             // mientras el detalle esta arriba.
-            enabled: visible
+            enabled: root.pantalla === "library" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active && !orden.active
 
             onAbrirDetalle: {
                 root.juegoDetalle = game;
                 root.pantalla = "detail";
             }
             onLanzar: root.lanzar(game)
+            onAbrirAyuda: ayuda.active = true
+            onAbrirOrden: orden.active = true
+            onCerrarOrden: orden.active = false
+            // Buscar es la fase 010. Hasta que exista, Y no hace nada — y eso
+            // es mejor que un boton que promete y no cumple: la pastilla
+            // BUSCAR de la barra ya esta dibujada porque es parte del diseño,
+            // pero el atajo no miente si no hay a donde ir.
         }
 
         DetailScreen {
@@ -80,8 +120,8 @@ FocusScope {
             anchors.fill: parent
             paths: paths
             game: root.juegoDetalle
-            visible: root.pantalla === "detail" && !lanzando.active
-            focus: root.pantalla === "detail" && !lanzando.active && !visor.active && !trucos.active
+            visible: root.pantalla === "detail" && !lanzando.active && !ayuda.active
+            focus: root.pantalla === "detail" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active
             enabled: visible
 
             onVolver: root.pantalla = "library"
@@ -91,6 +131,7 @@ FocusScope {
                 if (tipo === "manual") root.abrirManual();
                 else if (tipo === "cheats") trucos.active = true;
             }
+            onAbrirAyuda: ayuda.active = true
         }
 
         // --- el visor de documentos: revistas Y manual, el mismo ---
@@ -136,6 +177,47 @@ FocusScope {
                 fondo: detalle
                 focus: true
                 onCerrar: trucos.active = false
+            }
+        }
+
+        // La ayuda se abre desde Libreria O Detalle (README del handoff:
+        // "visible en toda pantalla donde exista esa barra"), asi que el
+        // fondo a desenfocar depende de donde estemos parados — mismo
+        // ternario que ya resuelve root.accent un poco mas arriba.
+        Loader {
+            id: ayuda
+            anchors.fill: parent
+            active: false
+            focus: active
+
+            sourceComponent: HelpOverlay {
+                accent: root.accent
+                fondo: root.pantalla === "detail" ? detalle : libreria
+                focus: true
+                onCerrar: ayuda.active = false
+            }
+        }
+
+        Loader {
+            id: orden
+            anchors.fill: parent
+            active: false
+            focus: active
+
+            sourceComponent: SortPanel {
+                catalogo: root.catalogoInstancia
+                teclas: root.teclasInstancia
+                accent: root.accent
+                focus: true
+                // libreria.popoverOrdenAbierto tambien se sincroniza aca, no
+                // solo en onCerrarOrden: el popover se puede cerrar de tres
+                // formas distintas (B/X adentro, click afuera, elegir un
+                // valor) y las tres emiten esta misma señal — un solo lugar
+                // que las cubra a las tres.
+                onCerrar: {
+                    orden.active = false;
+                    libreria.popoverOrdenAbierto = false;
+                }
             }
         }
 

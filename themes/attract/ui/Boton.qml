@@ -25,12 +25,30 @@ Item {
     property color accent: Theme.accentNeutro
     property bool activo: false
 
+    // La tecla que hace lo mismo que este boton, dibujada adentro como un
+    // keycap. No es decoracion: en un gabinete sin teclado ni mouse es la
+    // unica forma de descubrir que X abre el orden y que Y abre Buscar
+    // (design_handoff_home/README.md §Top bar). "" lo oculta.
+    property string atajo: ""
+
+    // El prototipo usa 8px de radio para casi todo (BUSCAR, "?", CERRAR,
+    // VOLVER — Pegasus Home.dc.html:84,223,278,785) y reserva 10px solo para
+    // el CTA grande del detalle, "JUGAR EN" (:289). Theme.radiusButton = 10
+    // es el default historico de este componente porque el primer lugar
+    // donde se uso fue justo ese boton grande; se deja como default para no
+    // tocar los llamados existentes, y las pantallas que necesiten el 8 del
+    // prototipo lo pasan explicito. Auditoria de fidelidad, 2026-08-08.
+    property int radio: Theme.radiusButton
+
     signal activado()
 
     readonly property bool _esAccent: variant === "accent"
 
-    implicitWidth: fila.width + 48
-    implicitHeight: 48
+    // padding 11px 20px del prototipo (Pegasus Home.dc.html:107). Antes eran
+    // 48 de alto y 24 de padding lateral, sacados del mockup viejo: el boton
+    // se veia notoriamente mas grande que en el diseño.
+    implicitWidth: fila.width + 40
+    implicitHeight: 40
 
     // El "lift" del diseno: el boton enfocado sube unos pixeles.
     //
@@ -51,7 +69,7 @@ Item {
     Rectangle {
         id: fondo
         anchors.fill: parent
-        radius: Theme.radiusButton
+        radius: root.radio
         color: root._esAccent
                ? root.accent
                : (root.activo ? Theme.glassFillHi : Theme.glassFill)
@@ -77,19 +95,43 @@ Item {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
+            visible: root.texto !== ""
             text: root.texto
             color: root._esAccent ? Theme.textOnAccent : Theme.textPrimary
             font.family: Theme.fontDisplay
             font.bold: true
-            font.pixelSize: 16
-            font.letterSpacing: 0.04 * 16
+            font.pixelSize: 14
+            font.letterSpacing: 0.04 * 14
+        }
+
+        // El keycap del atajo. Sobre vidrio va RELLENO DE ACCENT con texto
+        // oscuro, como la pastilla BUSCAR del prototipo (:81); sobre un boton
+        // que ya es de accent no se puede, asi que ahi se oscurece.
+        Rectangle {
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.atajo !== ""
+            width: tecla.implicitWidth + 10
+            height: tecla.implicitHeight + 4
+            radius: 4
+            color: root._esAccent ? Theme.alpha(Theme.textOnAccent, 0.20)
+                                  : root.accent
+
+            Text {
+                id: tecla
+                anchors.centerIn: parent
+                text: root.atajo
+                color: Theme.textOnAccent
+                font.family: Theme.fontMono
+                font.bold: true
+                font.pixelSize: 9
+            }
         }
     }
 
     FocusRing {
         accent: root._esAccent ? "#ffffff" : root.accent
         activo: root.activo
-        radio: Theme.radiusButton
+        radio: root.radio
     }
 
     MouseArea {

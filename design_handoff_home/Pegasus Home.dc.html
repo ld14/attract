@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:8px;}
+  @keyframes pgdrift{from{background-position:0 0;}to{background-position:0 240px;}}
+  @keyframes pgblink{0%,100%{opacity:1;}50%{opacity:.2;}}
+  @keyframes pgspin{to{transform:rotate(360deg);}}
+  @keyframes pgcaret{0%,100%{opacity:1;}50%{opacity:0;}}
+  image-slot::part(empty){color:rgba(255,255,255,.55) !important;}
+  image-slot::part(frame){background:transparent !important;}
+</style>
+</helmet>
+<div style="position:relative;width:100%;height:100vh;min-height:360px;overflow:hidden;background:#04050a;font-family:'Sora',system-ui,sans-serif;color:#e9ebf2;-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;">
+  <div style="{{ stageStyle }}">
+  <div style="{{ accentVars }}">
+
+    <!-- AMBIENT BACKDROP -->
+    <div style="position:absolute;inset:0;background:radial-gradient(135% 105% at 74% 4%, var(--accent,#19e3e3) 0%, transparent 44%), linear-gradient(180deg,#0a0c12 0%,#06070c 100%);opacity:.5;transition:background .5s;"></div>
+    <div style="position:absolute;inset:0;background:repeating-linear-gradient(180deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 2px, transparent 2px, transparent 8px);mix-blend-mode:screen;opacity:.1;animation:pgdrift 7s linear infinite;"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(6,7,12,.55) 0%, rgba(6,7,12,.2) 26%, rgba(6,7,12,.78) 62%, rgba(6,7,12,.97) 100%);"></div>
+
+    <!-- =================== BROWSE =================== -->
+    <sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Home / Browse" style="position:absolute;inset:0;">
+
+        <!-- TOP BAR -->
+        <div style="position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:22px 48px 0;">
+          <div style="display:flex;align-items:center;gap:32px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:13px;height:13px;border-radius:3px;background:var(--accent,#19e3e3);box-shadow:0 0 14px var(--accent,#19e3e3);"></div>
+              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:.16em;font-size:15px;">SHINBOX <span style="color:#6a7081;font-weight:500;">ARCADE</span></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="5">
+                <button onClick="{{ tab.onClick }}" style="{{ tab.style }}">
+                  <span>{{ tab.name }}</span>
+                  <span style="{{ tab.countStyle }}">{{ tab.countTxt }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="position:relative;display:flex;align-items:center;gap:6px;">
+              <button onClick="{{ onToggleMode }}" style="{{ modeBtnStyle }}">{{ modeLabel }}</button>
+              <button onClick="{{ onCycleSort }}" style="{{ sortBtnStyle }}">{{ critLabel }}</button>
+              <sc-if value="{{ showDirBtn }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ onToggleDir }}" title="Cambiar dirección" style="{{ dirBtnStyle }}">{{ dirGlyph }}</button>
+              </sc-if>
+              <sc-if value="{{ showValueBtn }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ onToggleAz }}" title="Elegir valor" style="{{ azBtnStyle }}">{{ valueLabel }}</button>
+                <sc-if value="{{ azOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ pickerGridStyle }}">
+                    <sc-for list="{{ pickerItems }}" as="az" hint-placeholder-count="26">
+                      <span onClick="{{ az.onClick }}" style="{{ az.style }}">{{ az.ch }}</span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ hasFilter }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ onClearFilter }}" style="{{ clearChipStyle }}">✕ {{ filterLabel }}</button>
+              </sc-if>
+            </div>
+            <button onClick="{{ onOpenSearch }}" style="{{ searchPillStyle }}">
+              <span style="display:inline-flex;width:13px;height:13px;border:2px solid currentColor;border-radius:50%;position:relative;"><span style="position:absolute;right:-3px;bottom:-3px;width:6px;height:2px;background:currentColor;transform:rotate(45deg);transform-origin:left;"></span></span>
+              BUSCAR
+              <span style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:#07080c;background:var(--accent,#19e3e3);padding:2px 5px;border-radius:4px;">Y</span>
+            </button>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7c8294;letter-spacing:.08em;padding-left:6px;border-left:1px solid rgba(255,255,255,.12);">{{ clock }}</span>
+            <button onClick="{{ onOpenHelp }}" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#c7cbd6;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">?</button>
+          </div>
+        </div>
+
+        <!-- HERO -->
+        <div style="position:absolute;top:84px;left:48px;width:600px;z-index:10;">
+          <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;">
+            <sc-for list="{{ fgChips }}" as="chip" hint-placeholder-count="3">
+              <span style="{{ chip.style }}">{{ chip.txt }}</span>
+            </sc-for>
+            <sc-if value="{{ fgMultiPlat }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-flex;align-items:center;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:#6a7081;padding:3px 0 0 4px;">{{ fgPlatCount }} EDICIONES</span>
+            </sc-if>
+          </div>
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(36px,4.6vw,62px);line-height:.9;letter-spacing:-.01em;text-shadow:0 8px 40px rgba(0,0,0,.55);">{{ fgTitle }}</div>
+          <div style="margin-top:14px;display:flex;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;color:#9aa0b0;">
+            <span style="color:var(--accent,#19e3e3);">{{ fgGenre }}</span>
+            <span>{{ fgYear }}</span>
+            <span>{{ fgPlayers }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid color-mix(in srgb,var(--accent,#19e3e3) 40%, rgba(255,255,255,.1));border-radius:20px;color:var(--accent,#19e3e3);"><span style="width:5px;height:5px;background:var(--accent,#19e3e3);transform:rotate(45deg);"></span>{{ fgRating }}</span>
+          </div>
+          <div style="margin-top:16px;font-size:15px;line-height:1.55;color:#aeb3c0;max-width:520px;text-wrap:pretty;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ fgSynopsis }}</div>
+          <div style="margin-top:18px;display:flex;align-items:center;gap:14px;">
+            <div style="display:flex;align-items:center;gap:9px;padding:11px 20px;border-radius:8px;background:var(--accent,#19e3e3);color:#07080c;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;letter-spacing:.04em;box-shadow:0 8px 24px color-mix(in srgb,var(--accent,#19e3e3) 55%, transparent);">VER DETALLE <span style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;background:rgba(7,8,12,.25);padding:2px 5px;border-radius:4px;">A</span></div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a7081;letter-spacing:.04em;">{{ fgPlatNote }}</span>
+          </div>
+        </div>
+
+        <!-- SHELVES -->
+        <div style="position:absolute;left:0;right:0;top:346px;bottom:52px;z-index:12;overflow:hidden;">
+          <div style="{{ shelvesTrackStyle }}">
+            <sc-for list="{{ shelves }}" as="shelf" hint-placeholder-count="3">
+              <div style="height:192px;">
+                <div style="display:flex;align-items:center;gap:12px;padding:0 48px;margin-bottom:11px;">
+                  <span style="{{ shelf.labelStyle }}">{{ shelf.label }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:#5b6173;">{{ shelf.countTxt }}</span>
+                  <sc-if value="{{ shelf.isSortable }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--accent,#19e3e3);padding:2px 7px;border:1px solid color-mix(in srgb,var(--accent,#19e3e3) 30%, rgba(255,255,255,.08));border-radius:20px;">⇅ {{ critLabel }}</span>
+                  </sc-if>
+                  <span style="flex:1;height:1px;background:linear-gradient(90deg, rgba(255,255,255,.08), transparent);margin-right:48px;"></span>
+                </div>
+                <div style="overflow:hidden;padding-left:48px;">
+                  <div style="{{ shelf.trackStyle }}">
+                    <div style="{{ shelf.leadStyle }}"></div>
+                    <sc-for list="{{ shelf.items }}" as="item" hint-placeholder-count="7">
+                      <div onClick="{{ item.onClick }}" onMouseEnter="{{ item.onHover }}" style="{{ item.cardStyle }}">
+                        <sc-if value="{{ item.isMore }}" hint-placeholder-val="{{ false }}">
+                          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:#6a7081;">
+                            <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:24px;color:var(--accent,#19e3e3);">+{{ item.moreCount }}</span>
+                            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;">CARGAR MÁS</span>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ item.isGame }}" hint-placeholder-val="{{ true }}">
+                          <image-slot id="{{ item.coverId }}" placeholder="{{ item.coverAlt }}" shape="rect" fit="cover" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></image-slot>
+                          <div style="position:absolute;inset:0;background:linear-gradient(180deg, transparent 38%, rgba(0,0,0,.8) 100%);"></div>
+                          <sc-if value="{{ item.showRank }}" hint-placeholder-val="{{ false }}">
+                            <span style="position:absolute;top:8px;left:9px;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:22px;line-height:.8;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7);opacity:.92;">{{ item.rankTxt }}</span>
+                          </sc-if>
+                          <div style="position:relative;display:flex;justify-content:flex-end;">
+                            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.62);">{{ item.year }}</span>
+                          </div>
+                          <div style="position:relative;">
+                            <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap;">
+                              <sc-for list="{{ item.chips }}" as="ch" hint-placeholder-count="2">
+                                <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.04em;color:rgba(255,255,255,.85);background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.22);padding:1px 4px;border-radius:3px;">{{ ch.txt }}</span>
+                              </sc-for>
+                            </div>
+                            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;line-height:1.02;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,.7);">{{ item.title }}</div>
+                            <sc-if value="{{ item.hasProgress }}" hint-placeholder-val="{{ false }}">
+                              <div style="margin-top:7px;height:4px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden;">
+                                <div style="{{ item.progressStyle }}"></div>
+                              </div>
+                            </sc-if>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- =================== HELP / MANUAL OVERLAY =================== -->
+    <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:70;background:rgba(5,6,9,.9);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;">
+        <div style="width:min(880px,92vw);max-height:86vh;display:flex;background:linear-gradient(180deg,#0e1118,#0a0c11);border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 40px 100px rgba(0,0,0,.6);overflow:hidden;">
+          <div style="flex:none;width:220px;background:rgba(255,255,255,.03);border-right:1px solid rgba(255,255,255,.08);padding:20px 12px;overflow:auto;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#6a7081;padding:0 10px 12px;">GUÍA RÁPIDA</div>
+            <sc-for list="{{ helpSteps }}" as="st" hint-placeholder-count="8">
+              <button onClick="{{ st.onClick }}" style="{{ st.navStyle }}">{{ st.num }}. {{ st.short }}</button>
+            </sc-for>
+          </div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 26px;border-bottom:1px solid rgba(255,255,255,.08);">
+              <div>
+                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:19px;">Cómo cargar un juego nuevo</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a7081;margin-top:4px;">Paso {{ helpPageNum }} de {{ helpPageTotal }}</div>
+              </div>
+              <button onClick="{{ onCloseHelp }}" style="width:36px;height:36px;border-radius:9px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#c7cbd6;font-size:14px;cursor:pointer;">✕</button>
+            </div>
+            <div style="flex:1;overflow:auto;padding:24px 26px 10px;">
+              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:22px;color:var(--accent,#19e3e3);margin-bottom:6px;">{{ helpTitle }}</div>
+              <div style="font-family:'Sora',sans-serif;font-size:15px;line-height:1.6;color:#c4c8d4;margin-bottom:16px;text-wrap:pretty;">{{ helpIntro }}</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ helpBullets }}" as="b" hint-placeholder-count="4">
+                  <div style="display:flex;gap:12px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;">
+                    <span style="flex:none;color:var(--accent,#19e3e3);font-size:14px;">▸</span>
+                    <div style="font-family:'Sora',sans-serif;font-size:14px;line-height:1.55;color:#dfe3ec;">{{ b.t }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ helpHasCode }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:16px;padding:14px 16px;background:#0a0c11;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#8fd6a8;white-space:pre-wrap;">{{ helpCode }}</div>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 26px;border-top:1px solid rgba(255,255,255,.08);">
+              <button onClick="{{ onHelpPrev }}" style="{{ helpPrevStyle }}">‹ Anterior</button>
+              <button onClick="{{ onHelpNext }}" style="{{ helpNextStyle }}">Siguiente ›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- =================== SEARCH =================== -->
+    <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Buscar" style="position:absolute;inset:0;z-index:30;background:rgba(5,6,10,.93);backdrop-filter:blur(14px);display:flex;flex-direction:column;">
+        <!-- search header -->
+        <div style="flex:none;display:flex;align-items:center;gap:20px;padding:26px 48px 22px;">
+          <span style="display:inline-flex;width:22px;height:22px;border:2.5px solid var(--accent,#19e3e3);border-radius:50%;position:relative;flex:none;"><span style="position:absolute;right:-5px;bottom:-5px;width:10px;height:2.5px;background:var(--accent,#19e3e3);transform:rotate(45deg);transform-origin:left;"></span></span>
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:2px;border-bottom:2px solid rgba(255,255,255,.16);padding-bottom:9px;">
+            <span style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:34px;letter-spacing:.01em;color:{{ qColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ qDisplay }}</span>
+            <span style="display:inline-block;width:3px;height:34px;background:var(--accent,#19e3e3);margin-left:3px;animation:pgcaret 1s step-end infinite;flex:none;"></span>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8a90a0;letter-spacing:.08em;white-space:nowrap;">{{ resultCountTxt }}</span>
+          <button onClick="{{ onCloseSearch }}" style="display:flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(255,255,255,.05);color:#c7cbd6;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;cursor:pointer;">CERRAR <span style="font-size:9px;font-weight:700;color:#07080c;background:rgba(255,255,255,.6);padding:2px 5px;border-radius:4px;">B</span></button>
+        </div>
+
+        <div style="flex:1;min-height:0;display:flex;gap:36px;padding:6px 48px 0;">
+          <!-- keyboard -->
+          <div style="flex:none;width:430px;display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ kbRows }}" as="row" hint-placeholder-count="6">
+              <div style="display:flex;gap:8px;">
+                <sc-for list="{{ row.keys }}" as="key" hint-placeholder-count="6">
+                  <button onClick="{{ key.onClick }}" style="{{ key.style }}">{{ key.label }}</button>
+                </sc-for>
+              </div>
+            </sc-for>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:18px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6173;letter-spacing:.06em;">
+              <span><span style="color:var(--accent,#19e3e3);">◄ ► ▲ ▼</span> mover</span>
+              <span><span style="color:var(--accent,#19e3e3);">A</span> escribir</span>
+              <span><span style="color:var(--accent,#19e3e3);">►</span> a resultados</span>
+            </div>
+          </div>
+
+          <!-- results -->
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:{{ resultsHeadColor }};margin-bottom:14px;">{{ resultsHead }}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;">
+              <div style="{{ resultsGridStyle }}">
+                <sc-for list="{{ searchResults }}" as="res" hint-placeholder-count="6">
+                  <div onClick="{{ res.onClick }}" onMouseEnter="{{ res.onHover }}" style="{{ res.style }}">
+                    <sc-if value="{{ res.isRecent }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-flex;width:14px;height:14px;align-items:center;justify-content:center;color:#6a7081;font-size:12px;flex:none;">↻</span>
+                      <span style="font-family:'Sora',sans-serif;font-size:15px;color:#c4c8d4;flex:1;">{{ res.title }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6173;">{{ res.meta }}</span>
+                    </sc-if>
+                    <sc-if value="{{ res.isGame }}" hint-placeholder-val="{{ true }}">
+                      <div style="{{ res.thumbStyle }}"><image-slot id="{{ res.coverId }}" placeholder=" " shape="rounded" fit="cover" style="width:100%;height:100%;display:block;"></image-slot></div>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ res.title }}</div>
+                        <div style="margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#8a90a0;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ res.meta }}</div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+                  <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:18px 20px;border:1px dashed rgba(255,255,255,.12);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#6a7081;">— Sin coincidencias para “{{ qPlain }}” —</div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- =================== DETALLE =================== -->
+    <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Detalle" style="position:absolute;inset:0;z-index:24;display:flex;flex-direction:column;">
+        <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:22px 48px 0;">
+          <button onClick="{{ onBack }}" style="display:flex;align-items:center;gap:9px;padding:8px 14px 8px 11px;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(255,255,255,.05);color:#c7cbd6;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;cursor:pointer;">◄ VOLVER <span style="font-size:9px;font-weight:700;color:#07080c;background:rgba(255,255,255,.6);padding:2px 5px;border-radius:4px;">B</span></button>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent,#19e3e3);letter-spacing:.12em;">{{ dGenre }} · {{ dYear }}</div>
+        </div>
+
+        <div style="flex:1;min-height:0;display:flex;gap:44px;padding:26px 48px 0;">
+          <div style="flex:none;width:300px;display:flex;flex-direction:column;gap:15px;">
+            <div style="{{ dCoverStyle }}">
+              <image-slot id="{{ dCoverId }}" placeholder="Portada — arrastrá la caja del juego" shape="rect" fit="cover" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></image-slot>
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg, transparent 40%, rgba(0,0,0,.82) 100%);"></div>
+              <div style="position:relative;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:30px;line-height:.96;text-transform:uppercase;text-shadow:0 3px 14px rgba(0,0,0,.6);">{{ dTitle }}</div>
+            </div>
+            <button onClick="{{ dLaunch }}" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px;border-radius:10px;border:none;cursor:pointer;background:var(--accent,#19e3e3);color:#07080c;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:16px;letter-spacing:.03em;box-shadow:0 0 0 2px #fff5,0 10px 30px color-mix(in srgb,var(--accent,#19e3e3) 55%, transparent);">▶ {{ dPlayLabel }} <span style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;background:rgba(7,8,12,.25);padding:2px 5px;border-radius:4px;">A</span></button>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6a7081;letter-spacing:.08em;text-align:center;">{{ dMedia }}</div>
+          </div>
+
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(34px,4vw,58px);line-height:.96;letter-spacing:-.01em;">{{ dTitle }}</div>
+            <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;">
+              <sc-for list="{{ dChips }}" as="chip" hint-placeholder-count="4">
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgba(255,255,255,.13);border-radius:20px;background:rgba(255,255,255,.04);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:#c2c6d2;white-space:nowrap;"><span style="color:#6a7081;">{{ chip.k }}</span>{{ chip.v }}</span>
+              </sc-for>
+              <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:1px solid color-mix(in srgb,var(--accent,#19e3e3) 40%, rgba(255,255,255,.1));border-radius:20px;color:var(--accent,#19e3e3);font-family:'JetBrains Mono',monospace;font-size:11px;"><span style="width:5px;height:5px;background:var(--accent,#19e3e3);transform:rotate(45deg);"></span>{{ dRating }}</span>
+            </div>
+
+            <div style="margin-top:22px;max-width:580px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:var(--accent,#19e3e3);margin-bottom:10px;">SINOPSIS</div>
+              <div style="font-size:16px;line-height:1.6;color:#c4c8d4;text-wrap:pretty;">{{ dSynopsis }}</div>
+            </div>
+
+            <div style="margin-top:auto;padding-top:24px;padding-bottom:70px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:#6a7081;margin-bottom:13px;">{{ dEditionsLabel }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                <sc-for list="{{ dEditions }}" as="ed" hint-placeholder-count="3">
+                  <button onClick="{{ ed.onClick }}" onMouseEnter="{{ ed.onHover }}" style="{{ ed.style }}">
+                    <span style="{{ ed.iconStyle }}">{{ ed.short }}</span>
+                    <div style="text-align:left;">
+                      <div style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:15px;">{{ ed.name }}</div>
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8a90a0;margin-top:2px;">{{ ed.media }}</div>
+                    </div>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- =================== LAUNCH =================== -->
+    <sc-if value="{{ launching }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:70;background:rgba(5,6,9,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;">
+        <div style="width:54px;height:54px;border:3px solid rgba(255,255,255,.14);border-top-color:var(--accent,#19e3e3);border-radius:50%;animation:pgspin .8s linear infinite;"></div>
+        <div style="text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.2em;color:var(--accent,#19e3e3);margin-bottom:10px;">INICIANDO</div>
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:30px;text-transform:uppercase;">{{ launchTitle }}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a7081;margin-top:10px;">{{ launchSub }}</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- CRT -->
+    <sc-if value="{{ crt }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:80;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(0,0,0,.15) 0px, rgba(0,0,0,.15) 1px, transparent 1px, transparent 3px), radial-gradient(120% 120% at 50% 50%, transparent 64%, rgba(0,0,0,.5) 100%);mix-blend-mode:multiply;"></div>
+    </sc-if>
+
+    <!-- LEGEND -->
+    <sc-if value="{{ showLegend }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:center;justify-content:center;gap:26px;padding:12px;background:linear-gradient(0deg, rgba(6,7,12,.92), transparent);">
+        <sc-for list="{{ legend }}" as="lg" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#07080c;background:var(--accent,#19e3e3);padding:3px 8px;border-radius:5px;letter-spacing:.04em;">{{ lg.k }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#9aa0b0;letter-spacing:.04em;">{{ lg.l }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+  </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:720},&quot;crtScanlines&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showLegend&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;accentMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;per-game&quot;,&quot;options&quot;:[&quot;per-game&quot;,&quot;cyan&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    mode:'browse',
+    tab:0,
+    region:'tabs',     // 'tabs' | 'shelves'
+    shelf:0,
+    col:0,
+    sort:0,
+    dir:1,
+    ctrlMode:'orden',
+    filter:null,
+    search:{ q:'', zone:'keys', kr:0, kc:0, res:0, recent:['striker','lucha','carreras','rpg'] },
+    detail:null,       // {id, plat}
+    launching:null,    // {title, sub}
+    scale:1,
+    clock:'',
+    helpOpen:false,
+    helpIdx:0,
+    azOpen:false
+  };
+
+  PLAT={ 'AMIGA':{s:'AMI',c:'PC',m:'Diskette'},'DOS':{s:'DOS',c:'PC',m:'Diskette'},'ATARI ST':{s:'ST',c:'PC',m:'Diskette'},'PC':{s:'PC',c:'PC',m:'CD-ROM'},'WINDOWS':{s:'WIN',c:'PC',m:'CD-ROM'},
+    'MEGA DRIVE':{s:'MD',c:'CONSOLA',m:'Cartucho'},'SNES':{s:'SNES',c:'CONSOLA',m:'Cartucho'},'NES':{s:'NES',c:'CONSOLA',m:'Cartucho'},'MASTER SYSTEM':{s:'SMS',c:'CONSOLA',m:'Cartucho'},'PSX':{s:'PSX',c:'CONSOLA',m:'CD-ROM'},'N64':{s:'N64',c:'CONSOLA',m:'Cartucho'},'SATURN':{s:'SAT',c:'CONSOLA',m:'CD-ROM'},'DREAMCAST':{s:'DC',c:'CONSOLA',m:'GD-ROM'},'PS2':{s:'PS2',c:'CONSOLA',m:'DVD'},
+    'ARCADE':{s:'ARC',c:'ARCADE',m:'Placa'} };
+
+  GBLURB={ 'Fútbol':'Fútbol arcade de la vieja escuela: vista en perspectiva, copas internacionales y pelota parada milimétrica.','Lucha':'Torneo 1v1 con combos profundos, juggles y un sistema de parry que premia la precisión.','Acción/RPG':'Acción y rol entrelazados: mazmorras, mejoras y decisiones que ramifican la historia.','Carreras':'Velocidad arcade sin concesiones: derrape, turbo y tráfico que no perdona.','Plataformas':'Saltos de precisión, secretos ocultos y dificultad honesta nivel a nivel.','FPS':'Shooter táctico en primera persona: coberturas, gestión de munición y cooperativo.','Party':'Caos multijugador para partidas rápidas entre amigos en arenas que se desarman.','Shooter':'Clásico de cabina: oleadas crecientes, controles simples y tabla de récords.','Estrategia':'Estrategia por turnos y gestión de recursos en mapas que se abren con cada decisión.','Aventura':'Aventura de exploración con puzzles, mapas y un mundo lleno de secretos.','Puzzle':'Mecánica pulida y curva endiablada: fácil de aprender, imposible de soltar.','Beat\u2019em up':'Beat\u2019em up de scroll lateral: combos, armas y hordas de enemigos en la calle.' };
+
+  curatedGames=[
+    {id:'striker',t:'Striker',y:1992,g:'Fútbol',pl:'1-2',dev:'Rage Software',plat:['AMIGA','DOS','MEGA DRIVE'],acc:'#3ad17a',r:94,plays:128,prog:.62,fav:true,added:9,syn:'Fútbol con vista 3D en perspectiva forzada y radar de pases largos. 64 selecciones, copa eliminatoria europea y pelota parada con línea de puntos móvil. Screenstar de CU Amiga.'},
+    {id:'blade',t:'Blade Circuit',y:1995,g:'Lucha',pl:'2',dev:'Hex Studios',plat:['ARCADE','PSX'],acc:'#ff5a3c',r:86,plays:96,prog:0,fav:false,added:7},
+    {id:'chrono',t:'Chrono Raider',y:2001,g:'Acción/RPG',pl:'1',dev:'Lumen Works',plat:['PSX'],acc:'#9b6bff',r:90,plays:64,prog:.30,fav:true,added:8},
+    {id:'turbo',t:'Turbo Grid GP',y:1989,g:'Carreras',pl:'2',dev:'Redline',plat:['ARCADE'],acc:'#ffb020',r:82,plays:210,prog:0,fav:false,added:3},
+    {id:'pixel',t:'Pixel Dungeon Knight',y:1987,g:'Plataformas',pl:'1',dev:'Bitwise',plat:['NES','MASTER SYSTEM'],acc:'#36d399',r:79,plays:54,prog:0,fav:false,added:2},
+    {id:'void',t:'Void Sector',y:2008,g:'FPS',pl:'4',dev:'Orbital Dev',plat:['PC','PS2'],acc:'#4b8cff',r:88,plays:140,prog:.5,fav:false,added:8},
+    {id:'jelly',t:'Jelly Brawl',y:2004,g:'Party',pl:'4',dev:'Wobble Co.',plat:['PS2'],acc:'#ff5fb0',r:76,plays:180,prog:0,fav:true,added:6},
+    {id:'star',t:'Starline Pilot',y:1984,g:'Shooter',pl:'2',dev:'Nova Coin',plat:['ARCADE'],acc:'#2dd4bf',r:81,plays:150,prog:0,fav:false,added:1},
+    {id:'neon',t:'Neon Drift',y:1998,g:'Carreras',pl:'2',dev:'Vapor Lab',plat:['ARCADE','DREAMCAST'],acc:'#ff4d8d',r:89,plays:240,prog:.80,fav:true,added:9},
+    {id:'iron',t:'Iron Vanguard',y:1996,g:'Estrategia',pl:'1',dev:'Cobalt',plat:['DOS','PC'],acc:'#7d9bff',r:84,plays:72,prog:0,fav:false,added:5},
+    {id:'mystic',t:'Mystic Cavern',y:1990,g:'Aventura',pl:'1',dev:'Fable Soft',plat:['AMIGA','DOS'],acc:'#36d399',r:80,plays:40,prog:0,fav:false,added:2},
+    {id:'bitr',t:'Bit Racer',y:1993,g:'Carreras',pl:'2',dev:'Pixelworks',plat:['SNES'],acc:'#ffb020',r:77,plays:88,prog:0,fav:false,added:4},
+    {id:'galaxy',t:'Galaxy Siege',y:1991,g:'Shooter',pl:'2',dev:'Star Forge',plat:['ARCADE','PC'],acc:'#4b8cff',r:85,plays:118,prog:0,fav:false,added:5},
+    {id:'knight',t:'Knight & Slime',y:1994,g:'Plataformas',pl:'1',dev:'Goo Games',plat:['SNES','MEGA DRIVE'],acc:'#36d399',r:83,plays:99,prog:0,fav:true,added:6},
+    {id:'dragon',t:'Dragon Fist',y:1993,g:'Lucha',pl:'2',dev:'Tiger Byte',plat:['ARCADE','SNES'],acc:'#ff5a3c',r:87,plays:175,prog:0,fav:false,added:4},
+    {id:'pirates',t:'Pixel Pirates',y:1997,g:'Aventura',pl:'1',dev:'Saltcoast',plat:['PC'],acc:'#2dd4bf',r:78,plays:33,prog:0,fav:false,added:3},
+    {id:'hyper',t:'Hyper Goal',y:1999,g:'Fútbol',pl:'4',dev:'Kickbyte',plat:['PSX'],acc:'#3ad17a',r:82,plays:130,prog:0,fav:false,added:6},
+    {id:'mecha',t:'Mecha Storm',y:2003,g:'Acción/RPG',pl:'1',dev:'Gearhead',plat:['PS2','PC'],acc:'#9b6bff',r:86,plays:110,prog:.45,fav:true,added:8},
+    {id:'cyber',t:'Cyber Maze',y:1995,g:'Puzzle',pl:'1',dev:'Logic Loop',plat:['PC'],acc:'#7d9bff',r:81,plays:60,prog:0,fav:false,added:3},
+    {id:'rally',t:'Rally Fury',y:1992,g:'Carreras',pl:'2',dev:'Dust Devil',plat:['ARCADE'],acc:'#ffb020',r:80,plays:140,prog:0,fav:false,added:4},
+    {id:'shadow',t:'Shadow Ninja',y:1990,g:'Beat\u2019em up',pl:'2',dev:'Kage',plat:['ARCADE','NES'],acc:'#ff4d8d',r:84,plays:160,prog:0,fav:false,added:5},
+    {id:'astro',t:'Astro Miner',y:1988,g:'Plataformas',pl:'1',dev:'Deepcore',plat:['AMIGA'],acc:'#36d399',r:76,plays:45,prog:0,fav:false,added:2},
+    {id:'tank',t:'Tank Command',y:1991,g:'Estrategia',pl:'1',dev:'Steel Hand',plat:['DOS','PC'],acc:'#7d9bff',r:82,plays:70,prog:0,fav:false,added:3},
+    {id:'bubble',t:'Bubble Pop',y:1994,g:'Puzzle',pl:'2',dev:'Fizz',plat:['ARCADE','SNES'],acc:'#ff5fb0',r:79,plays:200,prog:0,fav:true,added:5},
+    {id:'street',t:'Street Heat',y:1991,g:'Beat\u2019em up',pl:'2',dev:'Asphalt',plat:['ARCADE'],acc:'#ff5a3c',r:83,plays:90,prog:0,fav:false,added:4},
+    {id:'sky',t:'Sky Admiral',y:2000,g:'Estrategia',pl:'1',dev:'Cloudworks',plat:['PC'],acc:'#7d9bff',r:85,plays:55,prog:0,fav:false,added:6},
+    {id:'frost',t:'Frost Realm',y:2005,g:'Acción/RPG',pl:'1',dev:'Northlight',plat:['PS2'],acc:'#9b6bff',r:88,plays:78,prog:.12,fav:true,added:7},
+    {id:'volt',t:'Volt Runner',y:1996,g:'Plataformas',pl:'1',dev:'Sparkbit',plat:['SNES'],acc:'#36d399',r:81,plays:65,prog:0,fav:false,added:5},
+    {id:'punch',t:'Maximum Punch',y:1992,g:'Lucha',pl:'2',dev:'Knockout',plat:['ARCADE'],acc:'#ff5a3c',r:80,plays:120,prog:0,fav:false,added:3},
+    {id:'orbit',t:'Orbit Defender',y:1986,g:'Shooter',pl:'2',dev:'Vector Co.',plat:['ARCADE','NES'],acc:'#2dd4bf',r:78,plays:135,prog:0,fav:false,added:2}
+  ];
+
+  generateGames(count,startIdx){
+    function mulberry32(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+    const rnd=mulberry32(20240607);
+    const pick=(arr)=>arr[Math.floor(rnd()*arr.length)];
+    const wordsA=['Neon','Iron','Crystal','Shadow','Turbo','Mega','Star','Dragon','Steel','Ghost','Solar','Frost','Cyber','Golden','Savage','Phantom','Rogue','Nova','Titan','Rapid'];
+    const wordsB=['Strikers','Raiders','Legends','Vanguard','Odyssey','Rampage','Circuit','Uprising','Horizon','Chronicles','Rebellion','Frontier','Requiem','Protocol','Ascension','Dominion','Nexus','Blitz','Fury','Saga'];
+    const subtitles=['','','','',' II',' Remix',': Arcade',' 64',' EX',' Turbo',' Gold',' Remaster'];
+    const devs=['Rage Software','Hex Studios','Lumen Works','Redline','Bitwise','Orbital Dev','Wobble Co.','Nova Coin','Vapor Lab','Cobalt','Fable Soft','Pixelworks','Star Forge','Goo Games','Tiger Byte','Saltcoast','Kickbyte','Gearhead','Logic Loop','Dust Devil','Kage','Deepcore','Steel Hand','Fizz','Asphalt','Cloudworks','Northlight','Sparkbit','Knockout','Vector Co.'];
+    const genres=Object.keys(this.GBLURB);
+    const platformPool=Object.keys(this.PLAT);
+    const accents=['#3ad17a','#ff5a3c','#9b6bff','#ffb020','#36d399','#4b8cff','#ff5fb0','#2dd4bf','#ff4d8d','#7d9bff'];
+    const out=[];
+    for(let i=0;i<count;i++){
+      const title=pick(wordsA)+' '+pick(wordsB)+pick(subtitles);
+      const numPlat=1+Math.floor(rnd()*2);
+      const plat=[]; while(plat.length<numPlat){ const p=pick(platformPool); if(!plat.includes(p))plat.push(p); }
+      out.push({ id:'gen'+(startIdx+i), t:title, y:1983+Math.floor(rnd()*28), g:pick(genres), pl:String(1+Math.floor(rnd()*4)),
+        dev:pick(devs), plat, acc:pick(accents), r:60+Math.floor(rnd()*38), plays:Math.floor(rnd()*400),
+        prog:rnd()<0.08?+(rnd()*0.9+0.05).toFixed(2):0, fav:rnd()<0.06, added:Math.floor(rnd()*10), cover:'' });
+    }
+    return out;
+  }
+  games=this.curatedGames.map(g=>({...g,cover:''})).concat(this.generateGames(1170,31));
+
+  tabsDef=[ {name:'TODOS'}, {name:'FAVORITOS'} ];
+  tabCount(name){ if(name==='TODOS') return this.games.length; if(name==='FAVORITOS') return this.games.filter(g=>g.fav).length; return this.games.filter(g=>this.cats(g).has(name)).length; }
+  toggleAz(){ this.setState(s=>({azOpen:!s.azOpen})); }
+  closeAz(){ this.setState({azOpen:false}); }
+  toggleMode(){ this.setState(s=>{ const nm=s.ctrlMode==='orden'?'seleccion':'orden'; let sort=s.sort; if(nm==='seleccion'&&sort>1) sort=0; return {ctrlMode:nm, sort, filter:nm==='orden'?null:s.filter, azOpen:false}; }); }
+  toggleDir(){ this.setState(s=>({dir:-s.dir})); }
+  pickLetter(letter){ this.setState({filter:{field:'letra',value:letter}, azOpen:false, region:'shelves', shelf:0, col:0}); }
+  pickYear(year){ this.setState({filter:{field:'anio',value:year}, azOpen:false, region:'shelves', shelf:0, col:0}); }
+  clearFilter(){ this.setState({filter:null}); }
+  availableYears(){ const maxY=this.games.reduce((m,g)=>Math.max(m,g.y),1978); const out=[]; for(let y=1978;y<=maxY;y++) out.push(y); return out; }
+  sortDef=['LETRA','AÑO','NOTA','JUGADOS'];
+  cycleSort(){ this.setState(s=>{ const n=s.ctrlMode==='seleccion'?2:this.sortDef.length; return {sort:(s.sort+1)%n,col:0,azOpen:false}; }); }
+  keyGrid=[
+    [{l:'A'},{l:'B'},{l:'C'},{l:'D'},{l:'E'},{l:'F'}],
+    [{l:'G'},{l:'H'},{l:'I'},{l:'J'},{l:'K'},{l:'L'}],
+    [{l:'M'},{l:'N'},{l:'O'},{l:'P'},{l:'Q'},{l:'R'}],
+    [{l:'S'},{l:'T'},{l:'U'},{l:'V'},{l:'W'},{l:'X'}],
+    [{l:'Y'},{l:'Z'},{l:'0'},{l:'1'},{l:'2'},{l:'3'}],
+    [{l:'4'},{l:'5'},{l:'6'},{l:'7'},{l:'8'},{l:'9'}],
+    [{l:'espacio',k:'space',w:3},{l:'⌫',k:'del',w:1.5},{l:'borrar',k:'clr',w:1.5}]
+  ];
+
+  componentDidMount(){
+    this._onKey=(e)=>this.onKey(e);
+    window.addEventListener('keydown',this._onKey);
+    this._fit=()=>{ const w=window.innerWidth,h=window.innerHeight; this.setState({scale:Math.min(w/1280,h/720)}); };
+    this._fit(); window.addEventListener('resize',this._fit);
+    this._tick=()=>{ const d=new Date(); this.setState({clock:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}); };
+    this._tick(); this._timer=setInterval(this._tick,20000);
+  }
+  componentWillUnmount(){ window.removeEventListener('keydown',this._onKey); window.removeEventListener('resize',this._fit); clearInterval(this._timer); clearTimeout(this._lt); }
+
+  cats(g){ const set=new Set(); g.plat.forEach(p=>{ const d=this.PLAT[p]; if(d)set.add(d.c); }); return set; }
+  fmt(n){ return Number(n).toLocaleString('es-ES'); }
+  coverBg(acc,i){ return 'background:radial-gradient(140% 120% at '+(18+(i%3)*28)+'% '+(14+(i%2)*40)+'%, '+acc+'66 0%, transparent 52%),conic-gradient(from '+(i*40)+'deg at 70% 26%, '+acc+'2e, transparent 44%),linear-gradient(150deg, '+acc+'1f 0%, #0a0b10 64%);'; }
+
+  pool(){
+    const tab=this.tabsDef[this.state.tab].name;
+    let arr = tab==='TODOS' ? this.games.slice() : tab==='FAVORITOS' ? this.games.filter(g=>g.fav) : this.games.filter(g=>this.cats(g).has(tab));
+    const f=this.state.filter;
+    if(f){ if(f.field==='letra') arr=arr.filter(g=>g.t[0].toUpperCase()===f.value); else if(f.field==='anio') arr=arr.filter(g=>g.y===f.value); }
+    return arr;
+  }
+  sortAll(arr){
+    const a=arr.slice(); const m=this.state.sort; const dir=this.state.dir||1;
+    if(m===0) a.sort((x,y)=>dir*x.t.localeCompare(y.t));
+    else if(m===1) a.sort((x,y)=>dir*(x.y-y.y));
+    else if(m===2) a.sort((x,y)=>y.r-x.r);
+    else a.sort((x,y)=>y.plays-x.plays);
+    return a;
+  }
+  shelvesData(){
+    const p=this.pool();
+    const sh=[];
+    const cont=p.filter(g=>g.prog>0).sort((a,b)=>b.added-a.added);
+    if(cont.length) sh.push({kind:'cont',label:'CONTINUAR JUGANDO',count:cont.length+' juegos',items:cont});
+    const top=p.slice().sort((a,b)=>b.plays-a.plays).slice(0,12);
+    if(top.length) sh.push({kind:'top',label:'MÁS JUGADOS',count:'TOP 50',items:top});
+    const byG={}; p.forEach(g=>{ (byG[g.g]=byG[g.g]||[]).push(g); });
+    const genres=Object.keys(byG).filter(k=>byG[k].length>=3).sort((a,b)=>byG[b].length-byG[a].length).slice(0,2);
+    const gtot={'Carreras':184,'Lucha':96,'Plataformas':210,'Shooter':150,'Acción/RPG':128,'Estrategia':88,'Aventura':74,'Puzzle':63,'Party':41,'Fútbol':52,'FPS':57,'Bef':40};
+    genres.forEach(gn=>{ sh.push({kind:'genre',label:gn.toUpperCase(),count:this.fmt(gtot[gn]||byG[gn].length)+' títulos',items:byG[gn]}); });
+    const all=this.sortAll(p);
+    const f=this.state.filter;
+    const flabel = f ? (f.field==='letra'?(' · LETRA '+f.value):(' · AÑO '+f.value)) : '';
+    sh.push({kind:'all',label:'CATÁLOGO'+flabel,count:this.fmt(all.length)+' juegos',items:all,sortable:true});
+    return sh;
+  }
+  shelfItems(shelf){ return shelf.items; }
+
+  focusedGame(){
+    const sh=this.shelvesData();
+    if(!sh.length) return this.games[0];
+    const s=this.state;
+    const shelf=sh[Math.min(s.shelf,sh.length-1)];
+    const items=this.shelfItems(shelf);
+    const it=items[Math.min(s.col,items.length-1)];
+    return (it&&!it.more)?it:(items.find(x=>!x.more)||this.games[0]);
+  }
+
+  // ---------- search ----------
+  fuzzy(q,g){ q=q.toLowerCase().trim(); if(!q) return {hit:true,score:0}; const t=g.t.toLowerCase(); const idx=t.indexOf(q); if(idx>=0) return {hit:true,score:idx}; let i=0; for(const ch of t){ if(ch===q[i])i++; if(i>=q.length) return {hit:true,score:100}; } const gen=g.g.toLowerCase(); if(gen.includes(q)) return {hit:true,score:200}; return {hit:false}; }
+  results(){ const q=this.state.search.q; const out=[]; this.games.forEach(g=>{ const m=this.fuzzy(q,g); if(m.hit) out.push({g,score:m.score}); }); out.sort((a,b)=>a.score-b.score||b.g.plays-a.g.plays); return out.map(o=>o.g).slice(0,12); }
+
+  type(cell){
+    this.setState(s=>{ let q=s.search.q; if(cell.k==='space')q+=' '; else if(cell.k==='del')q=q.slice(0,-1); else if(cell.k==='clr')q=''; else q+=cell.l; return {search:{...s.search,q,res:0}}; });
+  }
+  kbActivate(ri,ci){ this.setState(s=>({search:{...s.search,zone:'keys',kr:ri,kc:ci}})); const cell=this.keyGrid[ri][ci]; this.type(cell); }
+  resCols(){ return this.state.search.q.trim()?3:1; }
+  resItems(){ const q=this.state.search.q.trim(); if(!q) return this.state.search.recent.map(r=>({recent:true,q:r})); return this.results().map(g=>({g})); }
+
+  helpPages = [
+    { short:'El ROM', title:'1 · Poné el ROM en su lugar', intro:'Cada sistema (arcade, nes, …) ya tiene que existir dentro de library/ antes de cargar el juego — esto no crea sistemas nuevos.',
+      bullets:['Ruta exacta: library/<sistema>/<nombre-carpeta-juego>/<archivo-rom>','El nombre de carpeta = el .zip sin la extensión, nunca el título bonito.','Evitá los caracteres < > : " / \\ | ? * y que no termine en espacio o punto.'],
+      code:'python -m attract.ingest library/arcade/dino.zip library/arcade' },
+    { short:'Las imágenes', title:'2 · Sumá las imágenes', intro:'Van sueltas (sin subcarpetas) dentro de la carpeta media/ del juego, con nombres de archivo exactos.',
+      bullets:['boxFront.jpg, marquee.png, poster.png y video.mp4 van todos al mismo nivel en media/.','Orden de fallback para la carátula: boxFront → poster → marquee → genérica.','Ninguna es obligatoria — un juego sin imágenes sigue siendo válido.'], code:'' },
+    { short:'El video', title:'3 · El video de gameplay', intro:'Mismo directorio media/, nombre exacto video.mp4. Opcional: si falta, se muestra la carátula fija.', bullets:[], code:'' },
+    { short:'La revista', title:'4 · Revistas de la época', intro:'No van dentro de la carpeta del juego — viven en una carpeta compartida única y el juego solo las referencia por id.',
+      bullets:['Ruta: library/_shared/magazines/<id-revista>/','El juego la referencia en su game.json: { "mags": [ { "ref": "micromania-16" } ] }','Si falta el ref, el juego se muestra igual, solo sin esa sección.'], code:'' },
+    { short:'Datos del juego', title:'5 · Color, trucos, reseña, manual', intro:'Un único archivo game.json por juego, en library/<sistema>/<carpeta-juego>/game.json. Todos los campos son opcionales.',
+      bullets:['accent/accent2 en formato #rrggbb completo (6 dígitos).','Páginas de manual en media/manual/, numeradas p001.jpg, p002.jpg… con ceros a la izquierda.'], code:'{ "accent": "#3ad17a", "cheats": { "combos": [], "codes": [] } }' },
+    { short:'Sinopsis', title:'6 · La sinopsis', intro:'Archivo aparte synopsis.txt junto al juego. No se escribe a mano dentro de game.json; se aplica con un comando.', bullets:[], code:'python -m attract.synopsis dino library/arcade' },
+    { short:'Validar todo', title:'7 · Revisá que quedó bien', intro:'Antes de dar un juego por cargado, correr la validación.',
+      bullets:['Un juego recién cargado sin ninguna imagen tiene que dar bien igual — si marca error, el problema es el nombre de carpeta/archivo.'], code:'make doctor-lib' },
+    { short:'Si algo falla', title:'8 · Si algo no funciona', intro:'El validador casi siempre dice qué archivo y qué regla falla — empezá leyendo ese mensaje antes de pedir ayuda.', bullets:[], code:'' }
+  ];
+  openHelp(){ this.setState({helpOpen:true, helpIdx:0}); }
+  closeHelp(){ this.setState({helpOpen:false}); }
+  helpNav(d){ this.setState(s=>({helpIdx:Math.max(0,Math.min(this.helpPages.length-1,s.helpIdx+d))})); }
+
+  // ---------- actions ----------
+  openFocused(){ const fg=this.focusedGame(); this.openGame(fg); }
+  openGame(g){ this.setState({mode:'detail',detail:{id:g.id,plat:0}}); }
+  back(){ this.setState({mode:'browse',detail:null}); }
+  detailLaunch(){ const s=this.state; if(!s.detail)return; const g=this.games.find(x=>x.id===s.detail.id); this.launch(g,g.plat[s.detail.plat||0]); }
+  launch(g,plat){ this.setState({launching:{title:g.t,sub:'plataforma: '+plat+'  ·  retroarch -L core'}}); clearTimeout(this._lt); this._lt=setTimeout(()=>this.setState({launching:null}),2200); }
+
+  openSearch(){ this.setState(s=>({mode:'search',search:{...s.search,zone:'keys',kr:0,kc:0,res:0}})); }
+  closeSearch(){ this.setState({mode:'browse'}); }
+
+  clampCol(){ this.setState(s=>{ const sh=this.shelvesData(); const shelf=sh[Math.min(s.shelf,sh.length-1)]; const len=this.shelfItems(shelf).length; return {col:Math.max(0,Math.min(len-1,s.col)), shelf:Math.min(s.shelf,sh.length-1)}; }); }
+
+  onKey(e){
+    const s=this.state; const k=e.key;
+    if(s.launching) return;
+    if(s.helpOpen){ if(k==='Escape'||k==='Backspace'){ this.closeHelp(); e.preventDefault(); } else if(k==='ArrowRight'){ this.helpNav(1); e.preventDefault(); } else if(k==='ArrowLeft'){ this.helpNav(-1); e.preventDefault(); } return; }
+    if(s.azOpen){ if(k==='Escape'||k==='Backspace'){ this.closeAz(); e.preventDefault(); } return; }
+    if(s.mode==='detail'){ const g=this.games.find(x=>x.id===s.detail.id); const n=g.plat.length;
+      if(k==='ArrowRight'||k==='d'){ this.setState(st=>({detail:{...st.detail,plat:Math.min(n-1,(st.detail.plat||0)+1)}})); e.preventDefault(); }
+      else if(k==='ArrowLeft'||k==='a'){ this.setState(st=>({detail:{...st.detail,plat:Math.max(0,(st.detail.plat||0)-1)}})); e.preventDefault(); }
+      else if(k==='Enter'||k===' '){ this.detailLaunch(); e.preventDefault(); }
+      else if(k==='Escape'||k==='Backspace'){ this.back(); e.preventDefault(); }
+      return; }
+    if(s.mode==='search'){
+      const se=s.search;
+      if(k==='Escape'){ this.closeSearch(); e.preventDefault(); return; }
+      // physical-keyboard typeahead: letters / digits type straight into the query
+      if(k.length===1 && /^[a-z0-9 ]$/i.test(k)){ this.setState(st=>({search:{...st.search,q:st.search.q+(k===' '?' ':k.toLowerCase()),res:0,zone:'keys'}})); e.preventDefault(); return; }
+      if(k==='Backspace'){ this.type({k:'del'}); e.preventDefault(); return; }
+      if(se.zone==='keys'){
+        const row=this.keyGrid[se.kr]; const last=row.length-1;
+        if(k==='ArrowRight'){ if(se.kc>=last){ if(this.resItems().length) this.setState({search:{...se,zone:'results',res:0}}); } else this.setState({search:{...se,kc:se.kc+1}}); e.preventDefault(); }
+        else if(k==='ArrowLeft'){ this.setState({search:{...se,kc:Math.max(0,se.kc-1)}}); e.preventDefault(); }
+        else if(k==='ArrowDown'){ const nr=Math.min(this.keyGrid.length-1,se.kr+1); this.setState({search:{...se,kr:nr,kc:Math.min(se.kc,this.keyGrid[nr].length-1)}}); e.preventDefault(); }
+        else if(k==='ArrowUp'){ const nr=Math.max(0,se.kr-1); this.setState({search:{...se,kr:nr,kc:Math.min(se.kc,this.keyGrid[nr].length-1)}}); e.preventDefault(); }
+        else if(k==='Enter'){ this.type(this.keyGrid[se.kr][se.kc]); e.preventDefault(); }
+      } else { // results
+        const items=this.resItems(); const cols=this.resCols(); const n=items.length;
+        if(k==='ArrowLeft'){ if(se.res%cols===0){ this.setState({search:{...se,zone:'keys'}}); } else this.setState({search:{...se,res:se.res-1}}); e.preventDefault(); }
+        else if(k==='ArrowRight'){ this.setState({search:{...se,res:Math.min(n-1,se.res+1)}}); e.preventDefault(); }
+        else if(k==='ArrowDown'){ this.setState({search:{...se,res:Math.min(n-1,se.res+cols)}}); e.preventDefault(); }
+        else if(k==='ArrowUp'){ this.setState({search:{...se,res:Math.max(0,se.res-cols)}}); e.preventDefault(); }
+        else if(k==='Enter'){ const it=items[se.res]; if(it){ if(it.recent){ this.setState({search:{...se,q:it.q,zone:'keys',res:0}}); } else { this.openGame(it.g); } } e.preventDefault(); }
+      }
+      return;
+    }
+    // browse
+    if(k==='y'||k==='Y'||k==='/'||k==='f'){ this.openSearch(); e.preventDefault(); return; }
+    if(k==='x'||k==='X'){ this.cycleSort(); e.preventDefault(); return; }
+    if(s.region==='tabs'){
+      if(k==='ArrowRight'||k==='d'){ this.setState(st=>({tab:Math.min(this.tabsDef.length-1,st.tab+1),shelf:0,col:0})); e.preventDefault(); }
+      else if(k==='ArrowLeft'||k==='a'){ this.setState(st=>({tab:Math.max(0,st.tab-1),shelf:0,col:0})); e.preventDefault(); }
+      else if(k==='ArrowDown'||k==='s'){ this.setState({region:'shelves',shelf:0,col:0}); e.preventDefault(); }
+      else if(k==='Enter'||k===' '){ this.setState({region:'shelves',shelf:0,col:0}); e.preventDefault(); }
+    } else {
+      const sh=this.shelvesData(); const shelf=sh[Math.min(s.shelf,sh.length-1)]; const len=this.shelfItems(shelf).length;
+      if(k==='ArrowUp'||k==='w'){ if(s.shelf<=0){ this.setState({region:'tabs'}); } else { this.setState(st=>({shelf:st.shelf-1})); this._reclamp(); } e.preventDefault(); }
+      else if(k==='ArrowDown'||k==='s'){ if(s.shelf<sh.length-1){ this.setState(st=>({shelf:st.shelf+1})); this._reclamp(); } e.preventDefault(); }
+      else if(k==='ArrowRight'||k==='d'){ this.setState(st=>({col:Math.min(len-1,st.col+1)})); e.preventDefault(); }
+      else if(k==='ArrowLeft'||k==='a'){ this.setState(st=>({col:Math.max(0,st.col-1)})); e.preventDefault(); }
+      else if(k==='Enter'||k===' '){ const it=this.shelfItems(shelf)[s.col]; if(it&&!it.more) this.openGame(it); e.preventDefault(); }
+      else if(k==='Escape'||k==='Backspace'){ this.setState({region:'tabs'}); e.preventDefault(); }
+    }
+  }
+  _reclamp(){ setTimeout(()=>this.clampCol(),0); }
+
+  renderVals(){
+    const s=this.state;
+    const accMode=this.props.accentMode||'per-game';
+    const fg=this.focusedGame();
+    const dg = (s.mode==='detail'&&s.detail) ? this.games.find(x=>x.id===s.detail.id) : null;
+    const tintG = dg || fg;
+    const acc = accMode==='cyan' ? '#19e3e3' : tintG.acc;
+    const accentVars='display:contents;--accent:'+acc+';';
+    const CARD_W=148, STRIDE=164, ROW_H=192+18, BAND_H=720-346-52;
+
+    // tabs
+    const tabs=this.tabsDef.map((t,i)=>{ const active=i===s.tab; const onTabs=s.region==='tabs'; const cur=active&&s.mode==='browse';
+      return { name:t.name, countTxt:this.fmt(this.tabCount(t.name)),
+        countStyle:'font-family:JetBrains Mono,monospace;font-size:9px;letter-spacing:.06em;color:'+(cur?'color-mix(in srgb,'+acc+' 80%, #fff)':'#5b6173')+';',
+        style:'display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:8px;cursor:pointer;font-family:Chakra Petch,sans-serif;font-weight:600;font-size:13px;letter-spacing:.04em;transition:all .18s;'
+          +(cur?('color:#07080c;background:'+acc+';'+(onTabs?'box-shadow:0 0 0 2px #fff6,0 6px 18px '+acc+'88;':'box-shadow:0 4px 14px '+acc+'66;'))
+                :'color:#9aa0b0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);'),
+        onClick:()=>this.setState({tab:i,region:'shelves',shelf:0,col:0})
+      };
+    });
+
+    // shelves
+    const shData=this.shelvesData();
+    const totalShelves=shData.length;
+    const maxV=Math.max(0,totalShelves*ROW_H-BAND_H);
+    const vScroll=Math.min((s.region==='shelves'?s.shelf:0)*ROW_H,maxV);
+    const VISIBLE=9, BUFFER=3;
+    const shelves=shData.map((shelf,si)=>{
+      const itemsAll=this.shelfItems(shelf);
+      const isFocusedShelf = s.region==='shelves' && si===s.shelf;
+      const maxX=Math.max(0,itemsAll.length*STRIDE-(1280-96));
+      const tx = isFocusedShelf ? Math.min(Math.max(0,(s.col-1))*STRIDE,maxX) : 0;
+      const start = isFocusedShelf ? Math.max(0, s.col-BUFFER) : 0;
+      const end = Math.min(itemsAll.length, isFocusedShelf ? (s.col+VISIBLE) : (VISIBLE+BUFFER));
+      const leadWidth = start*STRIDE;
+      const items=itemsAll.slice(start,end);
+      const cards=items.map((it,wi)=>{
+        const ci=start+wi;
+        const focused = isFocusedShelf && ci===s.col;
+        const chips=it.plat.slice(0,3).map(p=>({txt:(this.PLAT[p]||{s:p}).s}));
+        return { isGame:true, isMore:false, title:it.t, year:String(it.y), chips,
+          coverId:'cov-'+it.id, coverAlt:it.t,
+          showRank:shelf.kind==='top', rankTxt:String(ci+1).padStart(2,'0'),
+          hasProgress:shelf.kind==='cont'&&it.prog>0,
+          progressStyle:'height:100%;width:'+Math.round(it.prog*100)+'%;border-radius:3px;background:'+acc+';box-shadow:0 0 8px '+acc+';',
+          cardStyle:'flex:none;width:'+CARD_W+'px;height:166px;border-radius:10px;padding:11px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;position:relative;overflow:hidden;'+this.coverBg(it.acc,ci+si)
+            +'transition:transform .25s cubic-bezier(.2,.7,.2,1),opacity .25s,box-shadow .25s;'
+            +(focused?('transform:translateY(-12px) scale(1.05);opacity:1;box-shadow:0 0 0 2px '+it.acc+',0 20px 44px rgba(0,0,0,.55),0 0 32px '+it.acc+'55;')
+                     :(isFocusedShelf?'opacity:.62;':'opacity:.5;')+'box-shadow:0 10px 24px rgba(0,0,0,.4);'),
+          onClick:()=>{ if(isFocusedShelf&&ci===s.col){ this.openGame(it); } else { this.setState({region:'shelves',shelf:si,col:ci}); } },
+          onHover:()=>this.setState({region:'shelves',shelf:si,col:ci})
+        };
+      });
+      return { label:shelf.label, countTxt:shelf.count, isSortable:!!shelf.sortable,
+        labelStyle:'font-family:Chakra Petch,sans-serif;font-weight:700;font-size:15px;letter-spacing:.04em;transition:color .2s;color:'+(isFocusedShelf?'#f1f3f8':'#aab0bf')+';',
+        trackStyle:'display:flex;gap:16px;align-items:flex-end;height:178px;transition:transform .35s cubic-bezier(.2,.7,.2,1);transform:translateX(-'+tx+'px);',
+        leadStyle:'flex:none;width:'+leadWidth+'px;',
+        items:cards };
+    });
+
+    // hero
+    const fgChips=fg.plat.slice(0,4).map(p=>({txt:p, style:'font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:.06em;color:#c2c6d2;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);padding:4px 9px;border-radius:5px;'}));
+    const multi=fg.plat.length>1;
+
+    // az scrubber
+    const onCatalog = s.region==='shelves' && shData[Math.min(s.shelf,shData.length-1)] && shData[Math.min(s.shelf,shData.length-1)].kind==='all';
+    const f=s.filter;
+    const isSel=s.ctrlMode==='seleccion';
+    const pickerItems = s.sort===0
+      ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(ch=>({ch, onClick:()=>this.pickLetter(ch),
+          style:'cursor:pointer;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:11px;font-weight:'+(f&&f.field==='letra'&&f.value===ch?'700':'500')+';transition:all .12s;'
+            +(f&&f.field==='letra'&&f.value===ch?('background:'+acc+';color:#07080c;box-shadow:0 0 10px '+acc+';'):'color:#c2c6d2;background:rgba(255,255,255,.04);') }))
+      : this.availableYears().map(yr=>({ch:String(yr), onClick:()=>this.pickYear(yr),
+          style:'cursor:pointer;width:34px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-family:JetBrains Mono,monospace;font-size:10px;font-weight:'+(f&&f.field==='anio'&&f.value===yr?'700':'500')+';transition:all .12s;'
+            +(f&&f.field==='anio'&&f.value===yr?('background:'+acc+';color:#07080c;box-shadow:0 0 10px '+acc+';'):'color:#c2c6d2;background:rgba(255,255,255,.05);') }));
+
+    // search
+    const se=s.search;
+    const q=se.q;
+    const qPlain=q.replace(/ /g,'·')||'';
+    const resItems=this.resItems();
+    const isRecentMode=!q.trim();
+    const resCount = isRecentMode ? '' : (this.results().length+' resultados');
+    const cols=this.resCols();
+    const kbRows=this.keyGrid.map((row,ri)=>({
+      keys:row.map((cell,ci)=>{
+        const f = se.zone==='keys' && se.kr===ri && se.kc===ci;
+        const isAction=!!cell.k;
+        const w = cell.w?cell.w:1;
+        const base='flex:'+w+';min-width:0;height:46px;border-radius:9px;cursor:pointer;font-family:'+(isAction?'JetBrains Mono,monospace':'Chakra Petch,sans-serif')+';font-weight:700;font-size:'+(isAction?'12px':'18px')+';display:flex;align-items:center;justify-content:center;transition:all .12s;border:1px solid '+(f?acc:'rgba(255,255,255,.1)')+';';
+        const fill = f ? ('background:'+acc+';color:#07080c;box-shadow:0 0 0 2px #fff5,0 6px 18px '+acc+'66;transform:translateY(-2px);')
+                       : ('background:'+(isAction?'rgba(255,255,255,.03)':'rgba(255,255,255,.05)')+';color:'+(isAction?'#9aa0b0':'#e9ebf2')+';');
+        return { label:cell.l, style:base+fill, onClick:()=>this.kbActivate(ri,ci) };
+      })
+    }));
+    const searchResults=resItems.map((it,i)=>{
+      const f = se.zone==='results' && se.res===i;
+      if(it.recent){
+        return { isRecent:true, isGame:false, title:it.q, meta:'búsqueda',
+          style:'display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;cursor:pointer;transition:all .14s;border:1px solid '+(f?acc:'rgba(255,255,255,.08)')+';background:'+(f?'rgba(255,255,255,.07)':'rgba(255,255,255,.025)')+';'+(f?'transform:translateX(4px);':''),
+          onClick:()=>this.setState({search:{...se,q:it.q,zone:'keys',res:0}}), onHover:()=>this.setState({search:{...se,zone:'results',res:i}}) };
+      }
+      const g=it.g; const chips=g.plat.slice(0,3).map(p=>(this.PLAT[p]||{s:p}).s).join(' · ');
+      return { isGame:true, isRecent:false, title:g.t, meta:g.g+'  ·  '+g.y+'  ·  '+chips, coverId:'cov-'+g.id,
+        thumbStyle:'flex:none;width:46px;height:58px;border-radius:6px;overflow:hidden;'+this.coverBg(g.acc,i),
+        style:'display:flex;align-items:center;gap:13px;padding:11px 13px;border-radius:10px;cursor:pointer;transition:all .14s;overflow:hidden;border:1px solid '+(f?g.acc:'rgba(255,255,255,.08)')+';background:'+(f?'rgba(255,255,255,.06)':'rgba(255,255,255,.025)')+';'+(f?'transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.4);':''),
+        onClick:()=>this.openGame(g), onHover:()=>this.setState({search:{...se,zone:'results',res:i}}) };
+    });
+
+    // detail
+    let dTitle='',dGenre='',dYear='',dSynopsis='',dRating='',dMedia='',dPlayLabel='JUGAR',dEditionsLabel='',dCoverStyle='',dCoverId='',dChips=[],dEditions=[];
+    if(dg){
+      const sel=Math.min(dg.plat.length-1, s.detail.plat||0);
+      const selPlat=dg.plat[sel];
+      const md=(this.PLAT[selPlat]||{m:'\u2014'}).m;
+      dTitle=dg.t; dGenre=dg.g; dYear=String(dg.y);
+      dSynopsis=dg.syn||this.GBLURB[dg.g]||'';
+      dRating=dg.r+'/100';
+      dMedia='Formato: '+md+(dg.plat.length>1?'  \u00b7  '+dg.plat.length+' ediciones':'');
+      dPlayLabel='JUGAR EN '+selPlat;
+      dEditionsLabel=dg.plat.length>1?'ELEG\u00cd PLATAFORMA':'PLATAFORMA';
+      dCoverStyle='position:relative;width:100%;height:380px;border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);'+this.coverBg(dg.acc, dg.y%5);
+      dCoverId='cov-'+dg.id;
+      dChips=[{k:'A\u00d1O',v:String(dg.y)},{k:'G\u00c9NERO',v:dg.g},{k:'JUG.',v:dg.pl},{k:'DEV',v:dg.dev}];
+      dEditions=dg.plat.map((p,i)=>{ const d=this.PLAT[p]||{s:p,m:''}; const f=i===sel;
+        return { name:p, media:d.m, short:d.s,
+          iconStyle:'flex:none;width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Chakra Petch,sans-serif;font-weight:700;font-size:12px;letter-spacing:.02em;color:'+(f?'#07080c':acc)+';background:'+(f?acc:'color-mix(in srgb,'+acc+' 14%, transparent)')+';border:1px solid color-mix(in srgb,'+acc+' 40%, transparent);',
+          style:'display:flex;align-items:center;gap:13px;padding:11px 16px 11px 11px;border-radius:12px;cursor:pointer;text-align:left;transition:all .16s;border:1px solid '+(f?acc:'rgba(255,255,255,.1)')+';background:'+(f?'rgba(255,255,255,.06)':'rgba(255,255,255,.025)')+';'+(f?'transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.4);':''),
+          onClick:()=>this.setState(st=>({detail:{...st.detail,plat:i}})), onHover:()=>this.setState(st=>({detail:{...st.detail,plat:i}})) };
+      });
+    }
+
+    // legend
+    let legend;
+    if(s.launching) legend=[];
+    else if(s.mode==='detail') legend=[{k:'◄ ►',l:'Plataforma'},{k:'A',l:'Jugar'},{k:'B',l:'Volver'}];
+    else if(s.mode==='search') legend=[{k:'◄ ► ▲ ▼',l:'Navegar'},{k:'A',l:'Escribir / Abrir'},{k:'B',l:'Cerrar'}];
+    else if(s.region==='tabs') legend=[{k:'◄ ►',l:'Plataforma'},{k:'▼',l:'Estantes'},{k:'Y',l:'Buscar'}];
+    else legend=[{k:'◄ ► ▲ ▼',l:'Navegar'},{k:'A',l:'Detalle'},{k:'X',l:'Orden'},{k:'Y',l:'Buscar'}];
+
+    return {
+      accentVars, clock:s.clock||'\u2014\u2014:\u2014\u2014',
+      stageStyle:'position:relative;flex:none;width:1280px;height:720px;overflow:hidden;border-radius:2px;transform:scale('+s.scale+');transform-origin:center;box-shadow:0 0 0 1px rgba(255,255,255,.05),0 40px 120px rgba(0,0,0,.6);',
+      crt:this.props.crtScanlines!==false,
+      showLegend:this.props.showLegend!==false,
+      isBrowse:s.mode==='browse', isSearch:s.mode==='search', isDetail:s.mode==='detail',
+      dTitle, dGenre, dYear, dSynopsis, dRating, dMedia, dPlayLabel, dEditionsLabel, dCoverStyle, dCoverId, dChips, dEditions,
+      onBack:()=>this.back(), dLaunch:()=>this.detailLaunch(),
+
+      tabs,
+      modeLabel:isSel?'SELECCIÓN':'ORDEN',
+      modeBtnStyle:'padding:7px 12px;border-radius:8px;border:1px solid '+(isSel?acc:'rgba(255,255,255,.1)')+';background:'+(isSel?'color-mix(in srgb,'+acc+' 16%, rgba(255,255,255,.04))':'rgba(255,255,255,.04)')+';color:'+(isSel?acc:'#c7cbd6')+';cursor:pointer;font-family:JetBrains Mono,monospace;font-weight:700;font-size:11px;letter-spacing:.06em;',
+      onToggleMode:()=>this.toggleMode(),
+      critLabel:this.sortDef[s.sort],
+      sortBtnStyle:'padding:7px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#dfe3ec;cursor:pointer;font-family:JetBrains Mono,monospace;font-size:11px;letter-spacing:.06em;',
+      onCycleSort:()=>this.cycleSort(),
+      showDirBtn:!isSel && s.sort<2, dirGlyph:s.dir===1?'▲':'▼', onToggleDir:()=>this.toggleDir(),
+      dirBtnStyle:'width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--accent,'+acc+');cursor:pointer;font-size:11px;',
+      showValueBtn:isSel && s.sort<2, valueLabel:(f&&((s.sort===0&&f.field==='letra')||(s.sort===1&&f.field==='anio')))?String(f.value):'—',
+      hasFilter:!!f, filterLabel:f?(f.field==='letra'?('LETRA '+f.value):('AÑO '+f.value)):'',
+      onClearFilter:()=>this.clearFilter(),
+      clearChipStyle:'padding:7px 10px;border-radius:8px;border:1px solid rgba(255,90,90,.4);background:rgba(255,90,90,.08);color:#ff8a8a;cursor:pointer;font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:.04em;',
+      pickerItems,
+      pickerGridStyle:'position:absolute;top:calc(100% + 8px);right:0;z-index:50;display:grid;grid-template-columns:repeat('+(s.sort===0?'7,26px':'6,34px')+');gap:4px;padding:10px;border-radius:12px;background:rgba(8,10,16,.96);border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 50px rgba(0,0,0,.55);backdrop-filter:blur(10px);max-height:180px;overflow-y:auto;',
+      searchPillStyle:'display:flex;align-items:center;gap:9px;padding:7px 13px;border-radius:8px;border:1px solid color-mix(in srgb,'+acc+' 30%, rgba(255,255,255,.1));background:color-mix(in srgb,'+acc+' 8%, rgba(255,255,255,.03));color:#dfe3ec;cursor:pointer;font-family:Chakra Petch,sans-serif;font-weight:600;font-size:12px;letter-spacing:.06em;',
+      onOpenSearch:()=>this.openSearch(),
+
+      fgTitle:fg.t, fgChips, fgMultiPlat:multi, fgPlatCount:String(fg.plat.length),
+      fgGenre:fg.g, fgYear:String(fg.y), fgPlayers:fg.pl+' jug.', fgRating:fg.r+'/100',
+      fgSynopsis:fg.syn||this.GBLURB[fg.g]||'',
+      fgPlatNote: multi? ('Disponible en '+fg.plat.length+' plataformas · elegís en el detalle') : ('Plataforma: '+fg.plat[0]),
+
+      onCatalog, azOpen:s.azOpen, onToggleAz:()=>this.toggleAz(),
+      azBtnStyle:'min-width:30px;height:30px;padding:0 8px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid '+(s.azOpen?acc:'rgba(255,255,255,.1)')+';background:rgba(255,255,255,.04);cursor:pointer;font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700;color:'+(s.azOpen?acc:'#c7cbd6')+';',
+
+      shelves, shelvesTrackStyle:'position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;gap:18px;transition:transform .4s cubic-bezier(.2,.7,.2,1);transform:translateY(-'+vScroll+'px);',
+
+      qDisplay:q||'Escribí para buscar…', qColor:q?'#f1f3f8':'#5b6173', qPlain:qPlain,
+      resultCountTxt:resCount, resultsHead:isRecentMode?'BÚSQUEDAS RECIENTES':'RESULTADOS', resultsHeadColor:isRecentMode?'#6a7081':acc,
+      resultsGridStyle:'display:grid;grid-template-columns:repeat('+cols+',1fr);gap:10px;align-content:start;',
+      kbRows, searchResults, noResults:!isRecentMode&&searchResults.length===0,
+      onCloseSearch:()=>this.closeSearch(),
+
+      launching:!!s.launching, launchTitle:s.launching?s.launching.title:'', launchSub:s.launching?s.launching.sub:'',
+      legend,
+
+      onOpenHelp:()=>this.openHelp(), onCloseHelp:()=>this.closeHelp(), helpOpen:s.helpOpen,
+      helpSteps:this.helpPages.map((p,i)=>({ num:i+1, short:p.short,
+        onClick:()=>this.setState({helpIdx:i}),
+        navStyle:'display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;border:none;cursor:pointer;font-family:JetBrains Mono,monospace;font-size:12px;margin-bottom:3px;'+(i===s.helpIdx?'background:'+acc+';color:#07080c;font-weight:700;':'background:transparent;color:#aeb3c0;') })),
+      helpPageNum:s.helpIdx+1, helpPageTotal:this.helpPages.length,
+      helpTitle:this.helpPages[s.helpIdx].title, helpIntro:this.helpPages[s.helpIdx].intro,
+      helpBullets:this.helpPages[s.helpIdx].bullets.map(t=>({t})),
+      helpHasCode:!!this.helpPages[s.helpIdx].code, helpCode:this.helpPages[s.helpIdx].code,
+      onHelpPrev:()=>this.helpNav(-1), onHelpNext:()=>this.helpNav(1),
+      helpPrevStyle:'padding:10px 18px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#c7cbd6;font-family:JetBrains Mono,monospace;font-size:12px;cursor:pointer;'+(s.helpIdx===0?'opacity:.35;pointer-events:none;':''),
+      helpNextStyle:'padding:10px 18px;border-radius:8px;border:none;background:'+acc+';color:#07080c;font-weight:700;font-family:Chakra Petch,sans-serif;font-size:13px;cursor:pointer;'+(s.helpIdx===this.helpPages.length-1?'opacity:.35;pointer-events:none;':'')
+    };
+  }
+}
+</script>
+</body>
+</html>

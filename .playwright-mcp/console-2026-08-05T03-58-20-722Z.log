@@ -1,0 +1,3 @@
+[       5ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://127.0.0.1:8934/support.js:0
+[     866ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://127.0.0.1:8934/%7B%7B%20coverVideoUrl%20%7D%7D:0
+[    1105ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8934/favicon.ico:0

@@ -21,12 +21,16 @@ sin scans, sin manual y sin combos, para siempre. Striker es la excepción.
 **Primera vez:** leé [`docs/SETUP.md`](docs/SETUP.md) — arma las dos máquinas y tiene la
 trampa de la versión de MAME, que puede romper ADR-0005 sin avisar.
 
+**Para cargar un juego** (ROM, imágenes, video, revista): leé
+[`docs/guides/cargar-un-juego-nuevo.md`](docs/guides/cargar-un-juego-nuevo.md) —
+el manual del día a día, distinto de `SETUP.md` que es instalación de máquina.
+
 ```bash
 make setup       # config de git (precomposeUnicode)
 make check-git   # verificá que quedó
 make doctor      # el validador contra los fixtures
-make test        # 68 tests, cada uno reproduce un bug real o un caso del contrato
-make theme       # instala el theme de debug en Pegasus
+make test        # 72 tests, cada uno reproduce un bug real o un caso del contrato
+make theme       # instala el theme de producción en Pegasus (make theme-debug para el harness)
 ```
 
 ## El banco de pruebas
@@ -60,14 +64,23 @@ Si solo funciona con Striker, no funciona.
 | [0010](spec/decisions/0010-contrato-magazine-json-extendido.md) | ✅ **aceptada** | Contrato `magazine.json` extendido con evidencia real |
 | [0011](spec/decisions/0011-fuente-synopsis-regeneracion-campo.md) | ✅ **aceptada** | `attract synopsis` escribe desde una fuente, merge de un solo campo |
 | [0012](spec/decisions/0012-mcp-dependencia-opcional-acotada.md) | ✅ **aceptada** | `attract mcp` usa el SDK `mcp` como dependencia opcional, acotada |
+| [0013](spec/decisions/0013-accent-por-juego.md) | ✅ **aceptada** | El accent de cada juego se declara a mano en su `data.json` |
+| [0014](spec/decisions/0014-manual-digitalizado.md) | ✅ **aceptada** | Manual digitalizado en `media/<set>/_manual/`, declarado en `data.json` |
+| [0015](spec/decisions/0015-contrato-data-json.md) | ✅ **aceptada** | Contrato completo de `data.json`, con nombres de campo explícitos |
+| [0016](spec/decisions/0016-canvas-fijo-escalado.md) | ✅ **aceptada** | El theme se dibuja en un canvas fijo de 1280×720 y se escala entero |
+| [0017](spec/decisions/0017-providers-pegasus.md) | ✅ **aceptada** | Los providers de Pegasus que no son de ATTRACT se apagan por config |
+| [0018](spec/decisions/0018-launch-ruta-absoluta.md) | ✅ **aceptada** | `launch:` usa la ruta absoluta del emulador, resuelta por máquina |
 
-**12 ADR, 11 vigentes.** 0010 salió de verificar la 0008 contra un
+**18 ADR, 17 vigentes.** 0010 salió de verificar la 0008 contra un
 `magazine.json` real, que traía más campos de los que se habían inventado
 para el fixture. 0011 salió de especificar la primera feature real
 (`attract synopsis`, `spec/features/001-synopsis/`) y decidir cómo escribe
 `metadata.pegasus.txt` sin romper ADR-0002. 0012 salió de especificar
 `attract mcp` (M5) y decidir cómo convive un SDK externo con el límite
-stdlib-only. Ver [`spec/decisions/README.md`](spec/decisions/README.md).
+stdlib-only. 0013-0018 salieron de diseñar y construir el theme de
+producción (`005-theme-base`, `006-theme-documentos`, `007-theme-trucos`)
+contra el handoff de diseño real. Ver
+[`spec/decisions/README.md`](spec/decisions/README.md).
 
 ## Stack
 
@@ -83,15 +96,16 @@ stdlib-only. Ver [`spec/decisions/README.md`](spec/decisions/README.md).
 
 ```
 docs/       SETUP.md ← empezá acá · CONVENCION.md ← el documento central
-            baseline · mapeo · mockup · decisiones/ ← handoffs de sesión
-spec/       constitution (misión, stack, roadmap) + decisions (12 ADR, 11
-            vigentes) + features (001 a 004, las 4 implementadas)
+            guides/cargar-un-juego-nuevo.md ← manual del día a día
+            baseline · mapeo · mockup · plataforma-pegasus.md · decisiones/ ← handoffs de sesión
+spec/       constitution (misión, stack, roadmap) + decisions (18 ADR, 17
+            vigentes) + features (001 a 007, theme de producción incluido)
 src/        attract doctor + synopsis + mcp + ingest (los 4 módulos planeados en cli.py)
 .claude/    skills/attract/ ← le dice a un agente cuándo correr doctor/synopsis
-themes/     attract-debug ← el harness del Bloque 3 · experimentos/ ← pruebas cerradas
-fixtures/   ROMs falsas de 0 bytes + una revista de mentira. Portables, suficientes
+themes/     attract ← theme de producción (005/006/007) · attract-debug ← harness del Bloque 3 · experimentos/ ← pruebas cerradas
+fixtures/   ROMs falsas de 0 bytes + revistas y manuales de mentira. Portables, suficientes
 library/    tu librería real. NO va al repo
-tests/      68 tests. Cada uno reproduce un bug real o un caso del contrato
+tests/      72 tests. Cada uno reproduce un bug real o un caso del contrato
 ```
 
 ## Lo que ya aprendimos a los golpes

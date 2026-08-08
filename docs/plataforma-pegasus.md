@@ -93,6 +93,41 @@ Lo que la documentación no dice, o dice distinto.
 - Se resuelve apagando los providers, no filtrando en el theme
   ([`ADR-0017`](../spec/decisions/0017-providers-pegasus.md)).
 
+### `api.keys` — los botones del mando
+
+Existen **ocho** predicados, y los ocho responden en este binario. El mapeo a
+teclas y a botones lo decide `settings.txt`, que vive fuera del repo: el theme
+usa siempre `api.keys.*`, nunca una tecla literal.
+
+| Predicado | Botón | Tecla por default | Uso en el theme |
+|---|---|---|---|
+| `isAccept` | A | `Return`/`Enter` | acción primaria |
+| `isCancel` | B | `Esc`/`Backspace` | volver / cerrar |
+| `isDetails` | X | **`I`** | panel de orden (009) |
+| `isFilters` | Y | **`F`** | abrir Buscar (010) |
+| `isPrevPage` / `isNextPage` | L1 / R1 | `Q`,`A` / `E`,`D` | libres |
+| `isPageUp` / `isPageDown` | L2 / R2 | `Fn`+`↑`/`↓` | libres |
+
+- **Ninguno se superpone**: cada tecla prende exactamente uno.
+- **No hay `isMenu`.** `keys.menu` (`F1`/Start) existe en `settings.txt` y es
+  **invisible** para el theme: no prende ningún predicado. Una función que
+  necesite botón propio no puede colgarse de ahí.
+- **Las letras `a d q e f i` no son teclas libres**: disparan predicados. Una
+  pantalla que escriba con el teclado físico (Buscar) tiene que preguntar solo
+  `isCancel` y tratar el resto como texto.
+- **`isCancel` (Escape/B) está RESERVADA por Pegasus por encima del theme**:
+  es la tecla con la que el usuario sale del theme o abre el menú propio de
+  Pegasus. Si un `Keys.onPressed` la acepta (`event.accepted = true`) sin
+  hacer nada visible con ella —el caso típico es tratarla igual que "subir de
+  foco" y aceptarla también cuando ya no hay a dónde subir—, el evento se
+  consume ahí y nunca llega a Pegasus: Escape queda "bloqueada" para todo lo
+  que no sea este theme. La regla: **aceptar `isCancel` solo en la rama que
+  hace algo real con ella** (cerrar un overlay, volver a la pantalla
+  anterior), nunca como parte de una condición combinada con otra tecla que sí
+  siempre tiene acción. Bug real visto en Pegasus el 2026-08-09,
+  `screens/BrowseScreen.qml`.
+- Evidencia: `themes/experimentos/teclas-xy.qml` §RESULTADO OBSERVADO.
+
 ### Lanzar
 
 - Solo existe `game.launch()`. **El comando resuelto no está expuesto.**
@@ -103,6 +138,18 @@ Lo que la documentación no dice, o dice distinto.
   variables `{file.*}` y `{env.*}`. **No hay `launch:` por sistema operativo.**
 - Evidencia: `themes/attract/overlays/LaunchOverlay.qml`,
   [`ADR-0018`](../spec/decisions/0018-launch-ruta-absoluta.md).
+
+### `api.memory` — la única persistencia del theme
+
+- Existe, con `get` / `set` / `has` / `unset`, y **sobrevive a cerrar y
+  reabrir Pegasus** (⌘Q, no solo cambiar de theme).
+- **`set()` conserva el tipo.** Un `number` vuelve `number`; un `Array` de
+  strings vuelve un `Array` de verdad (`Array.isArray()` da `true`). No hace
+  falta `JSON.stringify` — al revés que `game.extra`, que siempre envuelve en
+  lista.
+- Sin medir: objetos anidados, y qué pasa con un corte de luz en vez de una
+  salida limpia.
+- Evidencia: `themes/experimentos/memoria.qml`.
 
 ### Leer archivos desde el theme
 
@@ -134,7 +181,7 @@ y ninguno leyendo el código. La regla que dejan:
 |---|---|---|
 | **Un binding sobre `y` dentro de un positioner** | `Column`/`Row` posicionan escribiendo la `y` de sus hijos. El binding pelea y gana: el botón saltaba encima de la carátula. Se veía bien en 3 de 4 capturas. El "lift" va por `transform: Translate`, que no participa del layout | `ui/Boton.qml` |
 | **Altos calculados a mano** | Un espaciador de `parent.height - 14 - 44`, donde `44` asumía tres renglones de título. Al cambiar la fuente dejó de ser cierto y el texto se salió | `screens/GameCard.qml` |
-| **Crecer hacia arriba sin tope** | El hero anclado abajo creció más que el espacio disponible y se metió en la barra. La solución es que un bloque ceda calculando cuánto entra, no fijar constantes | `screens/LibraryScreen.qml` |
+| **Crecer hacia arriba sin tope** | El hero anclado abajo creció más que el espacio disponible y se metió en la barra. La solución es que un bloque ceda calculando cuánto entra, no fijar constantes | `screens/BrowseScreen.qml` |
 | **Dos bloques anclados a bordes opuestos** | El carrusel anclado al fondo crecía hacia arriba; la columna crecía hacia abajo. Cada uno correcto por su cuenta, cruzándose por diez píxeles. Se arregla metiéndolos en el **mismo** positioner con un espaciador calculado en un solo lugar y con piso | `screens/DetailScreen.qml` |
 | **Un hijo de `Row` cuyo ancho depende del `Row`** | Un `Row` calcula su ancho **a partir del de sus hijos**. Un hijo con `width: parent.width - 240` cierra el círculo: QML no lo resuelve y dibuja **todo encimado en la misma coordenada**. Se arregla anclando contra un contenedor de ancho propio, no contra el positioner | `overlays/CheatsOverlay.qml` |
 
@@ -160,6 +207,27 @@ es idioma o pelea:
 | `Column` | solo `y` | sí, el eje horizontal |
 | `Flow`, `Grid` | `x` **e** `y` | **no**, ningún eje |
 
+### `Loader.sourceComponent` inline + un nombre de propiedad que choca con un `id` de afuera
+
+**`Loader { sourceComponent: Tipo { prop: prop } }` puede autorreferenciarse
+en vez de leer el `id` de afuera, si `Tipo` tiene una propiedad propia con
+ESE MISMO nombre.** `sourceComponent` con un objeto inline lo envuelve en un
+`Component` implícito, y ahí adentro el nombre de la propiedad del tipo
+cargado le gana al `id` del documento exterior — se genera un binding loop
+silencioso (`QML Tipo: Binding loop detected for property "prop"`, visible
+solo en `lastrun.log`, nunca en pantalla como error) y la propiedad se queda
+en su valor por default para siempre.
+
+Pasó con `theme.qml:182`: `SortPanel { catalogo: catalogo }` — mismo texto
+que `BrowseScreen { catalogo: catalogo }`, que sí funciona porque es un hijo
+directo (sin `Loader` de por medio), no envuelto en un `Component`. La
+diferencia no se ve mirando el código de ninguno de los dos archivos por
+separado — solo se ve en el log. **Se arregla evitando el choque de
+nombres**: un alias en el documento exterior con OTRO nombre
+(`readonly property var catalogoInstancia: catalogo`) y referenciar ese
+alias, no el `id` a secas, dentro del `sourceComponent`. Medido el
+2026-08-09.
+
 ### Una trampa que no es de layout pero se le parece
 
 **Mezclar dos estados en una variable.** El carrusel de revistas usaba
@@ -176,6 +244,20 @@ cosas.
 un singleton no puede llamarse `Theme.qml`: crear uno **pisa al otro en
 silencio**. El `qmldir` permite exponerlo con otro nombre — el archivo se llama
 `Tokens.qml` y en el código se sigue escribiendo `Theme.algo`.
+
+**En macOS las flechas comunes llegan con `KeypadModifier`.** `Key_Up`
+(`0x1000013`) viene con `event.modifiers === 536870912` (`0x20000000`), no con
+`NoModifier`. Un `if` que exija "flecha sin modificadores" no dispara nunca en
+el Mac. `Fn`+`↑`/`↓` es otra cosa distinta y sí da `Key_PageUp`/`Key_PageDown`.
+Medido el 2026-08-05 con `themes/experimentos/teclas-xy.qml`.
+
+**Una `property` no puede empezar con mayúscula.** `readonly property int MAX:
+12` no compila: `Property names cannot begin with an upper case letter`. En
+JavaScript sí se puede —`core/InputTokens.js` tiene `var FLECHAS`— así que la
+costumbre de escribir las constantes en mayúscula cruza mal la frontera entre
+los `.js` y los `.qml`. Y el castigo es el máximo que hay: **el theme entero no
+carga**, con la misma pantalla de `Theme loading failed :(` que un import que
+no resuelve (§1). Medido el 2026-08-05 con `themes/experimentos/teclas-xy.qml`.
 
 ### Cosas de CSS que Qt Quick 5.15 no tiene
 
