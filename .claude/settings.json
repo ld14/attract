@@ -49,7 +49,12 @@
       "Bash(node themes/experimentos/verificar-tokens.js)",
       "Bash(git -C /Users/familyhouse/workplace/attract mv docs/decisiones/2026-07-23.md docs/decisiones/archivadas/2026-07-23.md)",
       "Bash(mkdir -p /Users/familyhouse/workplace/attract/spec/features/008-theme-ayuda)",
-      "Bash(echo \"---instalado---\")"
+      "Bash(echo \"---instalado---\")",
+      "Bash(git push *)",
+      "Bash(git ls-remote *)",
+      "Bash(gh repo *)",
+      "Bash(rtk gh *)",
+      "Bash(echo \"---exit: $?\")"
     ],
     "additionalDirectories": [
       "/Users/familyhouse/Library/Preferences/pegasus-frontend/themes/attract-debug",
