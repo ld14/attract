@@ -32,7 +32,8 @@ themes/attract/
 │  ├─ Paths.qml                media/<set>/ y media/_magazines/<ref>/ en runtime
 │  └─ GameData.qml             XHR de data.json -> accent, review, cheats, manual, mags
 ├─ ui/
-│  ├─ Background.qml           3 capas + CRT
+│  ├─ Background.qml           capas 1-3, detras de todo
+│  ├─ CrtOverlay.qml           capa 4, encima de todo (la monta theme.qml)
 │  ├─ CoverImage.qml           cadena de fallback 2.2 + color-wash con accent
 │  ├─ Boton.qml                variant: "accent" | "glass" (eran dos archivos)
 │  ├─ Chip.qml  SectionLabel.qml  FocusRing.qml
@@ -110,9 +111,79 @@ verificada contra Pegasus real, encadenada dos veces
 `onStatusChanged` para saltar al siguiente cuando uno falla. Es el único lugar
 del theme que conoce esa cadena.
 
-`Background` son las tres capas del handoff. Las scanlines van con un `Image`
-de 1×8px en `fillMode: Image.Tile` con la `y` animada — más barato que un
-shader y no necesita `QtGraphicalEffects`.
+#### Las cuatro capas de fondo
+
+Fuente: `design_handoff_home/background-texture-spec.md` y el prototipo
+`design_handoff_home/Pegasus Home.dc.html`. Son overlays puramente visuales, sin
+contenido ni lógica — fáciles de perder al portar porque no son "un componente".
+
+Apiladas de atrás hacia adelante:
+
+| # | Capa | Dónde | Presencia |
+|---|---|---|---|
+| 1 | Ambient backdrop (gradiente + glow de accent) | `ui/Background.qml` | siempre |
+| 2 | Scanlines con deriva infinita | `ui/Background.qml` | **siempre** |
+| 3 | Viñeta de legibilidad | `ui/Background.qml` | siempre |
+| — | _la UI real: pantallas, overlays, popovers_ | | |
+| 4 | Overlay CRT (filtro de tubo) | `ui/CrtOverlay.qml` | toggle, default ON |
+
+**Capa 1** — `linear-gradient(180deg, #0a0c12 → #06070c)` de base, y encima un
+`radial-gradient` elíptico centrado en 72%/8% con el accent del juego enfocado,
+desvaneciéndose a transparente al 46% del radio. Transiciona al cambiar de juego.
+_Diverge a propósito_: opacidad 0.22, no el 0.5 del CSS — con 0.5 el accent
+lavaba media pantalla y se comía el contraste de la barra y el título
+(auditoría 2026-08-06, anotada en el archivo).
+
+**Capa 2 — la que da vida al fondo.** Franja blanca de 2px a
+`rgba(255,255,255,.05)` seguida de 6px transparente (período 8px), opacidad de
+capa 0.12. Es textura, no un patrón visible a simple vista. **No depende del toggle CRT**: es lo que hace que el fondo
+respire con el tubo apagado.
+
+La animación es el punto crítico y es donde estuvo el bug: el CSS mueve
+`background-position` de 0 a 240px en 7s, y **240 = 30 × 8**, o sea treinta
+períodos del patrón — **233 ms por ciclo, ~34 px/s**. Estuvo puesto en 7000 ms
+por ciclo (30× más lento, 1.14 px/s), y a esa velocidad la deriva es
+indistinguible de una textura fija: era la causa real de que el fondo se viera
+plano (auditoría 2026-08-08).
+
+**Capa 3** — oscurece para que el texto se lea sobre cualquier arte.
+_Diverge a propósito_: el prototipo usa un solo gradiente vertical de 4 paradas;
+acá son dos (horizontal + vertical) porque la columna izquierda tiene que
+protegerse de cualquier carátula clara del estante, cosa que un vertical solo no
+hace. Colores base iguales (~`#06070c`), forma distinta (auditoría 2026-08-08).
+
+**Capa 4** — franja negra de 1px a `rgba(0,0,0,.15)` + 2px transparente
+(período 3px, líneas mucho más finas y oscuras que la capa 2), más un
+`radial-gradient` de viñeta transparente hasta el 64% y `rgba(0,0,0,.5)` en el
+borde. Va **encima de absolutamente todo**, incluidos ayuda, trucos, visor y el
+popover de orden — por eso vive fuera de `Background` y la monta `theme.qml` como
+último hijo de `stage` con `z: 80`. Mientras estuvo adentro de `Background` se
+dibujaba detrás de la UI entera y no llegaba a tocar ni la barra ni las tarjetas.
+
+#### Técnica: por qué no hacen falta ni shaders ni blend-modes
+
+Las cuatro capas son `Canvas` de QtQuick 2.0 y nada más. Las scanlines se pintan
+**una sola vez** y después solo se anima la `y` del `Canvas` dentro de un `Item`
+con `clip: true` — no hay repintado por frame. El alto extra de un período es lo
+que hace que el loop se vea continuo en vez de saltar.
+
+Los `mix-blend-mode` del CSS **no se aproximan: no se necesitan**, porque las dos
+capas que los usan son blanco puro y negro puro:
+
+- `screen` con blanco: `B(c,1) = 1-(1-c)(1-1) = 1`; compuesto con alfa `a` da
+  `c(1-a)+a`, idéntico al blend normal de blanco a alfa `a`.
+- `multiply` con negro: `B(c,0) = 0`; compuesto con alfa `a` da `c(1-a)`,
+  idéntico al blend normal de negro a alfa `a`.
+
+Sólo se notarían con un color que no fuera blanco o negro puro, y no hay ninguno.
+Esto vale por sí mismo: el theme no depende de que `QtGraphicalEffects` exista
+contra este binario (ver `themes/experimentos/graphical-effects.qml`).
+
+`createRadialGradient` sólo hace círculos, así que los radiales elípticos del CSS
+(`135% 105%`, `120% 120%`) se consiguen escalando el contexto en `y` y dibujando
+en coordenadas ya escaladas. Sin eso el glow de la capa 1 se derrama sobre media
+pantalla en vez de quedar arriba a la derecha — se vio en la primera corrida
+contra Pegasus real.
 
 El resto son envoltorios finos sobre `Rectangle`/`Text` con las constantes del
 diseño. Cada uno recibe `accent` como propiedad; ninguno lo busca por su

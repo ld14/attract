@@ -1,5 +1,12 @@
-// Las tres capas de fondo del diseno, mas el overlay CRT opcional.
-// Van detras de TODAS las pantallas (handoff #Background treatment).
+// Las tres capas de fondo que van DETRAS de todas las pantallas
+// (handoff #Background treatment):
+//
+//   1. ambient backdrop  — gradiente vertical oscuro + glow del accent
+//   2. scanlines         — deriva infinita, SIEMPRE presente
+//   3. vineta            — legibilidad del texto sobre el arte
+//
+// La cuarta capa del handoff (el overlay CRT) NO esta aca: va por ENCIMA de
+// toda la UI, asi que vive en ui/CrtOverlay.qml.
 //
 // El accent entra como propiedad, no se lee de Theme: es un dato por juego
 // (ADR-0013) y este fondo cambia de color al mover el foco en la libreria.
@@ -9,9 +16,17 @@
 //   radial-gradient()      -> Canvas.createRadialGradient. Equivalente real,
 //                             no una aproximacion: Canvas si tiene gradientes
 //                             radiales, lo que no los tiene es Rectangle.
-//   mix-blend-mode: screen -> NO existe en Qt Quick sin QtGraphicalEffects.
-//                             Las scanlines se aproximan bajando la opacidad;
-//                             se ven un poco menos luminosas que en el CSS.
+//   mix-blend-mode: screen -> NO HACE FALTA, y esto NO es una aproximacion.
+//                             La capa 2 es blanco puro, y para blanco puro el
+//                             screen y el blend normal dan el MISMO pixel:
+//                             screen(c, 1) = 1 - (1-c)(1-1) = 1, y componer
+//                             eso con alfa a da c(1-a) + a, que es exactamente
+//                             el blend normal de blanco a alfa a. Lo mismo vale
+//                             para el multiply con negro puro del overlay CRT:
+//                             multiply(c, 0) = 0, y componerlo da c(1-a).
+//                             Los blend-modes solo se notarian con un color que
+//                             no fuera blanco o negro puro, y no hay ninguno.
+//                             (Verificado algebraicamente, auditoria 2026-08-08.)
 //   repeating-linear-      -> Canvas pintado una sola vez, animando la y. Mas
 //   gradient + animacion      barato que un shader y no necesita ningun
 //                             modulo extra, que es justo lo que no sabemos si
@@ -27,7 +42,6 @@ Item {
     id: root
 
     property color accent: Theme.accentNeutro
-    property bool crtScanlines: true
 
     // --- CAPA 1: gradiente vertical oscuro + glow de accent arriba a la derecha
     Rectangle {
@@ -88,7 +102,10 @@ Item {
         }
     }
 
-    // --- CAPA 2: scanlines con deriva lenta (ambiente CRT, decorativo)
+    // --- CAPA 2: scanlines con deriva (ambiente CRT, decorativo)
+    // SIEMPRE presente, independiente del toggle CRT: es la textura que hace
+    // que el fondo se vea vivo incluso con el tubo apagado.
+    //
     // El patron se pinta UNA vez y despues solo se mueve la y: no hay repintado
     // por frame. El alto extra de un periodo es lo que hace que el loop se vea
     // continuo en vez de saltar.
@@ -111,9 +128,18 @@ Item {
                     ctx.fillRect(0, y, width, 2);
             }
 
+            // 233 ms POR CICLO, no 7000. El CSS anima background-position de
+            // 0 a 240px en 7s (Pegasus Home.dc.html:20, @keyframes pgdrift), y
+            // 240 = 30 x 8: son TREINTA periodos del patron en esos 7s, o sea
+            // 7000/30 = 233ms cada uno, ~34 px/s.
+            //
+            // Con duration: 7000 aca se hacia UN solo periodo en 7s (1.14 px/s):
+            // 30 veces mas lento, y a esa velocidad la deriva es indistinguible
+            // de una textura fija. Ese era el motivo real de que el fondo se
+            // viera plano — no que faltara la capa. Auditoria 2026-08-08.
             NumberAnimation on y {
                 from: -8; to: 0
-                duration: 7000
+                duration: 233
                 loops: Animation.Infinite
                 running: true
             }
@@ -158,20 +184,6 @@ Item {
         }
     }
 
-    // --- OVERLAY CRT opcional: lineas que oscurecen, no que iluminan.
-    // Distinto de la capa 2: aquella es ambiente, esta es el filtro de tubo.
-    Canvas {
-        anchors.fill: parent
-        visible: root.crtScanlines
-        opacity: 0.30
-        renderStrategy: Canvas.Cooperative
-
-        onPaint: {
-            var ctx = getContext("2d");
-            ctx.reset();
-            ctx.fillStyle = Qt.rgba(0, 0, 0, 0.25);
-            for (var y = 0; y < height; y += 3)
-                ctx.fillRect(0, y, width, 1);
-        }
-    }
+    // La CAPA 4 (overlay CRT) NO esta aca: va encima de toda la UI, no detras.
+    // Vive en ui/CrtOverlay.qml y la monta theme.qml como ultimo hijo de stage.
 }

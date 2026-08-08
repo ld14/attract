@@ -63,6 +63,12 @@ FocusScope {
     readonly property color accent: pantalla === "detail" ? detalle.accent
                                                           : libreria.accent
 
+    // Unico interruptor del filtro de tubo (prop `crtScanlines` del handoff,
+    // default ON). Solo apaga la CAPA 4: las scanlines de ambiente de la capa 2
+    // son independientes y siguen siempre encendidas — es lo que mantiene vivo
+    // el fondo con el tubo apagado (background-texture-spec.md:10).
+    readonly property bool crtScanlines: true
+
     Rectangle { anchors.fill: parent; color: Theme.screen }
 
     Item {
@@ -76,7 +82,6 @@ FocusScope {
         Background {
             anchors.fill: parent
             accent: root.accent
-            crtScanlines: true
         }
 
         BrowseScreen {
@@ -236,6 +241,18 @@ FocusScope {
                 focus: true
                 onCerrar: lanzando.active = false
             }
+        }
+
+        // El filtro de tubo va ULTIMO y por encima de TODO — barra, tarjetas,
+        // ayuda, trucos, visor y el popover de orden
+        // (background-texture-spec.md:37, z-index:80 en el prototipo).
+        //
+        // Ser el ultimo hermano ya alcanzaria para quedar arriba; el z explicito
+        // es para que siga arriba si alguien agrega un hermano despues.
+        CrtOverlay {
+            anchors.fill: parent
+            z: 80
+            activo: root.crtScanlines
         }
     }
 
