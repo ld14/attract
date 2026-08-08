@@ -78,8 +78,8 @@ para el fixture. 0011 salió de especificar la primera feature real
 `metadata.pegasus.txt` sin romper ADR-0002. 0012 salió de especificar
 `attract mcp` (M5) y decidir cómo convive un SDK externo con el límite
 stdlib-only. 0013-0018 salieron de diseñar y construir el theme de
-producción (`005-theme-base`, `006-theme-documentos`, `007-theme-trucos`)
-contra el handoff de diseño real. Ver
+producción (`005-theme-base`, `006-theme-documentos`, `007-theme-trucos`,
+`008-theme-ayuda`, `009-theme-estantes`) contra el handoff de diseño real. Ver
 [`spec/decisions/README.md`](spec/decisions/README.md).
 
 ## Stack
@@ -99,10 +99,10 @@ docs/       SETUP.md ← empezá acá · CONVENCION.md ← el documento central
             guides/cargar-un-juego-nuevo.md ← manual del día a día
             baseline · mapeo · mockup · plataforma-pegasus.md · decisiones/ ← handoffs de sesión
 spec/       constitution (misión, stack, roadmap) + decisions (18 ADR, 17
-            vigentes) + features (001 a 007, theme de producción incluido)
+            vigentes) + features (001 a 009, theme de producción incluido)
 src/        attract doctor + synopsis + mcp + ingest (los 4 módulos planeados en cli.py)
 .claude/    skills/attract/ ← le dice a un agente cuándo correr doctor/synopsis
-themes/     attract ← theme de producción (005/006/007) · attract-debug ← harness del Bloque 3 · experimentos/ ← pruebas cerradas
+themes/     attract ← theme de producción (005-009) · attract-debug ← harness del Bloque 3 · experimentos/ ← pruebas cerradas
 fixtures/   ROMs falsas de 0 bytes + revistas y manuales de mentira. Portables, suficientes
 library/    tu librería real. NO va al repo
 tests/      72 tests. Cada uno reproduce un bug real o un caso del contrato
