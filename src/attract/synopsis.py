@@ -70,9 +70,8 @@ def leer_fuente(sistema_root: Path, set_id: str) -> str:
 
 def parsear_bloques(texto: str) -> list[Bloque]:
     """Separa metadata.pegasus.txt en bloques: header (antes del primer
-    'game:', es_game=False) + un bloque por 'game:'. Preserva TODO -
-    escribir(parsear_bloques(texto)) sin ningun merge reproduce texto
-    byte a byte."""
+    'game:', es_game=False) + un bloque por 'game:'. Strip trailing blank
+    lines de cada bloque para que escribir las regenere consistentemente."""
     lineas = texto.split("\n")
     bloques: list[Bloque] = []
     actual: list[str] = []
@@ -81,12 +80,16 @@ def parsear_bloques(texto: str) -> list[Bloque]:
     for linea in lineas:
         if linea.startswith("game:"):
             if actual:
+                while actual and actual[-1] == "":
+                    actual.pop()
                 bloques.append(Bloque(lineas=actual, es_game=es_game_actual))
             actual = [linea]
             es_game_actual = True
         else:
             actual.append(linea)
     if actual:
+        while actual and actual[-1] == "":
+            actual.pop()
         bloques.append(Bloque(lineas=actual, es_game=es_game_actual))
 
     return bloques
@@ -173,9 +176,11 @@ def mergear_summary(bloque: Bloque, texto_nuevo: str) -> Bloque:
 
 def escribir(bloques: list[Bloque]) -> str:
     lineas: list[str] = []
-    for b in bloques:
+    for i, b in enumerate(bloques):
+        if i > 0:
+            lineas.append("")
         lineas.extend(b.lineas)
-    return "\n".join(lineas)
+    return "\n".join(lineas) + "\n"
 
 
 # ---------------------------------------------------------------------------
