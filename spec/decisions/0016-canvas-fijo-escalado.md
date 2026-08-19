@@ -1,10 +1,10 @@
 ---
 id: 0016
 title: "El theme se dibuja en un canvas fijo de 1280x720 y se escala entero"
-status: accepted
+status: superseded
 date: "2026-07-29"
 supersedes: null
-superseded-by: null
+superseded-by: 0019
 tags: [frontend]
 ---
 

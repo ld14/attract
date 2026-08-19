@@ -31,7 +31,13 @@ FocusScope {
     // Donde cuelga el popover. BrowseScreen.qml pasa la esquina real de sus
     // controles; los valores por defecto son un fallback razonable si algo
     // lo instancia sin pasarlos.
-    property real anclaX: Theme.canvasWidth - Theme.gutter
+    //
+    // `width` y no Theme.canvasWidth: desde ADR-0019 el lienzo CRECE en el
+    // eje que sobra, asi que el borde derecho real de la pantalla ya no es
+    // canvasWidth. `width` es el ancho vigente (este FocusScope llena el
+    // stage), y el default sigue significando lo mismo que antes: pegado al
+    // gutter derecho.
+    property real anclaX: width - Theme.gutter
     property real anclaY: 56
 
     signal cerrar()
@@ -104,7 +110,7 @@ FocusScope {
 
     Rectangle {
         id: panel
-        anchors { right: parent.right; rightMargin: Theme.canvasWidth - root.anclaX }
+        anchors { right: parent.right; rightMargin: root.width - root.anclaX }
         anchors { top: parent.top; topMargin: root.anclaY + 6 }
         width: root.anchoGrilla + 18      // 9px de margen interno a cada lado
         radius: 10

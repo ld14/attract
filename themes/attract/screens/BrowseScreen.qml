@@ -801,10 +801,19 @@ FocusScope {
         // ANTES de ese punto, adentro del area que este ListView no recorta.
         // Bug real visto en Pegasus el 2026-08-09.
         anchors { leftMargin: Theme.gutter - 10; rightMargin: Theme.gutter }
-        // top:346px, bottom:52px — literal del prototipo (:114). Los 52 de
-        // abajo son justo lo que ocupa la leyenda con su padding.
+        // top:346px — literal del prototipo (:114).
         y: 346
-        height: parent.height - y - 52
+        // El bottom YA NO es el "52" literal del prototipo. Esa cifra
+        // calzaba con SU footer, renderizado en su browser; el nuestro mide
+        // otra cosa (childrenRect.height + 24 de padding, ui/Leyenda.qml) y
+        // con la tipografia de Qt terminaba mas chico — dejando un hueco
+        // muerto entre el ultimo estante y el pie, reportado el 2026-08-09.
+        // Referenciar el alto REAL del footer en vez de copiar su numero
+        // es lo que la nota original ya decia que tenia que pasar ("los 52
+        // de abajo son justo lo que ocupa la leyenda con su padding") — el
+        // 52 nunca fue el numero en si, era una forma de decir "el alto del
+        // footer". +10 de aire minimo entre el ultimo estante y el pie.
+        height: parent.height - y - (footerLeyenda.height + 10)
 
         model: root.catalogo ? root.catalogo.estantes : []
         spacing: 18
@@ -893,18 +902,21 @@ FocusScope {
     //
     // ALTO DERIVADO DEL CONTENIDO, no un numero fijo. El prototipo define
     // este bloque con `padding:12px` (:345) — el alto sale de lo que mida el
-    // contenido MAS 12px arriba y abajo, nunca al reves. Antes esto era
-    // `height: 52`, un numero elegido a ojo que no salia de esa cuenta —
-    // corregido el 2026-08-09. Con el texto real (~13px + line-height del
-    // keycap) el resultado ronda los ~46px sobre el canvas de 1280×720, pero
-    // el numero exacto lo decide la fuente en tiempo real, no una constante
-    // — es EL MISMO bloque de codigo que usan las otras pantallas (o lo
-    // usaran: Buscar es la 010, todavia no existe), asi que tiene que
+    // contenido MAS su padding, nunca al reves. Antes esto era `height: 52`,
+    // un numero elegido a ojo que no salia de esa cuenta — corregido el
+    // 2026-08-09. El numero exacto lo decide la fuente en tiempo real, no
+    // una constante: es EL MISMO bloque de codigo que van a usar las otras
+    // pantallas (Buscar es la 010, todavia no existe), asi que tiene que
     // funcionar igual sin importar que fuente termine cargando cada una.
+    //
+    // El padding real es 7 y no los 12 del prototipo: con la tipografia de
+    // Qt la barra quedaba visiblemente mas gruesa que en el diseño (pedido
+    // explicito, 2026-08-09). Sigue siendo padding derivado, solo cambia la
+    // constante — el alto se acomoda solo si cambia la fuente.
     Rectangle {
         id: footerLeyenda
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-        height: leyenda.height + 24    // 12px arriba + 12px abajo
+        height: leyenda.height + 14    // 7px arriba + 7px abajo
         gradient: Gradient {
             GradientStop { position: 0.0; color: "transparent" }
             GradientStop { position: 1.0; color: Theme.alpha("#06070c", 0.92) }

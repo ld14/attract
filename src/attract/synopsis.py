@@ -106,6 +106,32 @@ def identificar_set(bloque: Bloque) -> str | None:
     return x_set or file_stem
 
 
+def _lineas_summary(texto: str) -> list[str]:
+    """El texto como `summary:` + sus continuaciones INDENTADAS.
+
+    Un summary de una sola linea da una sola linea, como siempre. Uno con
+    saltos da la primera en `summary: ...` y el resto indentadas con dos
+    espacios, que es como metadata.pegasus.txt marca "esto sigue siendo el
+    valor anterior, no una clave nueva" - el mismo formato que esta funcion
+    ya sabia LEER mas abajo (el while que saltea continuaciones) pero no
+    escribia.
+
+    Sin esto, un summary multilinea rompe el bloque: cada renglon a partir
+    del segundo queda al ras, Pegasus corta el valor en el primero y todo lo
+    que sigue (incluidos developer:/release:/x-set:) queda fuera de
+    contrato. Bug real: un synopsis con formato markdown, 2026-08-09.
+
+    Las lineas en blanco del texto original se emiten como dos espacios
+    pelados: una linea REALMENTE vacia terminaria el valor igual que una sin
+    indentar.
+    """
+    renglones = texto.split("\n")
+    salida = [f"summary: {renglones[0]}"]
+    for r in renglones[1:]:
+        salida.append(f"  {r}" if r.strip() else "  ")
+    return salida
+
+
 def mergear_summary(bloque: Bloque, texto_nuevo: str) -> Bloque:
     """Reemplaza (o inserta) la linea summary: y su continuacion indentada,
     si la habia. Ninguna otra linea del bloque cambia."""
@@ -126,7 +152,7 @@ def mergear_summary(bloque: Bloque, texto_nuevo: str) -> Bloque:
                 and not _RE_CLAVE.match(lineas[i].lstrip())
             ):
                 i += 1
-            nuevas.append(f"summary: {texto_nuevo}")
+            nuevas.extend(_lineas_summary(texto_nuevo))
             insertado = True
             continue
 
@@ -140,7 +166,7 @@ def mergear_summary(bloque: Bloque, texto_nuevo: str) -> Bloque:
             raise SynopsisError(
                 "bloque game: sin linea file: - no hay donde insertar summary:"
             )
-        nuevas.insert(idx_file + 1, f"summary: {texto_nuevo}")
+        nuevas[idx_file + 1 : idx_file + 1] = _lineas_summary(texto_nuevo)
 
     return Bloque(lineas=nuevas, es_game=bloque.es_game)
 

@@ -22,6 +22,20 @@
 // pasados unos segundos, es que el juego nunca arranco.
 //
 // El boton de cancelar tambien lo cierra, para no tener que esperar.
+//
+// TRES MODOS, no uno (ADR-0021). El overlay nacio para "estamos lanzando algo
+// afuera", y abrir el PDF del manual es el mismo problema con otra cara, asi
+// que se generalizo en vez de escribir un componente gemelo:
+//
+//   "lanzando"    spinner + Timer que cierra solo. El original.
+//   "confirmar"   sin spinner, sin Timer: espera A. Se usa antes de abrir el
+//                 PDF, porque en el gabinete abrirlo es un viaje de ida (el
+//                 foco se va y con joystick no vuelve).
+//   "error"       sin spinner, sin Timer: solo se cierra con B.
+//
+// Los dos modos nuevos NO tienen Timer a proposito. El auto-cierre del original
+// existe porque el lanzamiento no avisa si fallo; una pregunta que se contesta
+// sola no seria una pregunta, y un error que se borra solo no se lee.
 
 import QtQuick 2.0
 import ".."
@@ -32,11 +46,24 @@ FocusScope {
     property var game: null
     property color accent: Theme.accentNeutro
 
+    // "lanzando" | "confirmar" | "error"
+    property string modo: "lanzando"
+
+    // Los tres renglones. Vacios, cada uno cae a lo que mostraba el original,
+    // asi que el lanzamiento de un juego sigue funcionando sin pasarle nada.
+    property string titulo: ""
+    property string encabezado: ""
+    property string detalle: ""
+
+    // Un cuarto renglon opcional, para explicar que hacer. Solo lo usa "error".
+    property string nota: ""
+
     // Margen para que Pegasus tome la pantalla. Si seguimos vivos despues de
     // esto, el lanzamiento fallo.
     property int msSalida: 6000
 
     signal cerrar()
+    signal aceptar()
 
     anchors.fill: parent
 
@@ -51,8 +78,12 @@ FocusScope {
 
         // spinner: un arco que gira. Canvas y no QtGraphicalEffects, que
         // sigue sin verificarse contra este binario.
+        //
+        // Solo en "lanzando": en los otros dos no estamos esperando nada, y un
+        // spinner que gira sobre una pregunta o un error miente.
         Item {
             width: 46; height: 46
+            visible: root.modo === "lanzando"
             anchors.horizontalCenter: parent.horizontalCenter
 
             Canvas {
@@ -90,7 +121,9 @@ FocusScope {
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "INICIANDO"
+            width: 760
+            horizontalAlignment: Text.AlignHCenter
+            text: root.titulo !== "" ? root.titulo : "INICIANDO"
             color: root.accent
             font.family: Theme.fontMono
             font.pixelSize: Theme.sizeMono
@@ -109,7 +142,10 @@ FocusScope {
             fontSizeMode: Text.HorizontalFit
             font.pixelSize: 32
             minimumPixelSize: 18
-            text: root.game ? root.game.title.toUpperCase() : ""
+            text: {
+                if (root.encabezado !== "") return root.encabezado;
+                return root.game ? root.game.title.toUpperCase() : "";
+            }
         }
 
         // La ruta real del archivo. El prototipo simulaba un
@@ -124,10 +160,25 @@ FocusScope {
             font.family: Theme.fontMono
             font.pixelSize: Theme.sizeMonoSm
             text: {
+                if (root.detalle !== "") return root.detalle;
                 if (!root.game || root.game.files === undefined) return "";
                 if (root.game.files.count < 1) return "";
                 return String(root.game.files.get(0).path);
             }
+        }
+
+        // Que hacer al respecto. Solo aparece si alguien tiene algo que decir:
+        // un renglon vacio ocupando lugar es peor que no estar.
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 700
+            visible: root.nota !== ""
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            color: Theme.textMuted
+            font.family: Theme.fontBody
+            font.pixelSize: Theme.sizeLabel
+            text: root.nota
         }
     }
 
@@ -143,18 +194,25 @@ FocusScope {
         // gamepad, en teclado no existe. El gabinete va a tener joystick
         // y el Mac de desarrollo no, asi que se nombran las dos.
         // (El diseno asumia joystick y decia solo "B".)
-        text: "— B · ESC PARA VOLVER —"
+        text: root.modo === "confirmar"
+              ? "— A · ENTER ABRIR    B · ESC VOLVER —"
+              : "— B · ESC PARA VOLVER —"
     }
 
+    // Solo en "lanzando". Una pregunta que se contesta sola no es una pregunta,
+    // y un error que se borra solo no se llega a leer.
     Timer {
         interval: root.msSalida
-        running: root.visible
+        running: root.visible && root.modo === "lanzando"
         onTriggered: root.cerrar()
     }
 
     Keys.onPressed: {
         if (api.keys.isCancel(event)) {
             root.cerrar();
+            event.accepted = true;
+        } else if (root.modo === "confirmar" && api.keys.isAccept(event)) {
+            root.aceptar();
             event.accepted = true;
         }
     }

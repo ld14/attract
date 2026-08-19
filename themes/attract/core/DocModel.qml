@@ -43,6 +43,10 @@ QtObject {
     // va vacio: no hay "la nota de este juego" dentro de un manual.
     property var destacadas: []
 
+    // La url del PDF, si el manual declara uno (ADR-0021). "" en una revista.
+    // El visor no lo dibuja: se lo pasa al sistema operativo.
+    property string pdf: ""
+
     readonly property int total: paginas.length
     readonly property bool vacio: total === 0
 
@@ -74,25 +78,37 @@ QtObject {
             // de la revista: la nota es la puerta de entrada, no un limite
             // (docs/decisiones/2026-07-23.md #5).
             inicio: mag.inicioDe(set),
-            destacadas: mag.paginasDe(set)
+            destacadas: mag.paginasDe(set),
+            pdf: ""
         };
     }
 
-    // El manual de un juego.
+    // El manual ACTIVO de un juego (ADR-0023: `manual` es una lista, esto
+    // arma el modelo del documento que gameData.manualIdx tenga seleccionado).
+    // Puede traer paginas, un PDF, o las dos cosas (ADR-0021) — por eso se
+    // pregunta por hayManualPaginas y no por hayManual: con un documento que es
+    // SOLO PDF, `manualActivo.pages` no existe.
     function desdeManual(gameData, paths, game) {
         var urls = [];
         var base = paths ? paths.manualDe(game) : "";
-        if (base !== "" && gameData.hayManual) {
-            var ps = gameData.manual.pages;
+        if (base !== "" && gameData.hayManualPaginas) {
+            var ps = gameData.manualActivo.pages;
             for (var i = 0; i < ps.length; i++) urls.push(base + ps[i]);
         }
+        // Solo hay fuente que mostrar (el label, al lado del titulo) cuando
+        // hay mas de un documento: con uno solo la pestaña no existe y el
+        // label no se escribio (no era obligatorio, ADR-0023).
+        var fuente = (gameData.manuales.length > 1 && gameData.manualActivo)
+                     ? String(gameData.manualActivo.label || "") : "";
         return {
             tipo: "manual",
             titulo: "Manual digitalizado",
-            fuente: "",
+            fuente: fuente,
             paginas: urls,
             inicio: 0,
-            destacadas: []
+            destacadas: [],
+            pdf: (paths && gameData.hayManualPdf)
+                 ? paths.manualPdfDe(game, gameData.manualPdf) : ""
         };
     }
 }

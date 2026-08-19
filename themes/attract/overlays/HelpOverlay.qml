@@ -78,12 +78,12 @@ FocusScope {
             titulo: "4 · Revistas de la época",
             intro: "Las revistas no se arman a mano — te las entregan ya escaneadas y organizadas en su propia carpeta compartida. Vos solo la referenciás desde el juego.",
             bullets: [
-                "La carpeta de la revista NO va adentro del juego — va una sola vez en una carpeta compartida para revistas, aunque cubra varios juegos.",
-                "Se llama media/_magazines/<revista>-<número>/ (ej. micromania-16) y adentro van magazine.json, cover.jpg y las páginas p001.jpg, p002.jpg… con ceros a la izquierda.",
+                "La carpeta de la revista NO va adentro del juego ni de un sistema — va una sola vez en _magazines/, al lado de arcade/, nes/ y pc/. Una misma revista habla de juegos de los tres.",
+                "Se llama _magazines/<revista>-<número>/ (ej. micromania-34) y adentro van magazine.json, cover.jpg y una carpeta pages/ con p001.jpg, p002.jpg… con ceros a la izquierda.",
                 "Si te falta el archivo de la revista para un juego, dejalo así: el juego se muestra igual, solo sin esa sección.",
-                "La línea de abajo NO va en esta carpeta — va adentro del data.json del juego (paso 5), es la referencia que conecta uno con otro."
+                "No hace falta escribir la línea de abajo a mano: 'attract mags --apply' lee la revista y la agrega sola en el data.json de cada juego que aparezca en ella."
             ],
-            codigo: "{ \"mags\": [ { \"ref\": \"micromania-16\" } ] }"
+            codigo: "{ \"mags\": [ { \"ref\": \"micromania-34\" } ] }"
         },
         {
             corto: "Datos del juego",
@@ -103,7 +103,9 @@ FocusScope {
             intro: "Es un archivo aparte, chiquito, con un solo campo de texto. No lo escribís vos a mano en el juego — se aplica con un comando después de tenerlo listo.",
             bullets: [
                 "Va en <sistema>/_synopsis/<juego>.json — al lado de metadata.pegasus.txt, no dentro de media/.",
-                "Formato: { \"summary\": \"el texto acá\" } — un solo campo, nada más."
+                "Formato: { \"summary\": \"el texto acá\" } — un solo campo, nada más.",
+                "IMPORTANTE: dejar el archivo NO alcanza. Ese .json es solo la fuente; la pantalla lee metadata.pegasus.txt. Sin correr el comando de abajo, el texto puede estar perfecto y el juego igual va a mostrar \"Sin Informacion\".",
+                "Si cambiás el texto del .json más adelante, hay que volver a correr el comando para que se vea."
             ],
             codigo: "python -m attract.synopsis dino library/arcade"
         },
@@ -121,8 +123,12 @@ FocusScope {
             corto: "Si algo falla",
             titulo: "8 · Si algo no funciona",
             intro: "El comando de validación casi siempre te dice qué archivo y qué regla está fallando — empezá leyendo ese mensaje. Si necesitás más ayuda, pedile a quien mantiene el sistema que revise el mensaje exacto.",
-            bullets: [],
-            codigo: ""
+            bullets: [
+                "Cargaste todo y el juego no aparece, o aparece sin los cambios: cerrá el programa DEL TODO y volvé a abrirlo. La librería se lee al arrancar, no mientras está abierto.",
+                "Error de \"basura de macOS\" (.DS_Store): son archivos que el explorador de Finder crea solo al abrir una carpeta. No los creaste vos. Se borran y listo — pero van a volver a aparecer cada vez que navegues esas carpetas.",
+                "La sinopsis no se ve aunque el archivo esté bien: te faltó correr el comando del paso 6. Es el error más común."
+            ],
+            codigo: "find library -name \".DS_Store\" -type f -delete"
         }
     ]
 

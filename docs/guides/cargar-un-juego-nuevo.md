@@ -93,27 +93,65 @@ la referenciás desde el juego. No armes `magazine.json` a mano — si no
 tenés uno, no hay revista para ese juego todavía, y eso es un estado válido.
 
 ```
-library/arcade/media/_magazines/micromania-16/
+library/_magazines/micromania-34/        ← al lado de arcade/, NO adentro
 ├─ magazine.json
-├─ cover.jpg
-├─ p001.jpg
-├─ p002.jpg
-└─ …
+├─ cover.jpg                             ← la tapa va en la raíz
+└─ pages/
+   ├─ p001.jpg
+   ├─ p002.jpg
+   └─ …
 ```
 
-- El guión bajo en `_magazines/` es a propósito: separa la carpeta de
-  revistas de las carpetas de juego.
+- **`_magazines/` va en la raíz de la librería**, hermana de `arcade/`,
+  `nes/`, `pc/` — no adentro de ninguna. Una revista habla de juegos de
+  varios sistemas a la vez, así que meterla en uno obligaría a copiarla en
+  todos ([`ADR-0024`](../../spec/decisions/0024-contrato-magazine-json-v2.md)).
+- El guión bajo es a propósito: separa la carpeta de revistas de las de
+  sistema.
+- **Las páginas van en `pages/`; la tapa no.** Es la forma que produce el
+  subsistema de escaneo, y el theme la busca siempre ahí.
 - Las páginas llevan ceros a la izquierda (`p001.jpg`, no `p1.jpg`) para
   que el orden alfabético sea el orden real de lectura.
 - **Una revista cubre varios juegos** — se deja **una sola vez** en
   `_magazines/`, nunca copiada dentro de cada juego que aparece en ella.
 
-El juego la referencia desde su propio `data.json` (siguiente sección), sin
-copiar ninguna página:
+### Linkearla con los juegos
+
+No hace falta editar el `data.json` de cada juego a mano. `attract mags` lee
+los `articles[].game` de la revista y los matchea contra los juegos
+instalados ([`ADR-0025`](../../spec/decisions/0025-link-revista-juego-difuso.md)):
+
+```
+$ attract mags library
+
+  micromania-34
+    golden-axe                    -> goldnaxe     0.94  set
+    battle-squadron               -  (sin juego instalado, mejor 0.29)
+    …
+
+  20 slugs, 1 con juego instalado (umbral 0.85)
+  Nada escrito - correlo con --apply para aplicar.
+```
+
+El matching es **difuso** a propósito: el slug de la revista (`golden-axe`)
+no coincide con el set de MAME (`goldnaxe`). Por eso propone antes de
+escribir — mirá el reporte y recién después corré `attract mags library
+--apply`, que mergea el `ref` en el `mags[]` de cada juego conservando todo
+lo demás del `data.json`. Correrlo dos veces no duplica nada, así que podés
+volver a correrlo cada vez que sumes una ROM.
+
+Si preferís hacerlo a mano, es una línea en el `data.json` del juego:
 
 ```json
-{ "mags": [ { "ref": "micromania-16" } ] }
+{ "mags": [ { "ref": "micromania-34", "article": "golden-axe" } ] }
 ```
+
+`article` es el `articles[].game` de la revista que trata sobre este juego, y
+es **lo que hace que el visor abra en la nota** y no en la página 1. Es
+opcional: si falta, el theme busca el artículo por el nombre del set — que
+alcanza cuando la revista usa el mismo identificador que Pegasus, pero no
+cuando usa un slug editorial (`golden-axe` contra el set `goldnaxe`). Por eso
+`attract mags` lo escribe siempre.
 
 Si el `ref` apunta a una carpeta que no existe, no rompe nada — es un
 **aviso**, no un error: el juego se degrada mostrando "Sin cobertura en
@@ -137,8 +175,9 @@ archivo es válido, solo menos enriquecido (contrato completo:
   "manual": { "pages": ["p001.jpg", "p002.jpg"] },
 
   "cheats": {
-    "combos": [ { "name": "Patada giratoria", "input": "↓ ↘ → + K" } ],
-    "codes":  [ { "name": "Modo 3 jugadores", "input": "En el test menu: PLAYERS 3" } ]
+    "combos":   [ { "name": "Patada giratoria", "input": "↓ ↘ → + K" } ],
+    "codes":    [ { "name": "Modo 3 jugadores", "input": "En el test menu: PLAYERS 3" } ],
+    "secretos": [ { "name": "Dragón rojo", "input": "Aparece en la fase 3" } ]
   },
 
   "review": {
@@ -164,6 +203,51 @@ Notas que importan al cargar:
 - `accent`/`accent2` son hex `#rrggbb` de 6 dígitos — `attract doctor`
   rechaza formas cortas tipo `#fb0`.
 
+### Los grupos de `cheats` son libres
+
+`combos` y `codes` no son las únicas claves posibles: podés inventar los
+grupos que el juego necesite (`secretos`, `dos_jugadores`, `servicio`…) y
+todos se muestran ([`ADR-0020`](../../spec/decisions/0020-cheats-grupos-libres.md)).
+El título de la sección sale del nombre de la clave, en mayúsculas y sin
+guiones bajos: `dos_jugadores` → `DOS JUGADORES`.
+
+Si querés un título que la clave no puede dar, usá la forma larga:
+
+```json
+"cheats": {
+  "servicio": {
+    "label": "Menú de servicio de la placa",
+    "items": [ { "name": "Free Play", "input": "FREE PLAY = ON" } ]
+  }
+}
+```
+
+**Cada entrada se dibuja sola según su contenido**, no según el grupo: una
+secuencia corta de botones (`← ← + ATAQUE`) sale como tarjeta con las teclas
+dibujadas; una instrucción escrita sale como renglón con ★. Un mismo grupo
+puede mezclar las dos.
+
+#### Marcá los botones con `[corchetes]`
+
+En una instrucción escrita en castellano, poné entre corchetes lo que sea un
+botón. **Todo lo que quede afuera es texto, siempre**:
+
+```json
+{ "name": "9 créditos",
+  "input": "En la selección: mantener [←] + [↓] y pulsar [A] + [START]" }
+```
+
+Sin los corchetes, la `a` y la `y` sueltas del castellano se dibujaban como
+teclas A e Y en medio de la frase. Con corchetes eso no puede pasar.
+
+Dentro de los corchetes va **un** botón, y se dibuja aunque no sea de los
+conocidos: `[C]` sale como tecla igual. Un `input` **sin** corchetes usa la
+notación de siempre (`↓ ↘ → + P`), así que los archivos que ya existen
+siguen funcionando sin tocarlos.
+
+Lo que **sí** valida `doctor` en cualquier grupo: que sea una lista (o un
+objeto con `items`), y que cada entrada tenga `name` e `input` no vacíos.
+
 ## 6 · Sinopsis
 
 Distinto de `data.json`: `library/<sistema>/_synopsis/<juego>.json` (junto a
@@ -183,6 +267,20 @@ python -m attract.synopsis dino library/arcade
 
 Escribe el campo nativo `summary:` en el bloque `game:` correspondiente,
 sin tocar ninguna otra línea del bloque.
+
+**Dejar el `.json` NO alcanza — este comando no es opcional.** Pegasus lee el
+`summary:` de `metadata.pegasus.txt`, nunca el archivo de `_synopsis/`:
+
+```
+_synopsis/dino.json  ──(attract synopsis)──>  metadata.pegasus.txt
+    (la fuente)                                (lo que Pegasus lee)
+```
+
+Es la misma relación fuente/artefacto de
+[`ADR-0002`](../../spec/decisions/0002-metadata-fuente-o-artefacto.md). Sin
+correr el comando, el JSON puede estar perfecto y la pantalla igual muestra
+"Sin Informacion" — es el tropiezo más común al cargar un juego. Y si más
+adelante editás el texto del `.json`, hay que volver a correrlo.
 
 ## 7 · Validar todo
 
@@ -204,6 +302,27 @@ Un juego pelado (sin imágenes, sin video, sin reseña) tiene que dar
 **siempre válido** — si `make doctor-lib` marca error en un juego así, algo
 en el nombre de carpeta/archivo está mal, no en la falta de contenido.
 
+### El error de `.DS_Store`, que va a pasar seguido
+
+```text
+[ERROR] basura-macos
+    arcade/media/goldnaxe/.DS_Store
+```
+
+No lo creaste vos ni `ingest`: Finder escribe un `.DS_Store` en cada carpeta
+que abrís en el explorador. Se borran y listo:
+
+```bash
+find library -name ".DS_Store" -type f -delete
+```
+
+Es **error y no aviso** a propósito: Pegasus escanea por extensión, y el
+primo de este archivo (`._algo.zip`) termina en `.zip` y aparece como juego
+fantasma en la colección. En el gabinete no hay quién lo diagnostique.
+
+Van a volver a aparecer cada vez que navegues esas carpetas en Finder — no
+es que el borrado "no funcionó".
+
 ## 8 · Si tocaste el theme
 
 No hace falta para cargar un juego normal — el theme lee `library/` en
@@ -217,6 +336,14 @@ make theme-debug   # harness de debug (ADR-0001)
 
 ## Si algo falla
 
-Ver [`docs/troubleshooting.md`](../troubleshooting.md). Si el síntoma no
-está ahí, `make doctor-lib` casi siempre dice qué archivo y qué regla —
-empezá por ese mensaje literal.
+Los tres síntomas más comunes, en orden de frecuencia:
+
+| Síntoma | Causa |
+|---|---|
+| La sinopsis no se ve, aunque el `.json` esté bien | Falta correr `attract synopsis` (§6) — el `.json` es la fuente, no lo que Pegasus lee |
+| Cargaste todo y no aparece nada nuevo | Pegasus lee la librería **al arrancar**: ⌘Q y volver a abrir, no alcanza con volver al menú |
+| `[ERROR] basura-macos` | `.DS_Store` de Finder (§7) |
+
+Para el resto, ver [`docs/troubleshooting.md`](../troubleshooting.md). Si el
+síntoma no está ahí, `make doctor-lib` casi siempre dice qué archivo y qué
+regla — empezá por ese mensaje literal.

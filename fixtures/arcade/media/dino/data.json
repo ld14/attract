@@ -47,5 +47,18 @@
         "input": "↑ ↑ ↓ ↓ START"
       }
     ]
-  }
+  },
+  "manual": [
+    {
+      "label": "Manual de uso",
+      "pages": [
+        "p001.png",
+        "p002.png"
+      ]
+    },
+    {
+      "label": "Manual de servicio",
+      "file": "service.pdf"
+    }
+  ]
 }

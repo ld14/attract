@@ -115,5 +115,82 @@ for (var j = 0; j < pares.length; j++) {
                 (t ? t.color : "?") + " (convencion: " + colores[s] + ")");
 }
 
+// --- esSecuencia: ¿tarjeta con teclas, o renglon en prosa? ----------------
+//
+// Los casos son entradas REALES de library/arcade/media/goldnaxe/data.json,
+// que es donde se vio el problema: grupos con nombre libre mezclando combos
+// cortos con instrucciones largas.
+console.log("");
+function chequearSecuencia(nombre, entrada, variante, esperado) {
+    var dio = esSecuencia(entrada, variante);
+    var ok = dio === esperado;
+    if (!ok) fallas++;
+    console.log((ok ? "  OK    " : "  FALLA ") + nombre +
+                "  -> " + dio + (ok ? "" : " (esperado: " + esperado + ")"));
+}
+
+chequearSecuencia("combo corto",        "← ← + ATAQUE", "combo", true);
+chequearSecuencia("combo con flechas",  "↓ ↘ → + P",    "combo", true);
+chequearSecuencia("prosa sin botones",  "MAGIA (según las pociones acumuladas)", "combo", false);
+chequearSecuencia("instruccion larga",
+    "En la selección de personaje: mantener ← + ↓ y pulsar A + C + START",
+    "codigo", false);
+chequearSecuencia("prosa pura",
+    "Golpear a los ladrones azules durante las fases de bonus", "codigo", false);
+chequearSecuencia("vacio",              "", "combo", false);
+
+
+chequearSecuencia("prosa justo en el borde viejo",
+    "manten [↓] mientras te atacan", "codigo", false);
+chequearSecuencia("etiqueta larga sigue siendo secuencia",
+    "[→] [→] + [ATAQUE ESPECIAL]", "combo", true);
+
+
+// --- marcado explicito con corchetes + falsos positivos del castellano ----
+//
+// Casos REALES de la captura del 2026-08-09: la gramatica se comia la "a"
+// de "Golpear a los ladrones" y la "y" de "y pulsar" como si fueran teclas.
+console.log("");
+function tipos(entrada, variante) {
+    return partir(entrada, variante).map(function(t) { return t.tipo; }).join(",");
+}
+function chequearTipos(nombre, entrada, variante, esperado) {
+    var dio = tipos(entrada, variante);
+    var ok = dio === esperado;
+    if (!ok) fallas++;
+    console.log((ok ? "  OK    " : "  FALLA ") + nombre);
+    if (!ok) {
+        console.log("          entrada : " + JSON.stringify(entrada));
+        console.log("          esperado: " + esperado);
+        console.log("          dio     : " + dio);
+    }
+}
+
+chequearTipos("prosa castellana intacta",
+    "Golpear a los ladrones azules y obtener pociones", "codigo",
+    "texto");
+chequearTipos("marcado explicito",
+    "Golpear [A] los ladrones", "codigo",
+    "texto,keycap,texto");
+chequearTipos("marcado con flecha",
+    "mantener [←] + [↓] y pulsar [START]", "codigo",
+    "texto,direccion,texto,direccion,texto,keycap");
+chequearTipos("corchete no reconocido igual es tecla",
+    "pulsar [C]", "codigo",
+    "texto,keycap");
+chequearTipos("sin corchetes sigue la gramatica vieja",
+    "↓ ↘ → + P", "combo",
+    "direccion,direccion,direccion,mas,arcade");
+chequearTipos("keycap en MAYUSCULA sin corchetes sigue andando",
+    "↑ ↑ START", "codigo",
+    "direccion,direccion,keycap");
+
+// Y la consecuencia sobre el estilo: una instruccion marcada sigue siendo prosa.
+chequearSecuencia("instruccion marcada",
+    "Golpear [A] los ladrones azules durante las fases de bonus", "codigo", false);
+chequearSecuencia("combo marcado",
+    "[←] [←] + [ATAQUE]", "combo", true);
+
+
 console.log("\n" + (fallas === 0 ? "TODO BIEN" : fallas + " FALLAS") + "\n");
 process.exit(fallas === 0 ? 0 : 1);

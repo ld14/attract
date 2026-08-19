@@ -1,10 +1,10 @@
 ---
 id: 0010
 title: "Contrato de magazine.json extendido con evidencia real (supersede 0008)"
-status: accepted
+status: superseded
 date: "2026-07-28"
 supersedes: 0008
-superseded-by: null
+superseded-by: 0024
 tags: [data, backend]
 ---
 

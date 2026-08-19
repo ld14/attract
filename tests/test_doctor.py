@@ -77,7 +77,7 @@ def test_data_json_invalido(tmp_path):
 
 
 def test_magazine_json_invalido(tmp_path):
-    d = tmp_path / "media" / "_magazines" / "rev-1"
+    d = tmp_path / "_magazines" / "rev-1"
     d.mkdir(parents=True)
     (d / "magazine.json").write_text("{no es json", encoding="utf-8")
     assert "json-invalido" in chequeos(revisar(tmp_path))
@@ -86,7 +86,7 @@ def test_magazine_json_invalido(tmp_path):
 def test_mags_ref_faltante_es_aviso_no_error(tmp_path):
     # Degradacion soportada a proposito (ADR-0008): no bloquea el viaje a
     # Windows, pero attract doctor la tiene que notar.
-    d = tmp_path / "media" / "x"
+    d = tmp_path / "arcade" / "media" / "x"
     d.mkdir(parents=True)
     (d / "data.json").write_text('{"mags": [{"ref": "no-existe"}]}', encoding="utf-8")
 
@@ -96,13 +96,27 @@ def test_mags_ref_faltante_es_aviso_no_error(tmp_path):
 
 
 def test_mags_ref_existente_no_avisa(tmp_path):
-    (tmp_path / "media" / "_magazines" / "rev-1").mkdir(parents=True)
-    d = tmp_path / "media" / "x"
+    # La revista vive en <raiz>/_magazines/, fuera del arbol del sistema
+    # (ADR-0024): la misma revista cubre juegos de arcade, NES y PC.
+    (tmp_path / "_magazines" / "rev-1").mkdir(parents=True)
+    d = tmp_path / "arcade" / "media" / "x"
     d.mkdir(parents=True)
     (d / "data.json").write_text('{"mags": [{"ref": "rev-1"}]}', encoding="utf-8")
 
     rep = revisar(tmp_path)
     assert "mags-ref-faltante" not in {h.chequeo for h in rep.avisos}
+
+
+def test_mags_ref_no_se_resuelve_dentro_del_sistema(tmp_path):
+    # El layout viejo (ADR-0010): la revista adentro de media/. Tiene que
+    # avisar igual, o mover una libreria de la forma vieja pasaria en silencio.
+    (tmp_path / "arcade" / "media" / "_magazines" / "rev-1").mkdir(parents=True)
+    d = tmp_path / "arcade" / "media" / "x"
+    d.mkdir(parents=True)
+    (d / "data.json").write_text('{"mags": [{"ref": "rev-1"}]}', encoding="utf-8")
+
+    rep = revisar(tmp_path)
+    assert "mags-ref-faltante" in {h.chequeo for h in rep.avisos}
 
 
 # --- contrato de magazine.json (ADR-0010) ---------------------------------
@@ -135,9 +149,19 @@ def _magazine_valida(**overrides):
 
 
 def _escribir_magazine(tmp_path, datos):
-    d = tmp_path / "media" / "_magazines" / "rev-1"
-    d.mkdir(parents=True)
+    """La revista, con sus assets en el disco (ADR-0024): cover en la raiz,
+    paginas en pages/. Se crean los archivos que `datos` declara para que
+    chk_magazine_assets no dispare y tape lo que cada test quiere medir."""
+    d = tmp_path / "_magazines" / "rev-1"
+    (d / "pages").mkdir(parents=True)
     (d / "magazine.json").write_text(json.dumps(datos), encoding="utf-8")
+
+    cover = datos.get("cover")
+    if isinstance(cover, str) and cover.strip():
+        (d / cover).write_bytes(b"")
+    for p in datos.get("pages") or []:
+        if isinstance(p, str):
+            (d / "pages" / p).write_bytes(b"")
 
 
 def test_magazine_valida_no_reporta_nada(tmp_path):
@@ -245,6 +269,53 @@ def test_cheats_bien_formados_no_reportan(tmp_path):
     assert revisar(tmp_path).ok
 
 
+# --- cheats con grupos de nombre libre (ADR-0020) -------------------------
+#
+# El bug que estos cubren, visto el 2026-08-09: un data.json con claves
+# inventadas ("secrets", "two_player", "service") pasaba doctor en VERDE y el
+# theme no mostraba ni una de esas entradas. Ahora la clave es libre, pero la
+# FORMA se valida.
+
+def test_cheats_grupo_con_nombre_libre_es_valido(tmp_path):
+    _escribir_data(tmp_path, {
+        "cheats": {
+            "secretos": [{"name": "Dragon rojo", "input": "Aparece en la fase 3"}],
+            "dos_jugadores": [{"name": "Revivir", "input": "Bajarle la vida en el bonus"}],
+        }
+    })
+    assert revisar(tmp_path).ok
+
+
+def test_cheats_grupo_con_label_explicito_es_valido(tmp_path):
+    _escribir_data(tmp_path, {
+        "cheats": {
+            "servicio": {
+                "label": "Menu de servicio",
+                "items": [{"name": "Free Play", "input": "FREE PLAY = ON"}],
+            }
+        }
+    })
+    assert revisar(tmp_path).ok
+
+
+def test_cheats_objeto_sin_items_es_error(tmp_path):
+    _escribir_data(tmp_path, {"cheats": {"servicio": {"label": "Solo titulo"}}})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_cheats_grupo_de_tipo_invalido_es_error(tmp_path):
+    """Un grupo que no es lista ni objeto no lo puede dibujar nadie."""
+    _escribir_data(tmp_path, {"cheats": {"secretos": "un string suelto"}})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_cheats_entrada_incompleta_en_grupo_libre_es_error(tmp_path):
+    """La validacion de {name, input} vale para CUALQUIER grupo, no solo
+    para combos/codes."""
+    _escribir_data(tmp_path, {"cheats": {"secretos": [{"name": "Sin input"}]}})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
 def test_review_score_fuera_de_rango_es_error(tmp_path):
     _escribir_data(tmp_path, {"review": {"score": 940}})
     assert "data-contrato" in chequeos(revisar(tmp_path))
@@ -285,16 +356,165 @@ def test_review_cat_fuera_de_rango_es_error(tmp_path):
 def test_manual_con_pagina_que_no_existe_es_error(tmp_path):
     # Una pagina declarada y ausente deja un hueco en el visor, y a esa altura
     # el theme no puede hacer nada (ADR-0014).
-    _escribir_data(tmp_path, {"manual": {"pages": ["p001.jpg"]}})
+    _escribir_data(tmp_path, {"manual": [{"pages": ["p001.jpg"]}]})
     assert "data-contrato" in chequeos(revisar(tmp_path))
 
 
 def test_manual_con_paginas_reales_no_reporta(tmp_path):
-    d = _escribir_data(tmp_path, {"manual": {"pages": ["p001.jpg", "p002.jpg"]}})
+    d = _escribir_data(tmp_path, {"manual": [{"pages": ["p001.jpg", "p002.jpg"]}]})
     (d / "_manual").mkdir()
     (d / "_manual" / "p001.jpg").write_bytes(b"")
     (d / "_manual" / "p002.jpg").write_bytes(b"")
     assert revisar(tmp_path).ok
+
+
+# --- manual.file: el PDF que abre la app del sistema (ADR-0021) ------------
+#
+# `_con_manual` recibe UN documento (la forma de un elemento de la lista) y lo
+# envuelve en `[...]` - asi los tests de mas abajo siguen probando exactamente
+# lo que probaban antes de que `manual` pasara a lista (ADR-0023), sin tener
+# que reescribir cada llamada.
+
+def _con_manual(tmp_path, documento, archivos=()):
+    """data.json con `manual: [documento]` y los archivos que existan en _manual/."""
+    d = _escribir_data(tmp_path, {"manual": [documento]})
+    (d / "_manual").mkdir()
+    for nombre in archivos:
+        (d / "_manual" / nombre).write_bytes(b"")
+    return d
+
+
+def test_manual_solo_con_pdf_es_valido(tmp_path):
+    # El caso que motiva ADR-0021: un manual que existe SOLO como PDF, sin
+    # rasterizar. Antes era invisible en la pantalla.
+    _con_manual(tmp_path, {"file": "manual.pdf"}, ["manual.pdf"])
+    assert revisar(tmp_path).ok
+
+
+def test_manual_con_paginas_y_pdf_es_valido(tmp_path):
+    _con_manual(
+        tmp_path,
+        {"pages": ["p001.jpg"], "file": "manual.pdf"},
+        ["p001.jpg", "manual.pdf"],
+    )
+    assert revisar(tmp_path).ok
+
+
+def test_manual_sin_pages_ni_file_es_error(tmp_path):
+    # Declara un manual y no dice donde esta. Con `pages: []` en cambio SI es
+    # valido: es la degradacion explicita de ADR-0014 ("No Disponible").
+    _con_manual(tmp_path, {})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_pages_vacio_sigue_siendo_valido(tmp_path):
+    # Invariante: agregar `file` no rompio la degradacion que ya existia.
+    _con_manual(tmp_path, {"pages": []})
+    assert revisar(tmp_path).ok
+
+
+def test_manual_file_que_no_existe_es_error(tmp_path):
+    # Mismo criterio que las paginas: el theme no puede chequear si un archivo
+    # existe (su unica herramienta de disco es XMLHttpRequest), asi que si esto
+    # no falla aca, falla apretando el boton en el gabinete.
+    _con_manual(tmp_path, {"file": "manual.pdf"})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_file_con_ruta_es_error(tmp_path):
+    # Es un nombre suelto dentro de _manual/, no una ruta. El theme lo concatena
+    # tal cual y se lo pasa al sistema operativo.
+    _con_manual(tmp_path, {"file": "../../otro.pdf"}, ["manual.pdf"])
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_file_con_separador_windows_es_error(tmp_path):
+    _con_manual(tmp_path, {"file": "sub\\manual.pdf"}, ["manual.pdf"])
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_file_sin_extension_pdf_es_error(tmp_path):
+    # La extension es lo unico que decide con que aplicacion abre el SO.
+    _con_manual(tmp_path, {"file": "manual"}, ["manual"])
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_file_pdf_en_mayusculas_es_valido(tmp_path):
+    # Windows no distingue mayusculas y es la maquina de produccion (ADR-0003).
+    _con_manual(tmp_path, {"file": "MANUAL.PDF"}, ["MANUAL.PDF"])
+    assert revisar(tmp_path).ok
+
+
+def test_manual_file_vacio_es_error(tmp_path):
+    _con_manual(tmp_path, {"file": "   "})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+# --- manual como lista de documentos, con label (ADR-0023) -----------------
+
+def test_manual_objeto_suelto_es_error(tmp_path):
+    # La forma vieja, pre-0023. No se interpreta como lista de uno: error
+    # explicito con la migracion (envolver en []).
+    _escribir_data(tmp_path, {"manual": {"file": "manual.pdf"}})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_lista_vacia_es_error(tmp_path):
+    _escribir_data(tmp_path, {"manual": []})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_un_documento_sin_label_es_valido(tmp_path):
+    # Cero migracion: un solo documento sigue sin necesitar label (sf2ce).
+    d = _escribir_data(tmp_path, {"manual": [{"file": "manual.pdf"}]})
+    (d / "_manual").mkdir()
+    (d / "_manual" / "manual.pdf").write_bytes(b"")
+    assert revisar(tmp_path).ok
+
+
+def test_manual_dos_documentos_con_label_es_valido(tmp_path):
+    d = _escribir_data(tmp_path, {
+        "manual": [
+            {"label": "Manual de uso", "file": "uso.pdf"},
+            {"label": "Manual de servicio", "file": "servicio.pdf"},
+        ]
+    })
+    (d / "_manual").mkdir()
+    (d / "_manual" / "uso.pdf").write_bytes(b"")
+    (d / "_manual" / "servicio.pdf").write_bytes(b"")
+    assert revisar(tmp_path).ok
+
+
+def test_manual_dos_documentos_uno_sin_label_es_error(tmp_path):
+    d = _escribir_data(tmp_path, {
+        "manual": [
+            {"label": "Manual de uso", "file": "uso.pdf"},
+            {"file": "servicio.pdf"},
+        ]
+    })
+    (d / "_manual").mkdir()
+    (d / "_manual" / "uso.pdf").write_bytes(b"")
+    (d / "_manual" / "servicio.pdf").write_bytes(b"")
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_labels_repetidos_es_error(tmp_path):
+    # Si no, `rasterize <set> <label>` seria ambiguo: no sabria cual de los dos.
+    d = _escribir_data(tmp_path, {
+        "manual": [
+            {"label": "Manual", "file": "a.pdf"},
+            {"label": "Manual", "file": "b.pdf"},
+        ]
+    })
+    (d / "_manual").mkdir()
+    (d / "_manual" / "a.pdf").write_bytes(b"")
+    (d / "_manual" / "b.pdf").write_bytes(b"")
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_manual_un_elemento_no_dict_es_error(tmp_path):
+    _escribir_data(tmp_path, {"manual": ["no es un objeto"]})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
 
 
 def test_mags_sin_ref_es_error(tmp_path):
@@ -304,11 +524,11 @@ def test_mags_sin_ref_es_error(tmp_path):
     assert "data-contrato" in chequeos(revisar(tmp_path))
 
 
-# --- indices de articles[] en rango (006) ---------------------------------
+# --- startPage como numero de pagina impresa (ADR-0024) -------------------
 
-def test_startpage_fuera_de_rango_es_error(tmp_path):
-    # Una revista de 2 paginas con un articulo que abre en la 5. Hasta la 006
-    # esto pasaba el validador y explotaba recien en el visor del theme.
+def test_startpage_a_pagina_inexistente_es_error(tmp_path):
+    # Una revista de 2 paginas con un articulo que abre en la 5. Sin este
+    # chequeo pasaba el validador y se veia recien en el visor del theme.
     datos = _magazine_valida()
     datos["pages"] = ["p001.jpg", "p002.jpg"]
     datos["articles"][0]["startPage"] = 5
@@ -318,15 +538,15 @@ def test_startpage_fuera_de_rango_es_error(tmp_path):
 
 
 def test_startpage_cero_es_error(tmp_path):
-    # Los indices son 1-BASED: el 0 no existe. Es el error probable de quien
-    # asuma que son offsets de array.
+    # No hay ningun archivo "p000", asi que el 0 nunca resuelve. Es el error
+    # probable de quien asuma que startPage es un offset de array.
     datos = _magazine_valida()
     datos["articles"][0]["startPage"] = 0
     _escribir_magazine(tmp_path, datos)
     assert "magazine-contrato" in chequeos(revisar(tmp_path))
 
 
-def test_articles_pages_fuera_de_rango_es_error(tmp_path):
+def test_articles_pages_a_pagina_inexistente_es_error(tmp_path):
     datos = _magazine_valida()
     datos["pages"] = ["p001.jpg", "p002.jpg"]
     datos["articles"][0]["startPage"] = 1
@@ -335,12 +555,65 @@ def test_articles_pages_fuera_de_rango_es_error(tmp_path):
     assert "magazine-contrato" in chequeos(revisar(tmp_path))
 
 
-def test_indices_en_el_limite_son_validos(tmp_path):
-    # 1 y el total son los dos extremos VALIDOS. Es el caso que un chequeo de
-    # rango mal escrito rompe.
+def test_paginas_en_el_limite_son_validas(tmp_path):
+    # La primera y la ultima son los dos extremos VALIDOS. Es el caso que un
+    # chequeo de rango mal escrito rompe.
     datos = _magazine_valida()
     datos["pages"] = ["p001.jpg", "p002.jpg", "p003.jpg"]
     datos["articles"][0]["startPage"] = 3
     datos["articles"][0]["pages"] = [1, 3]
+    _escribir_magazine(tmp_path, datos)
+    assert revisar(tmp_path).ok
+
+
+def test_revista_que_no_arranca_en_p001_no_es_error(tmp_path):
+    # EL bug de ADR-0024, con los numeros de micromania-34 en miniatura:
+    # pages[] arranca en p002 porque la pagina 1 es la tapa, y el ultimo
+    # articulo apunta a la ULTIMA pagina impresa. Contando posiciones eso da
+    # "fuera de rango" (4 paginas, indice 5); por numero de archivo es valido.
+    datos = _magazine_valida()
+    datos["pages"] = ["p002.jpg", "p003.jpg", "p004.jpg", "p005.jpg"]
+    datos["articles"][0]["startPage"] = 5
+    datos["articles"][0]["pages"] = [5]
+    _escribir_magazine(tmp_path, datos)
+    assert revisar(tmp_path).ok
+
+
+# --- assets de la revista en el disco (ADR-0024) ---------------------------
+
+def test_pagina_declarada_que_no_existe_es_error(tmp_path):
+    # El sintoma de esto era una pagina en blanco en el visor, sin ningun
+    # error en ningun lado.
+    datos = _magazine_valida()
+    _escribir_magazine(tmp_path, datos)
+    (tmp_path / "_magazines" / "rev-1" / "pages" / "p002.jpg").unlink()
+    assert "magazine-assets" in chequeos(revisar(tmp_path))
+
+
+def test_paginas_sueltas_sin_carpeta_pages_es_error(tmp_path):
+    # El layout viejo: las paginas en la raiz de la revista. Tienen que ir en
+    # pages/ (ADR-0024) o el theme no las encuentra.
+    d = tmp_path / "_magazines" / "rev-1"
+    d.mkdir(parents=True)
+    datos = _magazine_valida()
+    (d / "magazine.json").write_text(json.dumps(datos), encoding="utf-8")
+    (d / "cover.jpg").write_bytes(b"")
+    for p in datos["pages"]:
+        (d / p).write_bytes(b"")
+
+    assert "magazine-assets" in chequeos(revisar(tmp_path))
+
+
+def test_cover_que_no_existe_es_error(tmp_path):
+    datos = _magazine_valida()
+    _escribir_magazine(tmp_path, datos)
+    (tmp_path / "_magazines" / "rev-1" / "cover.jpg").unlink()
+    assert "magazine-assets" in chequeos(revisar(tmp_path))
+
+
+def test_guia_es_un_type_conocido(tmp_path):
+    # El generador real lo emite; hasta ADR-0024 daba aviso.
+    datos = _magazine_valida()
+    datos["articles"][0]["type"] = "guía"
     _escribir_magazine(tmp_path, datos)
     assert revisar(tmp_path).ok

@@ -31,10 +31,10 @@ FocusScope {
 
     anchors.fill: parent
 
-    readonly property var combos:
-        (datos && datos.cheats && datos.cheats.combos) ? datos.cheats.combos : []
-    readonly property var codigos:
-        (datos && datos.cheats && datos.cheats.codes) ? datos.cheats.codes : []
+    // Ya normalizados por GameData: [{ clave, label, items }]. Este overlay
+    // no vuelve a preguntar si el grupo vino como lista o como objeto con
+    // label — esa decision se toma en un solo lugar (ADR-0020).
+    readonly property var grupos: datos ? datos.gruposCheats : []
 
     // --- fondo ------------------------------------------------------------
 
@@ -230,139 +230,125 @@ FocusScope {
                 width: scroll.width
                 spacing: 18
 
-                // ---- COMBOS ----
-                Column {
-                    width: parent.width
-                    spacing: 10
-                    visible: root.combos.length > 0
+                // ---- LOS GRUPOS ----
+                //
+                // UN Repeater sobre grupos con nombre libre (ADR-0020), no
+                // dos bloques fijos "combos"/"codes". El estilo de cada
+                // entrada NO lo decide el grupo: lo decide el CONTENIDO, via
+                // Tokens.esSecuencia() — una secuencia corta de botones sale
+                // como tarjeta numerada, una instruccion escrita sale como
+                // renglon con ★. Asi un mismo grupo puede mezclar las dos
+                // cosas, que es como vienen los trucos de verdad.
+                Repeater {
+                    model: root.grupos
 
-                    Seccion {
+                    Column {
                         width: parent.width
-                        etiqueta: "▶ COMBOS"
-                        contador: ("0" + root.combos.length).slice(-2) + " MOVS"
-                        accent: root.accent
-                    }
+                        spacing: 10
 
-                    Repeater {
-                        model: root.combos
-                        // Con ANCHORS sobre la tarjeta, no con un Row.
-                        //
-                        // Un Row calcula su ancho a partir del de sus hijos.
-                        // Meterle un hijo cuyo ancho dependa del Row -que es
-                        // lo que hacia falta para que la fila de tokens ocupe
-                        // el resto- es una dependencia CIRCULAR: QML no la
-                        // puede resolver y dibuja cualquier cosa, todo
-                        // encimado. Se vio en Pegasus el 2026-08-04.
-                        //
-                        // La tarjeta si tiene ancho propio (el de la columna),
-                        // asi que anclando contra ELLA no hay circulo.
-                        Rectangle {
+                        readonly property var itemsGrupo: modelData.items
+
+                        Seccion {
                             width: parent.width
-                            height: Math.max(56, tokensCombo.height + 24)
-                            color: Theme.alpha(root.accent, 0.05)
-                            border.width: 1
-                            border.color: Theme.alpha(Theme.textBright, 0.07)
-
-                            // La barra de accent a la izquierda, del diseno.
-                            Rectangle {
-                                anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
-                                width: 3
-                                color: root.accent
-                            }
-
-                            Rectangle {
-                                id: numCombo
-                                anchors { left: parent.left; leftMargin: 16 }
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 30; height: 30
-                                color: Theme.alpha(root.accent, 0.14)
-                                border.width: 1
-                                border.color: Theme.alpha(root.accent, 0.45)
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: ("0" + (index + 1)).slice(-2)
-                                    color: root.accent
-                                    font.family: Theme.fontMono
-                                    font.pixelSize: 12
-                                    font.bold: true
-                                }
-                            }
-
-                            Text {
-                                id: nomCombo
-                                anchors { left: numCombo.right; leftMargin: 14 }
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 200
-                                wrapMode: Text.WordWrap
-                                maximumLineCount: 2
-                                elide: Text.ElideRight
-                                text: modelData.name || ""
-                                color: Theme.textPrimary
-                                font.family: Theme.fontBody
-                                font.pixelSize: 14
-                            }
-
-                            InputTokenRow {
-                                id: tokensCombo
-                                anchors { left: nomCombo.right; leftMargin: 14 }
-                                anchors { right: parent.right; rightMargin: 16 }
-                                anchors.verticalCenter: parent.verticalCenter
-                                accent: root.accent
-                                tokens: Tokens.partir(modelData.input || "", "combo")
-                            }
+                            etiqueta: modelData.label
+                            contador: ("0" + itemsGrupo.length).slice(-2) + " ENTRADAS"
+                            accent: root.accent
                         }
-                    }
-                }
 
-                // ---- CODIGOS SECRETOS ----
-                Column {
-                    width: parent.width
-                    spacing: 10
-                    visible: root.codigos.length > 0
+                        Repeater {
+                            model: itemsGrupo
 
-                    Seccion {
-                        width: parent.width
-                        etiqueta: "★ CÓDIGOS SECRETOS"
-                        contador: ("0" + root.codigos.length).slice(-2) + " SECRETOS"
-                        accent: root.accent
-                    }
+                            // UN delegate para las dos formas, no dos
+                            // componentes: comparten estructura (marcador +
+                            // nombre + tokens) y solo cambian el fondo y el
+                            // marcador de la izquierda. Con dos Component
+                            // declarados afuera habria que pasarles `index` y
+                            // `modelData` a mano — un Component creado en la
+                            // raiz NO ve el contexto del delegate.
+                            Item {
+                                width: parent.width
+                                height: Math.max(esSec ? 56 : 44, tokens.height + (esSec ? 24 : 16))
 
-                    Repeater {
-                        model: root.codigos
-                        Item {
-                            width: parent.width
-                            height: Math.max(44, tokensCod.height + 16)
+                                readonly property bool esSec:
+                                    Tokens.esSecuencia(modelData.input || "", "codigo")
 
-                            Text {
-                                id: estrella
-                                anchors { left: parent.left }
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "★"
-                                color: root.accent
-                                font.pixelSize: 14
-                            }
+                                // Solo la secuencia lleva tarjeta y barra de
+                                // accent; la instruccion va sobre el fondo.
+                                Rectangle {
+                                    anchors.fill: parent
+                                    visible: esSec
+                                    color: Theme.alpha(root.accent, 0.05)
+                                    border.width: 1
+                                    border.color: Theme.alpha(Theme.textBright, 0.07)
 
-                            Text {
-                                id: nomCod
-                                anchors { left: estrella.right; leftMargin: 14 }
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 200
-                                wrapMode: Text.WordWrap
-                                maximumLineCount: 2
-                                elide: Text.ElideRight
-                                text: modelData.name || ""
-                                color: Theme.textPrimary
-                                font.family: Theme.fontBody
-                                font.pixelSize: 14
-                            }
+                                    Rectangle {
+                                        anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                                        width: 3
+                                        color: root.accent
+                                    }
+                                }
 
-                            InputTokenRow {
-                                id: tokensCod
-                                anchors { left: nomCod.right; leftMargin: 14 }
-                                anchors { right: parent.right }
-                                anchors.verticalCenter: parent.verticalCenter
-                                accent: root.accent
-                                tokens: Tokens.partir(modelData.input || "", "codigo")
+                                // El marcador: numero en caja para una
+                                // secuencia, ★ para una instruccion.
+                                Item {
+                                    id: marcador
+                                    anchors { left: parent.left; leftMargin: esSec ? 16 : 0 }
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: esSec ? 30 : 14
+                                    height: 30
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        visible: esSec
+                                        color: Theme.alpha(root.accent, 0.14)
+                                        border.width: 1
+                                        border.color: Theme.alpha(root.accent, 0.45)
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: ("0" + (index + 1)).slice(-2)
+                                            color: root.accent
+                                            font.family: Theme.fontMono
+                                            font.pixelSize: 12
+                                            font.bold: true
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        visible: !esSec
+                                        text: "★"
+                                        color: root.accent
+                                        font.pixelSize: 14
+                                    }
+                                }
+
+                                Text {
+                                    id: nombre
+                                    anchors { left: marcador.right; leftMargin: 14 }
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 200
+                                    wrapMode: Text.WordWrap
+                                    maximumLineCount: 2
+                                    elide: Text.ElideRight
+                                    text: modelData.name || ""
+                                    color: Theme.textPrimary
+                                    font.family: Theme.fontBody
+                                    font.pixelSize: 14
+                                }
+
+                                // Con ANCHORS sobre el Item, no con un Row: un
+                                // Row saca su ancho de los hijos, y un hijo
+                                // que quiera "el resto" cierra un circulo que
+                                // QML no resuelve — dibuja todo encimado. Se
+                                // vio en Pegasus el 2026-08-04.
+                                InputTokenRow {
+                                    id: tokens
+                                    anchors { left: nombre.right; leftMargin: 14 }
+                                    anchors { right: parent.right; rightMargin: esSec ? 16 : 0 }
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    accent: root.accent
+                                    tokens: Tokens.partir(modelData.input || "", "codigo")
+                                }
                             }
                         }
                     }

@@ -1,11 +1,12 @@
-// Carga UNA revista: el magazine.json que vive en media/_magazines/<ref>/,
-// con el contrato de ADR-0010.
+// Carga UNA revista: el magazine.json que vive en <raiz-libreria>/_magazines/
+// <ref>/, con el contrato de ADR-0024.
 //
 // Mismo patron que GameData -se le pone un `ref` y se dispara solo- y el mismo
 // cache compartido (core/DataCache.js). Acá el cache importa mas todavia: una
-// misma revista cubre VARIOS juegos (ese es el motivo por el que las revistas
-// son una entidad aparte, ADR-0010), asi que el mismo archivo se pide desde
-// fichas distintas.
+// misma revista cubre VARIOS juegos, y de varios sistemas (ese es el motivo
+// por el que las revistas son una entidad aparte y viven FUERA del arbol de
+// cualquier sistema, ADR-0024), asi que el mismo archivo se pide desde fichas
+// distintas.
 //
 // Es la segunda mitad de la cadena de dos lecturas que ADR-0001 dejo
 // verificada: data.json -> mags[].ref -> magazine.json.
@@ -48,9 +49,16 @@ QtObject {
     readonly property string urlTapa:
         (base !== "" && datos && datos.cover) ? base + datos.cover : ""
 
+    // Las paginas viven en <rev>/pages/ y `pages[]` trae el nombre PELADO
+    // ("p002.jpg"), asi que el prefijo lo pone el consumidor (ADR-0024). Este
+    // es el unico lugar que lo hace.
+    //
+    // La tapa NO lleva el prefijo: cover.jpg vive en la raiz de la revista.
+    // Y el manual tampoco, que es plano en media/<set>/_manual/ (ADR-0014) y
+    // se arma en DocModel con paths.manualDe() — comparten visor, no layout.
     function urlPagina(indice0) {          // 0-based, como se usa adentro
         if (base === "" || indice0 < 0 || indice0 >= pages.length) return "";
-        return base + pages[indice0];
+        return base + "pages/" + pages[indice0];
     }
 
     // --- nombre para mostrar (regla cerrada en ADR-0010) -----------------
@@ -89,18 +97,42 @@ QtObject {
         return null;
     }
 
-    // En que pagina abre el visor para este juego, 0-BASED.
+    // --- de numero de pagina impresa a indice del array -------------------
     //
-    // startPage es un indice 1-based sobre pages[] — resuelto en
-    // spec/features/006-theme-documentos/spec.md, y no es una preferencia: el
-    // fixture tiene 8 paginas y sus articulos referencian 3..8, asi que
-    // 0-based dejaria el 8 fuera de rango y el numero impreso no seria
-    // mapeable a un archivo. La conversion a 0-based pasa ACA y en un solo
-    // lugar: mezclar las dos convenciones es de donde salen los off-by-one.
+    // startPage y articles[].pages son NUMEROS DE PAGINA IMPRESA, no indices
+    // sobre pages[] (ADR-0024). La diferencia no se ve en los fixtures, que
+    // arrancan todos en p001 y hacen coincidir las dos lecturas; se ve en una
+    // revista real, donde pages[] arranca en "p002.jpg" porque la pagina 1 es
+    // la tapa y vive aparte en cover.jpg:
+    //
+    //   pages[0]  = p002.jpg
+    //   pages[44] = p046.jpg   <- el articulo con startPage 46
+    //   pages[45] = p047.jpg   <- donde caia la resta startPage-1
+    //
+    // Por eso se BUSCA el archivo en vez de contar posiciones: asi no se
+    // asume nada sobre en que pagina arranca la revista ni sobre que la
+    // numeracion sea continua, que en un escaneo real no lo es.
+
+    // El numero impreso sale del nombre del archivo: "p046.jpg" -> 46.
+    function _numeroDe(nombre) {
+        var m = /(\d+)/.exec(String(nombre));
+        return m ? parseInt(m[1], 10) : -1;
+    }
+
+    // Indice 0-based de una pagina impresa, o -1 si esa pagina no esta.
+    function indiceDePagina(numero) {
+        for (var i = 0; i < pages.length; i++)
+            if (_numeroDe(pages[i]) === numero) return i;
+        return -1;
+    }
+
+    // En que pagina abre el visor para este juego, 0-BASED. Un startPage que
+    // no resuelve degrada a la primera pagina: la revista se abre igual.
     function inicioDe(set) {
         var a = articuloDe(set);
         if (!a || typeof a.startPage !== "number") return 0;
-        return Math.max(0, Math.min(totalPaginas - 1, a.startPage - 1));
+        var i = indiceDePagina(a.startPage);
+        return i >= 0 ? i : 0;
     }
 
     // Las paginas del articulo, 0-based, para marcarlas en las miniaturas.
@@ -111,8 +143,8 @@ QtObject {
         if (!a || !a.pages) return [];
         var out = [];
         for (var i = 0; i < a.pages.length; i++) {
-            var n = a.pages[i] - 1;
-            if (n >= 0 && n < totalPaginas) out.push(n);
+            var n = indiceDePagina(a.pages[i]);
+            if (n >= 0) out.push(n);
         }
         return out;
     }

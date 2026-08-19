@@ -187,6 +187,17 @@ Flow {
     Component {
         id: cTexto
         Text {
+            // Con TOPE de ancho y wrap. Sin esto un token de prosa largo se
+            // dibuja en UNA linea infinita: el Flow no lo puede envolver
+            // (envuelve fichas entre si, no el interior de una ficha) y el
+            // texto se corta a la mitad de una palabra. Se vio en Pegasus el
+            // 2026-08-09 con "...facilitar gran parte del r".
+            //
+            // El tope es el ancho del Flow, que ya viene acotado por la
+            // tarjeta. `Math.min` y no `width: root.width` a secas para que
+            // una palabra suelta no ocupe todo el renglon y empuje al resto.
+            width: Math.min(implicitWidth, root.width)
+            wrapMode: Text.WordWrap
             text: tok.valor
             color: Theme.textBody
             font.family: Theme.fontBody

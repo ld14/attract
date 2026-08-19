@@ -1,10 +1,10 @@
 ---
 id: 0015
 title: "Contrato completo de data.json, con nombres de campo explícitos"
-status: accepted
+status: superseded
 date: "2026-07-29"
 supersedes: null
-superseded-by: null
+superseded-by: 0020
 tags: [data, frontend]
 ---
 

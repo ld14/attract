@@ -38,7 +38,15 @@ var CARA = {
 
 var RE_GATILLO = /^[LR][123]$/i;
 var RE_ARCADE  = /^[PK]{1,3}$/;
-var RE_KEYCAP  = /^(START|SELECT|[ABXYZ][12]?)$/i;
+
+// SIN la bandera `i`, a proposito. Con `/i`, "a" e "y" —la preposicion y la
+// conjuncion mas comunes del castellano— coincidian con [ABXYZ] y se
+// dibujaban como teclas en medio de una frase: "Golpear [a] los ladrones",
+// "[y] pulsar". Bug real visto en Pegasus el 2026-08-09.
+//
+// El caso legitimo (una tecla escrita en minuscula, "start") se resuelve con
+// corchetes: "[start]". Lo explicito le gana a la adivinanza.
+var RE_KEYCAP  = /^(START|SELECT|[ABXYZ][12]?)$/;
 
 function _esFlechas(p) {
     if (p.length === 0) return false;
@@ -63,6 +71,55 @@ function _esCara(p) {
 //             color solo viene en `cara` y `arcade`; el resto lo pone el theme
 function partir(texto, variante) {
     if (typeof texto !== "string") return [];
+
+    // MARCADO EXPLICITO: lo que va entre corchetes es un boton, lo de afuera
+    // es prosa. Siempre. Es la unica forma de escribir una instruccion en
+    // castellano sin que la gramatica se coma las palabras: "Golpear a los
+    // ladrones" tiene una "a" y una "y" que RE_KEYCAP reconocia como teclas
+    // (bug real visto en Pegasus el 2026-08-09, ADR-0020).
+    //
+    // Sin corchetes se usa la gramatica de siempre, asi que los data.json
+    // que ya existen ("↓ ↘ → + P") siguen funcionando sin tocarlos.
+    if (texto.indexOf("[") >= 0) return _partirMarcado(texto, variante);
+
+    return _partirLibre(texto, variante);
+}
+
+// Cada segmento entre corchetes es UN boton; todo lo de afuera es prosa
+// literal, sin pasar por la gramatica.
+function _partirMarcado(texto, variante) {
+    var toks = [];
+    var re = /\[([^\]]*)\]/g;
+    var ultimo = 0;
+    var m;
+
+    while ((m = re.exec(texto)) !== null) {
+        var antes = texto.substring(ultimo, m.index);
+        if (antes.trim() !== "") toks.push({ tipo: "texto", valor: antes.trim() });
+
+        var dentro = m[1].trim();
+        if (dentro !== "") toks.push(_clasificar(dentro, variante));
+
+        ultimo = m.index + m[0].length;
+    }
+
+    var cola = texto.substring(ultimo);
+    if (cola.trim() !== "") toks.push({ tipo: "texto", valor: cola.trim() });
+
+    return toks;
+}
+
+// Un token marcado con corchetes: se le aplica la misma gramatica para saber
+// COMO dibujarlo, pero si no encaja en ninguna categoria igual es un boton
+// (keycap), no prosa — el autor ya dijo que lo es al ponerle corchetes.
+// Por eso "[C]" sale como tecla aunque C no este en la lista de keycaps.
+function _clasificar(p, variante) {
+    var t = _partirLibre(p, variante);
+    if (t.length === 1 && t[0].tipo !== "texto") return t[0];
+    return { tipo: "keycap", valor: p };
+}
+
+function _partirLibre(texto, variante) {
     var esCodigo = (variante === "codigo");
 
     // El `+` y la `,` se separan aunque vengan pegados: "→+P" es tres tokens.
@@ -119,4 +176,50 @@ function partir(texto, variante) {
             out.push({ tipo: t.tipo, valor: t.valor, color: t.color });
     }
     return out;
+}
+
+// Cuantas PALABRAS de prosa tolera una entrada antes de dejar de ser "una
+// secuencia de mando".
+//
+// Se cuentan palabras y no caracteres, y eso NO es un detalle: la primera
+// version contaba caracteres con tope 24, y "manten [↓] mientras te atacan"
+// —una instruccion en prosa— daba exactamente 24 y se dibujaba como tarjeta
+// de combo. Medir por largo confunde "una frase" con "una etiqueta larga":
+// "ATAQUE ESPECIAL" son 15 caracteres y UNA etiqueta; "mientras te atacan"
+// son 18 y TRES palabras de una oracion.
+//
+// Lo que distingue de verdad a una secuencia es que sus textos son
+// ETIQUETAS sueltas (ATAQUE, SALTO, MAGIA), no frases. Tres palabras en
+// total es el corte: "← ← + ATAQUE" tiene una, "manten ↓ mientras te
+// atacan" tiene cuatro.
+var MAX_PALABRAS_SECUENCIA = 3;
+
+// ¿Esta entrada se dibuja como una SECUENCIA de botones (tarjeta con teclas)
+// o como una INSTRUCCION en prosa (renglon con ★)?
+//
+// No es una heuristica sobre el texto crudo: se apoya en el tokenizer, que
+// ya sabe distinguir un boton de una palabra. Una entrada es secuencia si
+//
+//   1. tiene AL MENOS un token que es un boton de verdad, y
+//   2. la prosa suelta que la acompaña es corta (conectores como "+",
+//      "ATAQUE", "SALTO" — no una oracion).
+//
+// Existe porque `cheats` acepta grupos con nombre libre (ADR-0020): sin
+// esto habria que declarar el estilo por grupo, y el mismo grupo puede
+// mezclar un combo con una explicacion larga.
+function esSecuencia(texto, variante) {
+    var toks = partir(texto, variante);
+    var hayBoton = false;
+    var palabras = 0;
+
+    for (var i = 0; i < toks.length; i++) {
+        if (toks[i].tipo === "texto") {
+            var t = toks[i].valor.trim();
+            if (t !== "") palabras += t.split(/\s+/).length;
+        } else if (toks[i].tipo !== "mas") {
+            hayBoton = true;
+        }
+    }
+
+    return hayBoton && palabras <= MAX_PALABRAS_SECUENCIA;
 }

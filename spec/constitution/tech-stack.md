@@ -15,15 +15,17 @@
 
 | Ruta | Responsabilidad |
 |---|---|
-| `src/attract/cli.py` | Entry point. Dispatch de subcomandos: `doctor`, `synopsis`, `mcp`, `ingest` |
+| `src/attract/cli.py` | Entry point. Dispatch de subcomandos: `doctor`, `synopsis`, `mcp`, `ingest`, `import` |
 | `src/attract/doctor.py` | Validador preflight: todo lo que Windows rechazaría debe fallar en el Mac |
 | `src/attract/synopsis.py` | Primer módulo que **escribe** `metadata.pegasus.txt` — merge quirúrgico del campo `summary:` desde `_synopsis/<set>.json` (ADR-0011) |
 | `src/attract/mcp_server.py` | Servidor MCP (M5) — tools `attract_doctor`/`attract_synopsis`. Única dependencia externa del proyecto, opcional e import perezoso (ADR-0012) |
 | `src/attract/ingest.py` | Primer módulo que **crea** un `game:` nuevo (M7) — identidad vía `mame -listxml` (stdlib `xml.etree.ElementTree`) |
+| `src/attract/instalar.py` | Importa paquetes COINDOOR (ADR-0027) — valida en staging con `doctor.py`, instala assets/data/bloque en la librería |
 | `tests/test_doctor.py` | 34 tests, cada uno reproduce un bug real ya visto o un caso del contrato |
 | `tests/test_synopsis.py` | 11 tests: merge de campo, idempotencia, casos límite/fallo |
 | `tests/test_mcp_server.py` | 8 tests: aislamiento sin `mcp` instalado, lógica de las tools, registro contra el SDK real (se saltea si `mcp` no está) |
 | `tests/test_ingest.py` | 14 tests: 10 contra XML sintético, 1 contra la ausencia real del binario (PATH vacío) y 3 de integración contra el `mame` instalado (se saltean si no hay) |
+| `tests/test_instalar.py` | 12 tests: caso feliz (set nuevo/existente), paquete mínimo, path traversal, campos faltantes, data.json inválido, reimportación idempotente, preservación de mags, sistema inexistente |
 | `fixtures/` | ROMs falsas de 0 bytes + `metadata.pegasus.txt` de ejemplo, para validar el doctor sin la librería real |
 | `library/` | Librería real del autor (ROMs, CHDs, assets). Nunca se commitea |
 | `themes/attract/` | Theme de producción (feature 005). Tres capas según quién sabe de qué: `core/` datos y rutas, `ui/` dibuja, `screens/`+`overlays/` componen. Un solo singleton (`Theme`, el archivo es `Tokens.qml` — ver su encabezado) |
@@ -71,16 +73,19 @@ metadata.pegasus.txt
 Datos ricos que **no** viven en `metadata.pegasus.txt` (ADR-0001):
 
 ```
-media/
-├─ _magazines/<rev>-<n>/    # la revista, UNA sola vez
+<raíz-librería>/
+├─ _magazines/<rev>-<n>/    # la revista, UNA sola vez, FUERA de todo sistema
 │  ├─ magazine.json         # name, issue?, year?, color?, cover, key_id, pages[], articles[]
-│  ├─ cover.jpg
-│  └─ p001.jpg … pNNN.jpg   # todas las páginas, ceros a la izquierda
-└─ <set>/
-   ├─ boxFront.jpg …        # assets nativos, auto-descubiertos por Pegasus
-   ├─ data.json             # accent, cheats, review, manual + mags: [{ref: "<rev>-<n>"}]
-   └─ _manual/              # páginas del manual escaneado, si hay
-      └─ p001.jpg … pNNN.jpg
+│  ├─ cover.jpg             # la tapa, en la raíz de la revista
+│  └─ pages/                # las páginas van acá (ADR-0024)
+│     └─ p001.jpg … pNNN.jpg
+└─ <sistema>/               # arcade/, nes/, pc/ …
+   ├─ metadata.pegasus.txt
+   └─ media/<set>/
+      ├─ boxFront.jpg …     # assets nativos, auto-descubiertos por Pegasus
+      ├─ data.json          # accent, cheats, review, manual: [{label?,pages?,file?}] + mags: [{ref: "<rev>-<n>"}]
+      └─ _manual/           # páginas del/los manual(es), PLANO (no lleva pages/)
+         └─ p001.jpg … pNNN.jpg
 ```
 
 Contrato completo de `data.json` en
@@ -90,9 +95,22 @@ campos opcionales, nombres completos (`{name, input}`, no `{n, i}`),
 parciales.
 
 El juego **referencia** la revista, no la contiene: una revista cubre varios
-juegos, y duplicar el escaneo en cada uno es el error que esto evita. Qué páginas
-son la nota de cada juego vive en `magazine.json → articles[]`, buscando por
-`game == "<set>"`. Una sola fuente de verdad ([`ADR-0010`](../decisions/0010-contrato-magazine-json-extendido.md), accepted — el contrato original era [`ADR-0008`](../decisions/0008-modelo-datos-revistas.md), superseded).
+juegos —y de **varios sistemas**, por eso `_magazines/` cuelga de la raíz de la
+librería y no del árbol de ninguno— y duplicar el escaneo en cada uno es el
+error que esto evita. Qué páginas son la nota de cada juego vive en
+`magazine.json → articles[]`, buscando por `game == "<set>"`. Una sola fuente de
+verdad ([`ADR-0024`](../decisions/0024-contrato-magazine-json-v2.md), accepted —
+supersede a [`ADR-0010`](../decisions/0010-contrato-magazine-json-extendido.md),
+que a su vez superseded a [`ADR-0008`](../decisions/0008-modelo-datos-revistas.md)).
+
+`articles[].game` es un **slug editorial** del generador (`golden-axe`), no el
+set de MAME (`goldnaxe`). `attract mags` los une por coincidencia difusa y
+escribe el `mags[]` de cada juego
+([`ADR-0025`](../decisions/0025-link-revista-juego-difuso.md), accepted).
+
+`startPage` y `articles[].pages` son **números de página impresa**, que se
+resuelven buscando `p{NNN}` dentro de `pages[]` — no son índices sobre el array:
+una revista real arranca en `p002.jpg` porque la página 1 es la tapa.
 
 Con un set **merged**, un `.zip` puede ser una familia de máquinas (parents +
 clones), no un juego — identidad real la da `mame -listxml`, no el filesystem
@@ -114,10 +132,22 @@ página de información por familia, variantes como `file:` múltiples).
 ## Límites duros
 
 - **Sin dependencias externas** en `src/attract/` — es deliberado (`doctor`
-  corre con cualquier Python ≥3.10, sin instalar nada). **Excepción
-  acotada:** `attract mcp` usa el SDK `mcp` (PyPI) con import perezoso,
-  aislado a ese módulo — `doctor`/`synopsis`/la CLI base siguen sin
-  instalar nada ([`ADR-0012`](../decisions/0012-mcp-dependencia-opcional-acotada.md), accepted).
+  corre con cualquier Python ≥3.10, sin instalar nada). **Hay exactamente DOS
+  excepciones acotadas**, las dos opcionales, las dos con import perezoso
+  adentro de la función y aisladas a un solo módulo:
+  - `attract mcp` usa el SDK `mcp` (PyPI)
+    ([`ADR-0012`](../decisions/0012-mcp-dependencia-opcional-acotada.md), accepted).
+  - `attract rasterize` usa `pymupdf` para convertir el PDF del manual a páginas
+    ([`ADR-0022`](../decisions/0022-rasterizar-pdf-a-paginas.md), accepted).
+    Se importa como `import pymupdf`, **no** `import fitz` — ese alias está
+    deprecado y avisa por stderr.
+
+  `doctor`/`synopsis`/`ingest`/la CLI base siguen sin instalar nada, y hay un
+  test por dependencia que lo verifica bloqueando el módulo en un subproceso.
+  `make setup` no instala ninguna de las dos.
+
+  **Dos excepciones son una política; una tercera significa que este límite ya
+  no describe el proyecto y hay que reescribirlo, no parcharlo otra vez.**
 - **`library/` nunca va al repo** — pesa y no aporta (ver `.gitignore`/README).
 - **`*.pegasus.txt` es artefacto de build, no fuente** — nunca se edita a
   mano ni se versiona como fuente ([`ADR-0002`](../decisions/0002-metadata-fuente-o-artefacto.md),
@@ -141,11 +171,15 @@ página de información por familia, variantes como `file:` múltiples).
   externo junto a los assets del juego, que el theme lee con `XMLHttpRequest`
   ([`ADR-0001`](../decisions/0001-transporte-datos-ricos.md), accepted). Descartado:
   JSON embebido en campos `x-` y listas paralelas.
-- **Una revista no pertenece a un juego** — es una entidad propia en
-  `media/_magazines/<id>/`; los juegos la referencian por `ref`, no la copian
-  ([`ADR-0010`](../decisions/0010-contrato-magazine-json-extendido.md), accepted,
-  supersede a [`ADR-0008`](../decisions/0008-modelo-datos-revistas.md));
-  contrato encarnado en `fixtures/arcade/media/`.
+- **Una revista no pertenece a un juego, ni a un sistema** — es una entidad
+  propia en `<raíz-librería>/_magazines/<id>/`, fuera del árbol de cualquier
+  sistema; los juegos la referencian por `ref`, no la copian
+  ([`ADR-0024`](../decisions/0024-contrato-magazine-json-v2.md), accepted,
+  supersede a [`ADR-0010`](../decisions/0010-contrato-magazine-json-extendido.md));
+  contrato encarnado en `fixtures/_magazines/`. Descartado: normalizar el
+  `magazine.json` entrante al contrato viejo (viola ADR-0009 y hay que rehacerlo
+  con cada regeneración) y compartir la carpeta con symlinks (no sobreviven al
+  viaje a Windows).
 - **Las páginas de revista son imágenes, nunca PDF** — Pegasus es Qt 5.15 sin
   soporte de PDF ([`ADR-0007`](../decisions/0007-paginas-revista-imagenes-no-pdf.md), accepted).
   Lo mismo vale para las páginas de manual
@@ -155,6 +189,30 @@ página de información por familia, variantes como `file:` múltiples).
   Descartado: `x-manual` (rompe ADR-0001 y un número de páginas no da rutas) y
   el manual como entidad propia tipo `_magazines/` (una revista cubre varios
   juegos, un manual no — no hay duplicación que evitar).
+- **El límite de ADR-0007 es RENDERIZAR, no tener.** El theme no dibuja un PDF
+  jamás, pero sí puede **entregárselo al sistema operativo** para que lo abra la
+  app del usuario ([`ADR-0021`](../decisions/0021-manual-pdf-app-del-sistema.md),
+  accepted): `manual.file` en `data.json` y `Qt.openUrlExternally()`, que es
+  global de QtQml y no necesita `import`. Medido contra Pegasus real el
+  2026-08-09 (`themes/experimentos/abrir-url-externa.qml`). **Leer "nunca PDF" y
+  borrar esto es el error a evitar**: son dos cosas distintas. Descartado:
+  `launch:` de un pseudo-juego (obliga a una colección nueva), `subprocess` de
+  Python (ATTRACT no corre mientras Pegasus está abierto) y `QProcess` /
+  `Qt.labs.platform` (necesitan un `import`, y un import que no resuelve tumba
+  el theme entero). **Coste asumido:** el visor abre por delante pero Pegasus
+  pierde el foco, y en el gabinete —solo joystick— no hay forma de volver; la
+  mitigación real es mapear `Alt+F4` en el encoder, fuera de este repo.
+- **`manual` es una LISTA de documentos, no un objeto** — un juego puede
+  declarar más de un manual (de uso, de servicio, otro idioma —
+  ["ADR-0023"](../decisions/0023-manual-multiple-con-pestanas.md), accepted).
+  Cada elemento tiene la forma de siempre (`pages`/`file`) más un `label`
+  **obligatorio solo si hay más de un documento**; con uno solo, sin `label`,
+  se ve exactamente igual que antes de esta ADR — no hay migración de datos
+  real, solo envolver en `[...]`. El visor reusa las pestañas de revista
+  (`DocumentViewer.pestanas`, antes `revistas`) para elegir entre documentos;
+  nunca conviven las dos filas. `attract rasterize` opera por documento
+  (`<set> [label]`) y cada uno con más de uno rasteriza a su propio
+  `_manual/manual-<índice>/` para no colisionar nombres de página.
 - **El `accent` de cada juego se declara a mano** en su `data.json`
   ([`ADR-0013`](../decisions/0013-accent-por-juego.md), accepted). Descartado:
   tabla por colección (apaga el theming por juego, que es el efecto central

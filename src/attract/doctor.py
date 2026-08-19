@@ -194,9 +194,27 @@ def chk_json_valido(path: Path, rep: Reporte) -> None:
         rep.error("json-invalido", path, f"JSON invalido: {e}")
 
 
+def magazines_root_de(data_json: Path) -> Path:
+    """<raiz>/_magazines/ a partir de un data.json.
+
+    Las revistas no cuelgan de ningun sistema (ADR-0024): la misma revista
+    cubre juegos de arcade, NES y PC, asi que vive un nivel arriba de las
+    colecciones. La convencion es fija:
+
+        <raiz>/<sistema>/media/<set>/data.json  ->  <raiz>/_magazines/
+
+    Son 4 niveles. Se resuelve desde el data.json y no desde la raiz del
+    escaneo, asi que `attract doctor library` y `attract doctor library/arcade`
+    dan lo mismo. Si la ruta es mas corta que la convencion (un data.json
+    suelto), se devuelve lo que haya: el llamador ya reporta que no existe.
+    """
+    padres = data_json.parents
+    return (padres[3] if len(padres) > 3 else padres[-1]) / "_magazines"
+
+
 def chk_mags_ref(path: Path, rep: Reporte) -> None:
     """mags[].ref de un data.json deberia apuntar a una carpeta real en
-    media/_magazines/<ref>/. Es AVISO, no ERROR: la degradacion con un ref
+    <raiz>/_magazines/<ref>/. Es AVISO, no ERROR: la degradacion con un ref
     colgado es un caso soportado a proposito (ver fixtures/arcade/media/sf2ce/,
     ADR-0008) - no bloquea el viaje a Windows, pero vale la pena que se note."""
     try:
@@ -211,8 +229,7 @@ def chk_mags_ref(path: Path, rep: Reporte) -> None:
         ref = mag.get("ref") if isinstance(mag, dict) else None
         if not ref:
             continue
-        # data.json vive en media/<juego>/data.json; las revistas en media/_magazines/<ref>/
-        destino = path.parent.parent / "_magazines" / ref
+        destino = magazines_root_de(path) / ref
         if not destino.is_dir():
             rep.aviso(
                 "mags-ref-faltante", path,
@@ -228,6 +245,50 @@ REVIEW_CATS_CONOCIDAS = {
     "originalidad", "graficos", "adiccion",
     "sonido", "dificultad", "animacion",
 }
+
+
+def _chk_manual_doc(doc, i: int, path: Path, falla) -> None:
+    """Un elemento de la lista `manual` (ADR-0023). Misma forma que el
+    `manual` objeto de antes de esta ADR: `pages`/`file`, al menos uno."""
+    prefijo = f"manual[{i}]"
+
+    if not isinstance(doc, dict):
+        falla(prefijo, "tiene que ser un objeto")
+        return
+    if "pages" not in doc and "file" not in doc:
+        falla(prefijo, "tiene que traer 'pages', 'file', o las dos")
+        return
+
+    if "pages" in doc:
+        pages = doc["pages"]
+        if not isinstance(pages, list) or not all(isinstance(p, str) for p in pages):
+            falla(f"{prefijo}.pages", "si esta, lista de strings")
+        else:
+            # Una pagina declarada que no esta en el disco deja un hueco en el
+            # visor. Se chequea aca y no en el theme porque el theme no puede
+            # hacer nada al respecto a esa altura.
+            for nombre in pages:
+                if not (path.parent / "_manual" / nombre).is_file():
+                    falla(
+                        f"{prefijo}.pages",
+                        f"'{nombre}' no existe en {path.parent / '_manual'}",
+                    )
+
+    if "file" in doc:
+        pdf = doc["file"]
+        if not isinstance(pdf, str) or not pdf.strip():
+            falla(f"{prefijo}.file", "si esta, string no vacio")
+        elif "/" in pdf or "\\" in pdf:
+            # Es un NOMBRE de archivo dentro de _manual/, no una ruta. Sin
+            # separadores no hay traversal posible, y ademas el theme lo
+            # concatena a media/<set>/_manual/ tal cual.
+            falla(f"{prefijo}.file", f"tiene que ser un nombre suelto, sin rutas: {pdf!r}")
+        elif not pdf.lower().endswith(".pdf"):
+            # El theme se lo pasa al sistema operativo sin mirarlo: la
+            # extension es lo unico que decide con que se abre.
+            falla(f"{prefijo}.file", f"tiene que terminar en '.pdf', llego {pdf!r}")
+        elif not (path.parent / "_manual" / pdf).is_file():
+            falla(f"{prefijo}.file", f"'{pdf}' no existe en {path.parent / '_manual'}")
 
 
 def chk_data_contrato(path: Path, rep: Reporte) -> None:
@@ -258,6 +319,12 @@ def chk_data_contrato(path: Path, rep: Reporte) -> None:
             falla(campo, f"tiene que ser un hex '#rrggbb', llego {val!r}")
 
     # --- mags: la lista de referencias. Que el ref EXISTA lo mira chk_mags_ref ---
+    #
+    # `article` es OPCIONAL: el slug de `articles[].game` que trata sobre este
+    # juego (ADR-0025). Lo escribe `attract mags` porque el slug editorial de
+    # la revista ("golden-axe") no es el set de Pegasus ("goldnaxe"), y sin el
+    # el theme no puede encontrar la nota. Si falta, el theme busca por el set,
+    # que es lo correcto cuando los dos coinciden.
     mags = datos.get("mags")
     if mags is not None:
         if not isinstance(mags, list):
@@ -266,40 +333,89 @@ def chk_data_contrato(path: Path, rep: Reporte) -> None:
             for i, mag in enumerate(mags):
                 if not isinstance(mag, dict) or not isinstance(mag.get("ref"), str) or not mag["ref"].strip():
                     falla(f"mags[{i}]", "tiene que ser un objeto con 'ref' string no vacio")
+                    continue
+                art = mag.get("article")
+                if art is not None and (not isinstance(art, str) or not art.strip()):
+                    falla(f"mags[{i}].article", "si esta presente tiene que ser string no vacio")
 
-    # --- manual (ADR-0014) ---
+    # --- manual (ADR-0014/0021, lista de documentos por ADR-0023) ---
+    #
+    # `manual` es una LISTA de documentos, no un objeto - un juego real puede
+    # tener mas de uno (manual de uso, de servicio, otro idioma; "multivariado",
+    # sin un par cerrado de categorias). Cada documento tiene la forma que
+    # `manual` tenia antes de ADR-0023, y ademas puede traer `label`:
+    #
+    #     "pages": ["p001.png", ...]   paginas escaneadas, las hojea el visor
+    #     "file":  "manual.pdf"        el PDF, lo abre la app del sistema
+    #     "label": "Manual de uso"     obligatorio solo si hay mas de un documento
+    #
+    # Un objeto suelto (la forma vieja, pre-0023) es error explicito y no se
+    # interpreta - dos formas validas para lo mismo es peor que un mensaje claro
+    # con la migracion de una linea (envolver en `[...]`).
     manual = datos.get("manual")
     if manual is not None:
-        if not isinstance(manual, dict):
-            falla("manual", "tiene que ser un objeto")
+        if isinstance(manual, dict):
+            falla(
+                "manual",
+                "tiene que ser una lista de documentos, no un objeto suelto "
+                "(ADR-0023) - envolvelo en []",
+            )
+        elif not isinstance(manual, list) or not manual:
+            falla("manual", "tiene que ser una lista no vacia de documentos")
         else:
-            pages = manual.get("pages")
-            if not isinstance(pages, list) or not all(isinstance(p, str) for p in pages):
-                falla("manual.pages", "obligatorio si hay manual, lista de strings")
-            else:
-                # Una pagina declarada que no esta en el disco deja un hueco en
-                # el visor. Se chequea aca y no en el theme porque el theme no
-                # puede hacer nada al respecto a esa altura.
-                for nombre in pages:
-                    if not (path.parent / "_manual" / nombre).is_file():
-                        falla(
-                            "manual.pages",
-                            f"'{nombre}' no existe en {path.parent / '_manual'}",
-                        )
+            labels_vistos: set[str] = set()
+            for i, doc in enumerate(manual):
+                _chk_manual_doc(doc, i, path, falla)
+                if len(manual) > 1 and isinstance(doc, dict):
+                    label = doc.get("label")
+                    if not isinstance(label, str) or not label.strip():
+                        falla(f"manual[{i}].label", "obligatorio si hay mas de un documento")
+                    elif label.strip() in labels_vistos:
+                        falla(f"manual[{i}].label", f"repetido: {label.strip()!r}")
+                    else:
+                        labels_vistos.add(label.strip())
 
-    # --- cheats (ADR-0015) ---
+    # --- cheats (ADR-0020, extiende ADR-0015) ---
+    #
+    # El nombre del grupo es LIBRE: ya no se validan solo "combos" y "codes".
+    # Cada grupo puede venir de dos formas, y las dos se validan igual por
+    # dentro:
+    #
+    #     "combos":   [ {name, input} ]
+    #     "secretos": { "label": "...", "items": [ {name, input} ] }
+    #
+    # Que la clave sea libre NO significa que cualquier cosa pase: el modo de
+    # falla que esto evita es el que se vio el 2026-08-09 — 8 entradas
+    # escritas bajo claves que nadie leia, con doctor en verde y la pantalla
+    # sin mostrarlas. Ahora una forma que el theme no sabe dibujar falla acá.
     cheats = datos.get("cheats")
     if cheats is not None:
         if not isinstance(cheats, dict):
             falla("cheats", "tiene que ser un objeto")
         else:
-            for grupo in ("combos", "codes"):
-                items = cheats.get(grupo)
-                if items is None:
+            for grupo, valor in cheats.items():
+                if isinstance(valor, list):
+                    items = valor
+                elif isinstance(valor, dict):
+                    if "items" not in valor:
+                        falla(f"cheats.{grupo}", "objeto sin 'items'")
+                        continue
+                    items = valor["items"]
+                    if not isinstance(items, list):
+                        falla(f"cheats.{grupo}.items", "tiene que ser una lista")
+                        continue
+                    etiqueta = valor.get("label")
+                    if etiqueta is not None and (
+                        not isinstance(etiqueta, str) or not etiqueta.strip()
+                    ):
+                        falla(f"cheats.{grupo}.label", "si esta, string no vacio")
+                else:
+                    falla(
+                        f"cheats.{grupo}",
+                        "tiene que ser una lista, o un objeto con 'items'",
+                    )
                     continue
-                if not isinstance(items, list):
-                    falla(f"cheats.{grupo}", "tiene que ser una lista")
-                    continue
+
                 for i, item in enumerate(items):
                     prefijo = f"cheats.{grupo}[{i}]"
                     if not isinstance(item, dict):
@@ -353,12 +469,33 @@ def _numero_0_100(v) -> bool:
 MAGAZINE_TYPES_CONOCIDOS = {
     "publicidad", "indice", "índice", "review", "noticia",
     "entrevista", "especial", "hardware", "preview",
+    "guia", "guía",
 }
+
+_NUMERO_PAGINA = re.compile(r"(\d+)")
+
+
+def numeros_de_pagina(pages) -> set[int]:
+    """Los numeros de pagina IMPRESA que declara pages[], sacados del nombre
+    de cada archivo: "p046.jpg" -> 46 (ADR-0024).
+
+    No es 1..len(pages). Una revista real arranca en "p002.jpg" -la pagina 1
+    es la tapa y vive aparte en cover.jpg- asi que contar posiciones corre
+    todo un lugar y hace que la ultima pagina parezca fuera de rango.
+    """
+    out = set()
+    for p in pages:
+        if not isinstance(p, str):
+            continue
+        m = _NUMERO_PAGINA.search(p)
+        if m:
+            out.add(int(m.group(1)))
+    return out
 
 
 def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
     """Valida el contrato de magazine.json mas alla de sintaxis JSON:
-    campos obligatorios, tipos, rango de confidence (ADR-0010)."""
+    campos obligatorios, tipos, rango de confidence (ADR-0024)."""
     try:
         datos = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
@@ -396,10 +533,14 @@ def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
         falla("articles", "obligatorio, lista")
         return
 
-    # Cuantas paginas tiene la revista, para chequear que los articulos no
-    # apunten afuera. Si pages estaba mal ya se reporto arriba; aca se usa 0
-    # para no encadenar errores confusos.
-    total_paginas = len(pages) if isinstance(pages, list) else 0
+    # Los NUMEROS DE PAGINA IMPRESA que la revista realmente tiene, sacados
+    # del nombre de cada archivo (ADR-0024). No es 1..len(pages): una revista
+    # real arranca en "p002.jpg" porque la pagina 1 es la tapa y vive aparte
+    # en cover.jpg, asi que contar posiciones da un corrimiento y falsos
+    # "fuera de rango" al final. Si pages estaba mal ya se reporto arriba;
+    # aca queda vacio para no encadenar errores confusos.
+    numeros = numeros_de_pagina(pages) if isinstance(pages, list) else set()
+    rango = f"{min(numeros)} a {max(numeros)}" if numeros else "(sin paginas)"
 
     for i, art in enumerate(articles):
         prefijo = f"articles[{i}]"
@@ -418,7 +559,7 @@ def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
                 "magazine-contrato", path,
                 f"{prefijo}.type='{tipo}' no es de los conocidos "
                 f"({', '.join(sorted(MAGAZINE_TYPES_CONOCIDOS))}) - "
-                "el enum no es cerrado (ADR-0010), puede ser valido igual",
+                "el enum no es cerrado (ADR-0024), puede ser valido igual",
             )
 
         for campo_str_opc in ("game", "title"):
@@ -429,22 +570,21 @@ def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
                     f"{prefijo}.{campo_str_opc}: si esta presente tiene que ser string",
                 )
 
-        # startPage y articles[].pages son indices 1-BASED sobre pages[].
-        # No es una interpretacion: se deduce del contrato. Un articulo que
-        # apunte fuera de rango hoy pasaba el validador y explotaba recien en
-        # el visor del theme, que es el peor lugar para enterarse.
-        # Ver spec/features/006-theme-documentos/spec.md.
+        # startPage y articles[].pages apuntan a una pagina que la revista
+        # tiene que TENER. Un articulo que apunta a una pagina inexistente
+        # pasaba el validador y se veia recien en el visor del theme, que es
+        # el peor lugar para enterarse.
         sp = art.get("startPage")
         if not isinstance(sp, int) or isinstance(sp, bool):
             rep.error(
                 "magazine-contrato", path,
                 f"{prefijo}.startPage: obligatorio, number",
             )
-        elif total_paginas and not (1 <= sp <= total_paginas):
+        elif numeros and sp not in numeros:
             rep.error(
                 "magazine-contrato", path,
-                f"{prefijo}.startPage={sp} fuera de rango: pages[] tiene "
-                f"{total_paginas} paginas, el indice va de 1 a {total_paginas}",
+                f"{prefijo}.startPage={sp} no es una pagina de esta revista: "
+                f"pages[] va de {rango}",
             )
 
         art_pages = art.get("pages")
@@ -455,14 +595,13 @@ def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
                 "magazine-contrato", path,
                 f"{prefijo}.pages: obligatorio, lista de numbers",
             )
-        elif total_paginas:
-            fuera = [n for n in art_pages if not (1 <= n <= total_paginas)]
+        elif numeros:
+            fuera = [n for n in art_pages if n not in numeros]
             if fuera:
                 rep.error(
                     "magazine-contrato", path,
-                    f"{prefijo}.pages tiene indices fuera de rango: {fuera} "
-                    f"(pages[] tiene {total_paginas} paginas, van de 1 a "
-                    f"{total_paginas})",
+                    f"{prefijo}.pages apunta a paginas que esta revista no "
+                    f"tiene: {fuera} (pages[] va de {rango})",
                 )
 
         conf = art.get("confidence")
@@ -484,6 +623,54 @@ def chk_magazine_contrato(path: Path, rep: Reporte) -> None:
                 )
 
 
+def chk_magazine_assets(path: Path, rep: Reporte) -> None:
+    """Cada entrada de pages[] y el cover tienen que existir en el disco.
+
+    Las paginas viven en <rev>/pages/ y el cover en la raiz de la revista
+    (ADR-0024). Un nombre que no resuelve no rompe nada en el validador ni
+    tira ninguna excepcion: el sintoma es una pagina en blanco en el visor,
+    que es el peor lugar para enterarse. Por eso es ERROR y no aviso - es
+    exactamente la clase de cosa que doctor existe para adelantar.
+
+    Se reportan hasta 5 paginas faltantes y despues el conteo: una revista
+    con la carpeta pages/ mal armada tiene TODAS mal, y 63 lineas iguales
+    tapan el resto del reporte.
+    """
+    try:
+        datos = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return  # ya lo reporto chk_json_valido
+
+    if not isinstance(datos, dict):
+        return
+
+    rev = path.parent
+
+    cover = datos.get("cover")
+    if isinstance(cover, str) and cover.strip() and not (rev / cover).is_file():
+        rep.error("magazine-assets", path, f"cover '{cover}' no existe en {rev}")
+
+    pages = datos.get("pages")
+    if not isinstance(pages, list):
+        return  # ya lo reporto chk_magazine_contrato
+
+    faltan = [p for p in pages if isinstance(p, str) and not (rev / "pages" / p).is_file()]
+    if not faltan:
+        return
+
+    for nombre in faltan[:5]:
+        rep.error(
+            "magazine-assets", path,
+            f"pages[] declara '{nombre}' pero no existe {rev / 'pages' / nombre}",
+        )
+    if len(faltan) > 5:
+        rep.error(
+            "magazine-assets", path,
+            f"...y {len(faltan) - 5} paginas mas ({len(faltan)} de {len(pages)} faltan). "
+            "Las paginas van en <revista>/pages/ (ADR-0024)",
+        )
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -500,7 +687,8 @@ CHEQUEOS_UNIVERSALES = [
 def revisar(raiz: Path, target: str = "windows") -> Reporte:
     rep = Reporte()
     rep.chequeos_corridos = [n for n, _, _ in CHEQUEOS_UNIVERSALES] + [
-        "metadata", "json-valido", "mags-ref", "magazine-contrato", "data-contrato",
+        "metadata", "json-valido", "mags-ref", "magazine-contrato",
+        "magazine-assets", "data-contrato",
     ]
 
     if not raiz.exists():
@@ -546,6 +734,7 @@ def revisar(raiz: Path, target: str = "windows") -> Reporte:
         if path.name == "magazine.json":
             try:
                 chk_magazine_contrato(path, rep)
+                chk_magazine_assets(path, rep)
             except UnicodeDecodeError:
                 pass  # ya lo reporto chk_encoding
 

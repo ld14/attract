@@ -139,6 +139,24 @@ usa siempre `api.keys.*`, nunca una tecla literal.
 - Evidencia: `themes/attract/overlays/LaunchOverlay.qml`,
   [`ADR-0018`](../spec/decisions/0018-launch-ruta-absoluta.md).
 
+### Abrir algo con la app del sistema
+
+- **`Qt.openUrlExternally(url)` existe y funciona.** Es global de QtQml: **no
+  necesita `import`**, así que no puede provocar el "Theme loading failed" de §1.
+  Por debajo es `QDesktopServices::openUrl` — `LSOpenCFURLRef` en macOS,
+  `ShellExecuteW` en Windows.
+- **Devuelve `false` con una ruta inexistente**, y `false` con una url vacía. A
+  diferencia de `game.launch()`, **acá sí hay canal de error** — aunque un `true`
+  sigue significando "el SO aceptó el pedido", no "el visor arrancó".
+- **Espacios y acentos abren en macOS con y sin `encodeURIComponent`.** No está
+  medido en Windows; el theme codifica el nombre por ser la forma canónica.
+- **Con Pegasus en fullscreen, la ventana externa abre POR DELANTE y Pegasus
+  pierde el foco.** No hay ninguna API de foco ni de ventanas en Pegasus para
+  recuperarlo. En un gabinete sin teclado eso es un viaje de ida.
+- Sin medir: **todo el comportamiento en Windows**.
+- Evidencia: `themes/experimentos/abrir-url-externa.qml` (2026-08-09, macOS),
+  [`ADR-0021`](../spec/decisions/0021-manual-pdf-app-del-sistema.md).
+
 ### `api.memory` — la única persistencia del theme
 
 - Existe, con `get` / `set` / `has` / `unset`, y **sobrevive a cerrar y
@@ -295,7 +313,12 @@ no resuelve (§1). Medido el 2026-08-05 con `themes/experimentos/teclas-xy.qml`.
 
 - **Nada de esto se verificó en el gabinete (Windows).** Todo se midió en el
   Mac. Lo que más riesgo tiene de comportarse distinto es `loops` de
-  QtMultimedia, que históricamente varía entre backends de plataforma.
+  QtMultimedia, que históricamente varía entre backends de plataforma — y desde
+  el 2026-08-09 se le suma `Qt.openUrlExternally`, que en Windows va por
+  `ShellExecuteW` en vez de `LSOpenCFURLRef`.
+- **Cómo se vuelve a Pegasus desde una ventana externa en el gabinete.** El foco
+  se pierde y no hay API para recuperarlo; con joystick solo no hay `Alt+Tab`.
+  Falta probar si el encoder puede mandar `Alt+F4`.
 - Si `PreserveAspectCrop` **recorta** o **estira**: se vio que llena el panel
   sin franjas negras, falta distinguir cuál de las dos.
 - El prototipo del handoff **no se puede renderizar**: le falta el

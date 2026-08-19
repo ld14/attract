@@ -128,13 +128,17 @@ git add -A && git commit -m "chore: scaffold v0.0"
 git tag v0.0-inicio
 ```
 
-> `make setup`/`make test` no instalan `mcp` — es la única dependencia
-> externa del proyecto, y es opcional (ver
-> [`ADR-0012`](../spec/decisions/0012-mcp-dependencia-opcional-acotada.md)).
-> Solo hace falta si vas a correr `attract mcp`: `pip install mcp`. Sin
-> eso instalado, los tests de `mcp` se saltean solos
-> (`pytest.importorskip`) y todo lo demás (`doctor`, `synopsis`) funciona
-> exactamente igual.
+> `make setup`/`make test` **no instalan ninguna dependencia externa**. El
+> proyecto tiene dos, las dos opcionales y cada una atada a un solo comando:
+>
+> | Comando | Instalar | ADR |
+> |---|---|---|
+> | `attract mcp` | `pip install mcp` | [`0012`](../spec/decisions/0012-mcp-dependencia-opcional-acotada.md) |
+> | `attract rasterize` | `pip install pymupdf` | [`0022`](../spec/decisions/0022-rasterizar-pdf-a-paginas.md) |
+>
+> Sin ellas instaladas, sus tests se saltean solos (`pytest.importorskip`) y
+> todo lo demás (`doctor`, `synopsis`, `ingest`) funciona exactamente igual —
+> que es justamente la propiedad que los dos ADR protegen.
 
 ## 1.6 Qué ROMs necesita el Mac
 

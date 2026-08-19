@@ -6,12 +6,15 @@
       "ref": "revista-que-no-existe"
     }
   ],
-  "manual": {
-    "pages": [
-      "p001.png",
-      "p002.png",
-      "p003.png",
-      "p004.png"
-    ]
-  }
+  "manual": [
+    {
+      "pages": [
+        "p001.png",
+        "p002.png",
+        "p003.png",
+        "p004.png"
+      ],
+      "file": "manual.pdf"
+    }
+  ]
 }

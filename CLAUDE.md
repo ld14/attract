@@ -16,8 +16,9 @@ luego las tareas, y solo entonces el código. Ver `spec/README.md`.
 **La constitución manda.** Si una feature choca con `spec/constitution/`, se
 replantea la feature, no la constitución.
 
-**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0018,
-17 vigentes — 0008 superseded por 0010; formato con frontmatter — ver
+**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0025,
+21 vigentes — 0008 superseded por 0010, 0016 por 0019, 0015 por 0020,
+0010 por 0024; formato con frontmatter — ver
 `spec/decisions/_TEMPLATE.md`). Se crean con `/new-adr`.
 
 **Los handoffs de sesión viven en `docs/decisiones/AAAA-MM-DD.md`.** Son la red
@@ -30,9 +31,11 @@ cítalos, pero recuerda que el destino de su contenido es un ADR.
 | Acción | Comando |
 |---|---|
 | Setup | `make setup` (git config + venv + verificación) |
-| Tests | `make test` (pytest, 72 tests) |
+| Tests | `make test` (pytest, 184 tests) |
 | Doctor (fixtures) | `make doctor` |
 | Doctor (librería real) | `make doctor-lib` |
+| Linkear revistas ↔ juegos | `attract mags library` (dry-run) / `--apply` (ADR-0025) |
+| Instalar paquete COINDOOR | `attract import <paquete.zip> [ruta]` (ADR-0027) |
 | Instalar theme | `make theme` (producción) / `make theme-debug` (harness ADR-0001) |
 | Servidor MCP | `make mcp` (necesita `pip install mcp`, ver ADR-0012) |
 
@@ -42,10 +45,10 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 
 | Ruta | Qué es |
 |---|---|
-| `src/attract/` | CLI Python: `doctor` (validador), `synopsis` (primer escritor de `metadata.pegasus.txt`), `mcp` (servidor MCP, M5), `ingest` (crea `game:` nuevo vía `mame -listxml`, M7) |
+| `src/attract/` | CLI Python: `doctor` (validador), `synopsis` (primer escritor de `metadata.pegasus.txt`), `mcp` (servidor MCP, M5), `ingest` (crea `game:` nuevo vía `mame -listxml`, M7), `instalar` (importa paquete COINDOOR, ADR-0027), `rasterize` (PDF del manual → páginas, ADR-0022), `magazines` (linkea revistas con juegos, ADR-0025) |
 | `.claude/skills/attract/` | Claude Skill de proyecto: le dice a un agente cuándo correr `doctor`/`synopsis` (M4, `spec/features/002-attract-skill/`) |
-| `tests/` | 72 tests (38 `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`), cada uno reproduce un bug real o un caso del contrato |
-| `fixtures/` | ROMs falsas de 0 bytes + `media/_magazines/` (una revista de mentira). Portables y versionables |
+| `tests/` | 184 tests (66 `doctor` + 14 `synopsis` + 9 `mcp` + 14 `ingest` + 41 `rasterize` + 28 `magazines` + 12 `instalar`), cada uno reproduce un bug real o un caso del contrato |
+| `fixtures/` | ROMs falsas de 0 bytes + `_magazines/` (cuatro revistas de mentira, en la **raíz** de `fixtures/` — ADR-0024). Portables y versionables |
 | `library/` | Librería real del autor. NO va a git |
 | `themes/attract/` | **Theme de producción** (feature 005). `Tokens.qml` (singleton `Theme`), `core/` (datos y rutas), `ui/` (dibuja), `screens/`, `overlays/`. Ver `spec/features/005-theme-base/plan.md` |
 | `themes/attract-debug/` | Harness de debug: dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no lo reemplaces, agregá al lado |
@@ -54,7 +57,7 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 | `docs/plataforma-pegasus.md` | **Hechos verificados de Pegasus/Qt 5.15**, cada uno con su evidencia. Leelo antes de tocar el theme: la documentación oficial no siempre coincide con el binario |
 | `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía |
 | `spec/constitution/` | Reglas estables: misión, stack, roadmap |
-| `spec/decisions/` | ADRs. 0001-0018, 17 vigentes (0008 superseded por 0010) |
+| `spec/decisions/` | ADRs. 0001-0025, 21 vigentes (0008 superseded por 0010, 0016 por 0019, 0015 por 0020, 0010 por 0024) |
 | `spec/features/NNN-*/` | spec + plan + tasks por feature. `001`-`006` implementadas; `007-theme-trucos` es la que falta |
 | `themes/attract/` (feature 005-006) | Librería, detalle, video, carrusel de revistas y visor de documentos. Verificado contra Pegasus real |
 
@@ -91,13 +94,20 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
     Estos dos hacen observables los tres eslabones — `dino` tiene `boxFront`
     (eslabón 1), `mok` **no** lo tiene y cae a `poster` (eslabón 2), `sf2ce`
     queda en 0 bytes (eslabón 3). No son arte y no pretenden serlo.
-  - Las **páginas y tapas** de las cuatro revistas de `_magazines/` y las de
-    `sf2ce/_manual/` son
+  - Las **páginas y tapas** de las cuatro revistas de `fixtures/_magazines/`
+    (páginas en `<revista>/pages/`, tapa en la raíz — ADR-0024) y las de
+    `sf2ce/_manual/` (plano, sin `pages/`) son
     PNG generados (~2 KB cada uno) **con el número impreso grande**. El número
     es el punto: sin él no se puede verificar que hojear avance, que
     `startPage` abra donde debe, ni que una miniatura salte a la página
     correcta. Con todo en 0 bytes el visor no muestra nada y no hay nada que
     comprobar.
+
+    Las cuatro arrancan en `p001`, y por eso **no** distinguen las dos
+    lecturas posibles de `startPage` (índice vs. número impreso): dan lo mismo.
+    Ese fue el punto ciego que dejó pasar el bug de ADR-0024 hasta que llegó
+    una revista real que arranca en `p002`. Un fixture nuevo que arranque en
+    `p002` paga solo.
 - **Las carátulas de verdad van en `library/`, nunca en `fixtures/`.** Son
   arte con copyright y `fixtures/` se versiona. `library/preview/` es una
   colección desechable para mirar el theme con arte real y compararlo contra
@@ -106,10 +116,13 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 
 ## Fuera de alcance sin preguntar
 
-- Añadir dependencias nuevas (el proyecto es stdlib-only a propósito,
-  única excepción acotada hasta ahora: `mcp`, ver
-  [`ADR-0012`](spec/decisions/0012-mcp-dependencia-opcional-acotada.md) —
-  cualquier otra dependencia nueva sigue necesitando preguntar primero)
+- Añadir dependencias nuevas (el proyecto es stdlib-only a propósito, con
+  **dos** excepciones acotadas y opcionales: `mcp` para `attract mcp`
+  ([`ADR-0012`](spec/decisions/0012-mcp-dependencia-opcional-acotada.md)) y
+  `pymupdf` para `attract rasterize`
+  ([`ADR-0022`](spec/decisions/0022-rasterizar-pdf-a-paginas.md)) — cualquier
+  otra sigue necesitando preguntar primero, y una tercera obliga a reescribir
+  el límite duro en vez de parcharlo otra vez)
 - Completar los docs plantilla del bootcamp (`CONVENCION.md`, `baseline.md`,
   `mapeo-mockup-pegasus.md`) — son ejercicios del autor, no tareas de Claude
 - Cambios en CI/CD o infraestructura

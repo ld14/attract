@@ -51,8 +51,7 @@ Column {
                     glifo: "❐",
                     etiqueta: "Manual digitalizado",
                     hay: root.datos ? root.datos.hayManual : false,
-                    sub: (root.datos && root.datos.hayManual)
-                         ? root.datos.manualPaginas + " págs" : ""
+                    sub: root.datos ? root._subManual() : ""
                 }
             ]
 
@@ -139,11 +138,55 @@ Column {
         }
     }
 
+    // Cuanto entra en el subtitulo sin romper la tarjeta (250px fijos, texto
+    // en Theme.fontMono a Theme.sizeMonoSm=10 -> ~6px/caracter, y el icono +
+    // los margenes ya se comen buena parte del ancho). NO es "el detalle
+    // completo cabe si tiene pocos grupos": eso fue el bug real. "4 combos ·
+    // 2 códigos secretos" son solo DOS grupos y ya desborda, porque lo que
+    // importa es cuanto TEXTO entra, no cuantos items hay. Se mide el string
+    // armado, no se cuenta.
+    readonly property int _anchoSubtitulo: 22
+
+    // Tres niveles, cada uno mas corto que el anterior, y el ultimo SIEMPRE
+    // entra sin importar los datos: es la garantia de que la tarjeta no
+    // vuelve a romperse por mucho contenido, cualquiera sea.
+    function _acortar(detalle, resumen) {
+        if (detalle.length <= _anchoSubtitulo) return detalle;
+        if (resumen && resumen.length <= _anchoSubtitulo) return resumen;
+        return "Ver detalle";
+    }
+
+    // Con MAS de un documento (ADR-0023) el desglose por pagina/PDF pasa a
+    // vivir en las pestañas del visor, no en la tarjeta: acá solo se cuenta.
+    // Con UNO, "12 págs", "PDF", o "12 págs · PDF" (ADR-0021) — sin cambios
+    // respecto de antes de la 0023, salvo el recorte si algun dia no entrara.
+    function _subManual() {
+        if (!datos) return "";
+        if (datos.manuales.length > 1)
+            return _acortar(datos.manuales.length + " manuales");
+        var p = [];
+        if (datos.hayManualPaginas) p.push(datos.manualPaginas + " págs");
+        if (datos.hayManualPdf) p.push("PDF");
+        return _acortar(p.join("  ·  "));
+    }
+
+    // Un renglon por grupo, sea cual sea su nombre (ADR-0020): antes esto
+    // contaba las dos claves fijas combos/codes, asi que un grupo con
+    // nombre propio no aparecia en el subtitulo aunque tuviera entradas. El
+    // detalle completo esta a un A de distancia, adentro del overlay - el
+    // subtitulo es un adelanto, no tiene que decirlo todo.
     function _subCheats() {
         if (!datos || !datos.hayCheats) return "";
+        var g = datos.gruposCheats;
+
         var p = [];
-        if (datos.combosCount) p.push(datos.combosCount + " combos");
-        if (datos.codesCount) p.push(datos.codesCount + " trucos");
-        return p.join("  ·  ");
+        for (var i = 0; i < g.length; i++)
+            p.push(g[i].items.length + " " + g[i].label.replace(/^[▶★]\s*/, "").toLowerCase());
+        var detalle = p.join("  ·  ");
+        // Separador angosto a proposito: es el segundo nivel, tiene que
+        // aprovechar cada caracter para no caer directo al CTA generico.
+        var resumen = datos.cheatsCount + " entradas · " + g.length + " grupos";
+
+        return _acortar(detalle, resumen);
     }
 }

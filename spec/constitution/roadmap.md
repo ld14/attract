@@ -193,6 +193,15 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     total** (34 `doctor` + 11 `synopsis` + 9 `mcp` + 14 `ingest`) — conteo
     de ese momento; hoy son 72 (`doctor` creció a 38), ver más abajo.
 
+24. **`spec/features/016-import-coindoor/` — implementada.** `attract
+    import <paquete.zip>` instala un paquete COINDOOR (ADR-0027) en la
+    librería: valida el zip en un staging temporal reusando `doctor.py`
+    sin modificarlo, escribe assets → `data.json` → bloque `game:` en ese
+    orden (minimiza daño si se corta). Bloque nuevo lleva `x-procedencia:
+    declarada` (ADR-0026). Preserva `mags[]` existente si el paquete no
+    trae uno. `src/attract/instalar.py` (12 tests nuevos en
+    `tests/test_instalar.py`). **184 tests en total.**
+
 20. **`004-attract-ingest` cerrada del todo, y el esqueleto del theme
     verificado — 2026-07-29.** Dos cosas en una sola sesión de Pegasus real,
     sin escribir código nuevo para ninguna: el harness de
@@ -267,6 +276,55 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     layout, que por eso subió a `docs/plataforma-pegasus.md`— y la última
     revista inalcanzable, que no era un off-by-one sino dos estados metidos en
     una misma variable.
+
+22. **Primera revista real completa, y el contrato v2 que destapó —
+    2026-08-10.** Se cargó `micromania-34` (63 páginas, 20 artículos con
+    `game`) y aparecieron tres cosas que los fixtures no podían revelar,
+    porque los fixtures los escribimos nosotros con el contrato ya en la mano:
+
+    - **Las páginas viven en `pages/`**, no sueltas en la carpeta de la
+      revista. El theme armaba `<rev>/p002.jpg` y las 63 daban 404: el visor
+      abría vacío sin un solo error en ningún lado.
+    - **`startPage` es el número de página impresa, no un índice.** `pages[]`
+      arranca en `p002.jpg` porque la página 1 es la tapa y vive en
+      `cover.jpg`, así que la resta `startPage - 1` corría todo un lugar y al
+      final de la revista daba un `startPage=64` "fuera de rango" sobre 63
+      elementos — que era el validador teniendo razón bajo un contrato
+      equivocado.
+    - **Una revista cruza sistemas.** `micromania-34` cubre Golden Axe
+      (arcade), Dr. Mario (NES) y Monkey Island (PC); con la carpeta adentro
+      de `<sistema>/media/` había que copiar ~105 MB por sistema.
+
+    [`ADR-0024`](../decisions/0024-contrato-magazine-json-v2.md) supersede a
+    0010 con los tres cambios, adaptando **el consumidor** y no el archivo del
+    generador (ADR-0009). `_magazines/` pasó a la raíz de la librería, el
+    theme resuelve `../_magazines/` y prefija `pages/` en un solo lugar, y
+    tanto el theme como `doctor` resuelven las páginas **buscando el archivo**
+    `p{NNN}` en vez de contar posiciones — más robusto que la aritmética que
+    reemplaza, porque no asume dónde arranca la revista ni que la numeración
+    sea continua. Verificado antes de mover: las cuatro revistas de `fixtures/`
+    arrancan en `p001` y dan **índices idénticos** con las dos reglas, así que
+    nada de lo que ya funcionaba cambió.
+
+    Chequeo nuevo, `chk_magazine_assets`: cada página y el `cover` tienen que
+    existir en el disco. Es exactamente el bug de arriba, cuyo único síntoma
+    era una pantalla en blanco.
+
+23. **`attract mags` — el link revista→juego dejó de ser manual, 2026-08-10.**
+    La otra punta del problema: la revista dice de qué juegos habla
+    (`articles[].game`) y el juego dice en qué revistas aparece (`mags[{ref}]`),
+    pero los dos lados usan identificadores distintos — slug editorial
+    (`golden-axe`) contra set de MAME (`goldnaxe`). No es formato: normalizar da
+    `goldenaxe`, al set le falta una `e` porque los nombres de MAME son
+    abreviaturas históricas, no derivaciones del título.
+
+    [`ADR-0025`](../decisions/0025-link-revista-juego-difuso.md): coincidencia
+    difusa con `difflib` (stdlib, no toca el límite de dependencias) contra el
+    set **y** el título, umbral 0.85. El número salió de medir, no de suponer:
+    los 20 slugs de `micromania-34` contra los sets instalados dan 0.94 al
+    match correcto y 0.43 al falso candidato más alto. Dry-run por defecto y
+    merge idempotente sobre `mags[]` — `data.json` lo escribe una persona y
+    esta herramienta es dueña de un solo campo.
 
 ## Siguiente 🔜
 

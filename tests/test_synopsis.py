@@ -157,3 +157,48 @@ def test_doctor_sigue_ok_despues_de_escribir(tmp_path):
 
     rep = revisar(raiz)
     assert rep.ok, [h.detalle for h in rep.errores]
+
+
+# --- summary multilinea: las continuaciones van INDENTADAS ----------------
+#
+# Bug real, 2026-08-09: un synopsis con formato markdown (varios parrafos
+# separados por \n) se escribia con cada renglon al ras. Pegasus corta el
+# valor en el primer renglon sin indentar, asi que se perdia casi toda la
+# sinopsis Y las claves siguientes del bloque (developer:/release:/x-set:)
+# quedaban fuera de contrato.
+
+def test_summary_multilinea_indenta_continuaciones():
+    from attract.synopsis import Bloque
+
+    b = Bloque(lineas=["game: X", "file: x.zip", "developer: Y"], es_game=True)
+    out = mergear_summary(b, "primera\nsegunda\ntercera").lineas
+
+    assert out[2] == "summary: primera"
+    assert out[3] == "  segunda"
+    assert out[4] == "  tercera"
+    # la clave que venia despues sigue al ras, no absorbida por el summary
+    assert out[5] == "developer: Y"
+
+
+def test_summary_multilinea_respeta_lineas_en_blanco():
+    """Una linea vacia SIN indentar terminaria el valor igual que una clave
+    nueva, asi que se emite como dos espacios pelados."""
+    from attract.synopsis import Bloque
+
+    b = Bloque(lineas=["game: X", "file: x.zip"], es_game=True)
+    out = mergear_summary(b, "parrafo uno\n\nparrafo dos").lineas
+
+    assert out[2] == "summary: parrafo uno"
+    assert out[3] == "  "
+    assert out[4] == "  parrafo dos"
+
+
+def test_summary_de_una_linea_no_cambia():
+    """El caso comun no se toca: sigue siendo una sola linea."""
+    from attract.synopsis import Bloque
+
+    b = Bloque(lineas=["game: X", "file: x.zip"], es_game=True)
+    out = mergear_summary(b, "un solo renglon").lineas
+
+    assert out[2] == "summary: un solo renglon"
+    assert len(out) == 3

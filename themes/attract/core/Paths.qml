@@ -17,7 +17,7 @@
 // devuelve YA sin extensión ("dino", no "dino.zip"). El fixture EXPERIMENTO no
 // tiene x-set justamente para cubrir ese camino.
 //
-// TRES TRAMPAS, las tres con evidencia, no supuestas:
+// CUATRO TRAMPAS, las cuatro con evidencia, no supuestas:
 //
 //   1. `files[0].path` viene SIN esquema, pero los assets vienen CON él
 //      ("file:///Users/…"). Para un XMLHttpRequest hace falta el esquema, asi
@@ -29,6 +29,16 @@
 //      fallback que quedo sin escribir. Falla en tres casos reales medidos: un
 //      asset puede ser una URL remota (Steam devuelve https://…), TEST
 //      MULTIFILE no tiene ningun asset, y el juego de library/arcade tampoco.
+//   4. `conEsquema()` concatena SIN percent-encoding. Para XMLHttpRequest e
+//      Image viene funcionando y no se toca. Pero lo que sale de acá para el
+//      SISTEMA OPERATIVO (manualPdfDe) si se codifica: ver el comentario de
+//      esa funcion.
+//
+// Y una cosa que NO es una ruta y vive acá igual: abrirAfuera(). Es lo unico
+// del theme que le habla al sistema operativo. Esta acá porque theme.qml ya
+// instancia este objeto y lo baja a todas las pantallas, asi que un archivo
+// propio para una funcion de cuatro lineas seria cableado nuevo a cambio de
+// nada. Si crece, se muda.
 //
 // No es un singleton a proposito (ver spec/features/005-theme-base/plan.md):
 // se instancia una vez en theme.qml con un id. Un singleton en subcarpeta
@@ -71,12 +81,22 @@ QtObject {
         return base === "" ? "" : base + "data.json";
     }
 
-    // media/_magazines/<ref>/ — la revista es una entidad aparte (ADR-0010),
-    // asi que cuelga del directorio de la coleccion, no del juego.
+    // <raiz-libreria>/_magazines/<ref>/ — la revista no cuelga de ningun
+    // sistema: la misma revista cubre juegos de arcade, NES y PC a la vez
+    // (ADR-0024), asi que vivir adentro de uno obligaria a copiarla en los
+    // tres. Sube UN nivel desde el directorio de la coleccion, que es lo que
+    // Pegasus tiene en game_dirs.txt:
+    //
+    //   dirColeccion  ->  /Users/…/library/arcade/
+    //   + ../_magazines/  ->  /Users/…/library/_magazines/
+    //
+    // El ".." no se resuelve aca a proposito: es un file:// URL y tanto
+    // XMLHttpRequest como Image lo normalizan solos. Colapsarlo a mano seria
+    // reimplementar path normalization para no ganar nada.
     function magazineDe(game, ref) {
         var dir = dirColeccionDe(game);
         if (dir === "" || !ref) return "";
-        return dir + "media/_magazines/" + ref + "/";
+        return dir + "../_magazines/" + ref + "/";
     }
 
     function magazineJsonDe(game, ref) {
@@ -88,6 +108,37 @@ QtObject {
     function manualDe(game) {
         var base = baseDe(game);
         return base === "" ? "" : base + "_manual/";
+    }
+
+    // El PDF del manual, listo para abrirAfuera() (ADR-0021). "" si no hay
+    // base o no hay nombre.
+    //
+    // Trampa 4: esto NO va a un XMLHttpRequest, va al sistema operativo. En
+    // macOS se midio que las dos formas abren, cruda y codificada
+    // (themes/experimentos/abrir-url-externa.qml). Se codifica igual, por dos
+    // motivos: es la forma canonica de un file:// URL, y Windows va por
+    // ShellExecuteW, que es otro camino y todavia no se midio.
+    //
+    // Solo el NOMBRE. El directorio ya viene con esquema y barras desde
+    // conEsquema(), y codificarlo convertiria las "/" en "%2F".
+    function manualPdfDe(game, nombre) {
+        var base = manualDe(game);
+        if (base === "" || !nombre) return "";
+        return base + encodeURIComponent(nombre);
+    }
+
+    // Le pasa un documento al sistema operativo para que lo abra la aplicacion
+    // predeterminada del usuario (ADR-0021). El theme no nombra ningun visor.
+    //
+    // Devuelve si el SO ACEPTO el pedido, que no es lo mismo que si el visor
+    // arranco — eso no se puede saber, igual que con game.launch(). Lo que si
+    // se midio es que una ruta inexistente devuelve false, asi que el `false`
+    // alcanza para avisar.
+    function abrirAfuera(url) {
+        if (!url) return false;
+        var ok = Qt.openUrlExternally(url);
+        console.log("ATTRACT: abrir afuera " + url + " -> " + ok);
+        return ok;
     }
 
     // --- interna ---------------------------------------------------------

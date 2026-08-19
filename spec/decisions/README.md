@@ -39,18 +39,28 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 | [0007](0007-paginas-revista-imagenes-no-pdf.md) | Páginas de revista: imágenes, nunca PDF embebido | accepted | 2026-07-23 |
 | [0008](0008-modelo-datos-revistas.md) | Revistas como entidad de primera clase, referenciadas por los juegos | superseded by 0010 | 2026-07-23 |
 | [0009](0009-frontera-produccion-consumo-revistas.md) | Frontera del sistema: ATTRACT consume revistas, no las produce | accepted | 2026-07-23 |
-| [0010](0010-contrato-magazine-json-extendido.md) | Contrato de `magazine.json` extendido con evidencia real (supersede 0008) | accepted | 2026-07-28 |
+| [0010](0010-contrato-magazine-json-extendido.md) | Contrato de `magazine.json` extendido con evidencia real (supersede 0008) | 🔁 superseded por 0024 | 2026-07-28 |
 | [0011](0011-fuente-synopsis-regeneracion-campo.md) | `attract synopsis` escribe desde una fuente persistida, no parchea el artefacto a mano | accepted | 2026-07-28 |
 | [0012](0012-mcp-dependencia-opcional-acotada.md) | `attract mcp` usa el SDK oficial `mcp` como dependencia opcional, acotada | accepted | 2026-07-29 |
 | [0013](0013-accent-por-juego.md) | El accent de cada juego se declara a mano en su `data.json` | accepted | 2026-07-29 |
 | [0014](0014-manual-digitalizado.md) | El manual digitalizado vive en `media/<set>/_manual/`, declarado en `data.json` | accepted | 2026-07-29 |
-| [0015](0015-contrato-data-json.md) | Contrato completo de `data.json`, con nombres de campo explícitos | accepted | 2026-07-29 |
-| [0016](0016-canvas-fijo-escalado.md) | El theme se dibuja en un canvas fijo de 1280×720 y se escala entero | accepted | 2026-07-29 |
+| [0015](0015-contrato-data-json.md) | Contrato completo de `data.json`, con nombres de campo explícitos | 🔁 superseded por 0020 | 2026-07-29 |
+| [0016](0016-canvas-fijo-escalado.md) | El theme se dibuja en un canvas fijo de 1280×720 y se escala entero | 🔁 superseded por 0019 | 2026-07-29 |
 | [0017](0017-providers-pegasus.md) | Los providers de Pegasus que no son de ATTRACT se apagan por config, no se filtran en el theme | accepted | 2026-07-29 |
 | [0018](0018-launch-ruta-absoluta.md) | El `launch:` usa la ruta absoluta del emulador, resuelta por máquina | accepted | 2026-08-03 |
+| [0019](0019-canvas-cover-no-letterbox.md) | El lienzo crece en el eje que sobra en vez de recortar o dejar barras | proposed | 2026-08-09 |
+| [0020](0020-cheats-grupos-libres.md) | `cheats` acepta grupos con nombre libre y el estilo lo decide el contenido | proposed | 2026-08-09 |
+| [0021](0021-manual-pdf-app-del-sistema.md) | El PDF del manual se entrega al sistema operativo con `Qt.openUrlExternally` | accepted | 2026-08-09 |
+| [0022](0022-rasterizar-pdf-a-paginas.md) | `attract rasterize` convierte el PDF del manual a páginas, con PyMuPDF opcional | accepted | 2026-08-09 |
+| [0023](0023-manual-multiple-con-pestanas.md) | Un juego puede declarar varios manuales; `manual` pasa de objeto a lista, con pestañas en el visor | accepted | 2026-08-09 |
+| [0024](0024-contrato-magazine-json-v2.md) | Contrato de `magazine.json` v2: carpeta global, páginas en `pages/` y `startPage` como número impreso (supersede 0010) | accepted | 2026-08-10 |
+| [0025](0025-link-revista-juego-difuso.md) | Linkear revista y juego por coincidencia difusa, proponiendo antes de escribir | accepted | 2026-08-10 |
+| [0026](0026-identidad-declarada-sin-mame.md) | Un `game:` puede crearse con identidad declarada a mano, sin `mame -listxml` | accepted | 2026-08-18 |
+| [0027](0027-contrato-paquete-import-coindoor.md) | Contrato del paquete que COINDOOR exporta y `attract import` instala | accepted | 2026-08-18 |
 
-**18 ADR en total, 17 vigentes** (0008 quedó superseded por 0010 — no se
-edita, se reemplaza). El razonamiento original de 0006-0009 está en
+**25 ADR en total, 21 vigentes** (0008 quedó superseded por 0010, 0016 por
+0019, 0015 por 0020 y 0010 por 0024 — no se editan, se reemplazan). El razonamiento original de 0006-0009
+está en
 [`docs/decisiones/2026-07-23.md`](../../docs/decisiones/2026-07-23.md), que
 puede archivarse ahora que su contenido vive formalizado acá. 0010 salió de
 una verificación de esta misma sesión, no del handoff original — un
@@ -81,3 +91,14 @@ app de GUI en macOS no hereda el PATH del shell, y el gabinete arranca Pegasus
 solo. La salida no fue un mecanismo nuevo sino usar una decisión que ya estaba
 tomada: el metadata es artefacto de build (ADR-0002), así que la ruta absoluta
 del emulador puede ser distinta en cada máquina sin romper nada.
+
+**0024-0025 salieron de cargar la primera revista real completa**
+(`micromania-34`, 63 páginas). 0010 había deducido la forma de `articles[]` de
+un `magazine.json` real, pero su carpeta nunca se montó contra el theme: los
+fixtures los escribimos nosotros con el contrato ya en la mano, así que no
+podían revelar que las páginas viven en `pages/` ni que `startPage` es el
+número impreso y no un índice. Es el mismo patrón que 0017 y 0018 — la
+evidencia apareció al abrir el programa con datos que no habíamos fabricado.
+0025 salió del problema que la revista real dejó al descubierto en la otra
+punta: su slug editorial (`golden-axe`) no coincide con el set de MAME
+(`goldnaxe`), y ninguna normalización determinística los une.

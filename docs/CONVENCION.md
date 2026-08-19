@@ -68,19 +68,42 @@ viene el archivo/directorio".
 > Con merged eso **agrupa por familia**: una carátula para todos los clones.
 > ¿Lo aceptás o necesitás `assets.*` explícitos?
 
-Dos estructuras separadas, no una:
+Dos estructuras separadas, y a **dos alturas distintas** del árbol:
 
 ```
-media/
-├─ _magazines/<revista>-<número>/   ← las revistas, UNA sola vez
-│  ├─ magazine.json                  ← contrato completo (ver ADR-0008)
-│  ├─ cover.jpg
-│  └─ p001.jpg … pNNN.jpg            ← todas las páginas del escaneo
+<raíz-librería>/
+├─ _magazines/<revista>-<número>/    ← las revistas, UNA sola vez
+│  ├─ magazine.json                   ← contrato completo (ver ADR-0024)
+│  ├─ cover.jpg                       ← la tapa, en la raíz de la revista
+│  └─ pages/
+│     └─ p001.jpg … pNNN.jpg          ← todas las páginas del escaneo
 │
-└─ <juego>/                          ← media/<archivo-sin-extensión>/
-   ├─ boxFront.jpg, video.mp4, …     ← PLANO, auto-descubierto por Pegasus
-   └─ data.json                      ← datos ricos propios + mags:[{ref}]
+└─ <sistema>/                         ← arcade/, nes/, pc/ …
+   ├─ metadata.pegasus.txt
+   └─ media/
+      └─ <juego>/                     ← media/<archivo-sin-extensión>/
+         ├─ boxFront.jpg, video.mp4…  ← PLANO, auto-descubierto por Pegasus
+         └─ data.json                 ← datos ricos propios + mags:[{ref}]
 ```
+
+**`_magazines/` está fuera del árbol de cualquier sistema** (ADR-0024). Una
+revista habla de juegos de varios sistemas a la vez — `micromania-34` cubre
+Golden Axe (arcade), Dr. Mario (NES) y Monkey Island (PC) — así que meterla
+adentro de uno obligaría a copiarla en los tres. El theme la resuelve como
+`<dir-colección>/../_magazines/<ref>/`, un nivel arriba de lo que Pegasus
+tiene en `game_dirs.txt`.
+
+**Las páginas van en `pages/`, la tapa no.** `magazine.json → pages[]` trae
+el nombre pelado (`"p002.jpg"`) y el prefijo lo pone quien lee. `cover` vive
+en la raíz de la revista. `attract doctor` verifica que todo resuelva
+(`chk_magazine_assets`): sin ese chequeo, una carpeta mal armada solo se ve
+como una página en blanco en el visor.
+
+**`startPage` es el número de página impresa, no un índice.** `startPage: 46`
+significa el archivo `p046.jpg`, y se resuelve buscándolo dentro de `pages[]`.
+No es lo mismo que "el elemento 46 del array": una revista real arranca en
+`p002.jpg` porque la página 1 es la tapa, así que contar posiciones corre
+todo un lugar.
 
 `media/<juego>/` es **plano**, sin subcarpetas por tipo — se acepta el
 auto-descubrimiento de Pegasus tal cual (`assets.boxFront`, `assets.video`,
@@ -313,12 +336,18 @@ Windows, nunca contra la de macOS.
   (`chk_json_valido`) — ERROR si no. Un `data.json` con una coma de más ya
   no pasa en silencio, explota en `doctor`, no en el theme.
 - `mags[].ref` de un `data.json` apunta a una carpeta real en
-  `media/_magazines/` (`chk_mags_ref`) — **AVISO**, no ERROR: la
+  `<raíz-librería>/_magazines/` (`chk_mags_ref`) — **AVISO**, no ERROR: la
   degradación con un `ref` colgado es un caso soportado a propósito (ver
   `fixtures/arcade/media/sf2ce/`, ADR-0008), no bloquea el viaje a
   Windows, pero se nota.
+- Cada página de `pages[]` y el `cover` existen en el disco
+  (`chk_magazine_assets`, ADR-0024) — **ERROR**. Las páginas se buscan en
+  `<revista>/pages/` y la tapa en la raíz de la revista. Sin este chequeo el
+  único síntoma de una carpeta mal armada era una página en blanco en el
+  visor, que es el peor lugar para enterarse. Se reportan hasta 5 y después
+  el conteo: si el layout está mal, están todas mal.
 - El contrato completo de `magazine.json` (`chk_magazine_contrato`,
-  ADR-0010): campos obligatorios (`name`, `cover`, `key_id`, `pages`,
+  ADR-0024): campos obligatorios (`name`, `cover`, `key_id`, `pages`,
   `articles`), tipos correctos, `articles[].confidence` entre 0.0 y 1.0,
   `articles[].type` obligatorio (si no es uno de los conocidos, AVISO no
   ERROR — el enum no es cerrado), `game`/`title` opcionales, flags de

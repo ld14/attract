@@ -52,7 +52,21 @@ QtObject {
     readonly property color accent2: Theme.accent2De(datos ? datos.accent2 : null)
 
     readonly property var mags: (datos && datos.mags) ? datos.mags : []
-    readonly property var manual: (datos && datos.manual) ? datos.manual : null
+
+    // `manual` es una LISTA de documentos (ADR-0023): un juego real puede
+    // tener mas de uno (manual de uso, de servicio, otro idioma). Con un solo
+    // elemento -el caso de hoy- se ve exactamente igual que antes de esta ADR:
+    // no hay migracion que hacer, `manualActivo` cae en el unico que hay.
+    readonly property var manuales: (datos && Array.isArray(datos.manual)) ? datos.manual : []
+
+    // Cual de los documentos esta mostrando la tarjeta/el visor ahora mismo.
+    // El dueño de este indice es theme.qml (igual que magIdx con las
+    // revistas); GameData solo lo usa para calcular sobre CUAL documento.
+    property int manualIdx: 0
+
+    readonly property var manualActivo:
+        (manualIdx >= 0 && manualIdx < manuales.length) ? manuales[manualIdx] : null
+
     readonly property var cheats: (datos && datos.cheats) ? datos.cheats : null
     readonly property var review: (datos && datos.review) ? datos.review : null
 
@@ -65,17 +79,89 @@ QtObject {
     // omitir las secciones vacias.
 
     readonly property bool hayRevistas: mags.length > 0
-    readonly property bool hayManual:
-        manual !== null && manual.pages !== undefined && manual.pages.length > 0
-    readonly property bool hayCheats:
-        cheats !== null &&
-        ((cheats.combos && cheats.combos.length > 0) ||
-         (cheats.codes && cheats.codes.length > 0))
+
+    // `hayManual*` es sobre el JUEGO: hay algo que mostrar en la tarjeta si
+    // ALGUN documento de la lista tiene contenido, no solo el activo - la
+    // tarjeta se decide antes de entrar al visor y de elegir cual documento.
+    readonly property bool hayManual: manuales.length > 0
+
+    // Estos dos son del documento ACTIVO (ADR-0021): paginas escaneadas que
+    // hojea el visor, y/o un PDF que abre el sistema operativo, del elemento
+    // que este seleccionado ahora.
+    readonly property bool hayManualPaginas:
+        manualActivo !== null && manualActivo.pages !== undefined && manualActivo.pages.length > 0
+    readonly property bool hayManualPdf:
+        manualActivo !== null && typeof manualActivo.file === "string" && manualActivo.file !== ""
+
+    // El NOMBRE del archivo del documento activo, no la ruta: la ruta la arma
+    // core/Paths.
+    readonly property string manualPdf: hayManualPdf ? String(manualActivo.file) : ""
+
+    // Las pestañas del visor cuando hay mas de un manual: [{etiqueta}]. Vacio
+    // con uno solo -sin fila de pestañas, como antes de ADR-0023.
+    readonly property var manualPestanas: {
+        if (manuales.length <= 1) return [];
+        var out = [];
+        for (var i = 0; i < manuales.length; i++)
+            out.push({ etiqueta: String(manuales[i].label || "") });
+        return out;
+    }
+
+    // --- los grupos de trucos, normalizados ------------------------------
+    //
+    // `cheats` acepta CUALQUIER clave, no solo combos/codes (ADR-0020). Cada
+    // grupo puede venir de dos formas:
+    //
+    //   "combos":   [ {name, input} ]                        lista directa
+    //   "secretos": { label: "...", items: [ {name, input} ] }  con titulo
+    //
+    // Aca las dos se aplanan a { clave, label, items } para que el overlay
+    // dibuje una sola forma y no repita el "¿cual de las dos era?" por
+    // seccion. El orden de las claves del JSON se respeta: es el orden en
+    // que el autor las escribio, y no hay ninguno mejor que ese.
+    readonly property var gruposCheats: {
+        if (!cheats || typeof cheats !== "object") return [];
+        var out = [];
+        for (var clave in cheats) {
+            var v = cheats[clave];
+            var items = null;
+            var label = "";
+
+            if (Array.isArray(v)) {
+                items = v;
+            } else if (v && typeof v === "object" && Array.isArray(v.items)) {
+                items = v.items;
+                if (typeof v.label === "string") label = v.label;
+            }
+
+            if (!items || items.length === 0) continue;
+            out.push({ clave: clave, label: label || _labelDe(clave), items: items });
+        }
+        return out;
+    }
+
+    // El titulo de un grupo sin `label` propio. combos/codes conservan el
+    // texto que ya tenian; cualquier otra clave se muestra tal cual, en
+    // mayusculas y sin guiones bajos ("dos_jugadores" -> "DOS JUGADORES").
+    function _labelDe(clave) {
+        if (clave === "combos") return "▶ COMBOS";
+        if (clave === "codes") return "★ CÓDIGOS SECRETOS";
+        return String(clave).replace(/_/g, " ").toUpperCase();
+    }
+
+    readonly property bool hayCheats: gruposCheats.length > 0
     readonly property bool hayReview: review !== null
 
-    readonly property int combosCount: (cheats && cheats.combos) ? cheats.combos.length : 0
-    readonly property int codesCount: (cheats && cheats.codes) ? cheats.codes.length : 0
-    readonly property int manualPaginas: hayManual ? manual.pages.length : 0
+    // El total de TODOS los grupos, no solo de combos/codes: con claves
+    // libres, contar dos claves fijas dejaria afuera lo que el autor sumo.
+    readonly property int cheatsCount: {
+        var n = 0;
+        for (var i = 0; i < gruposCheats.length; i++)
+            n += gruposCheats[i].items.length;
+        return n;
+    }
+
+    readonly property int manualPaginas: hayManualPaginas ? manualActivo.pages.length : 0
 
     // Una categoria de la resena, o null si esa categoria puntual no tiene
     // dato. Los DOS niveles de "sin dato" de CONVENCION #2.3: sin review el
@@ -100,6 +186,11 @@ QtObject {
 
     function cargar() {
         if (_xhr) { _xhr.abort(); _xhr = null; }
+
+        // Sin esto, entrar al segundo documento de un juego y despues volver
+        // al mismo -o abrir otro con menos documentos- deja manualActivo en
+        // null hasta que alguien vuelva a tocar el indice a mano.
+        manualIdx = 0;
 
         if (!game || !paths) {
             _urlVigente = "";
