@@ -64,16 +64,20 @@ media/
   "players": 2,
   "release": "1992-04-10",
   "summary": "...",
-  "format": "PCB"
+  "format": "PCB",
+  "file_format": "zip"
 }
 ```
 
 Obligatorios: `schema_version`, `system`, `set`, `title` — el mínimo que
 necesita existir un `game:` válido (`docs/CONVENCION.md` §2.1). El resto,
-opcional, igual que el resto del contrato del proyecto. `format` mapea a
-`x-formato` (obligatorio en la práctica según CONVENCION, pero es
-responsabilidad de COINDOOR pedirlo en su formulario, no de este contrato
-exigirlo).
+opcional, igual que el resto del contrato del proyecto.
+
+- `format` → mapea a `x-formato`: formato **físico** del medio original
+  (Arcade, GD-ROM, PCB, Cartucho, Diskette, CD, DVD). Es lo que el theme
+  muestra como badge.
+- `file_format` → mapea a `x-formato-archivo`: formato de **archivo** del
+  ROM (zip, chd, iso, etc.). Informativo, no se muestra en el badge.
 
 ### `data.json` — el contrato que ya existe, sin traducir
 

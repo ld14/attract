@@ -215,6 +215,8 @@ def construir_bloque_declarado(game: dict, assets: list[tuple[str, str]]) -> Blo
     lineas.append(f"x-set: {set_id}")
     if game.get("format"):
         lineas.append(f"x-formato: {unicodedata.normalize('NFC', str(game['format']))}")
+    if game.get("file_format"):
+        lineas.append(f"x-formato-archivo: {unicodedata.normalize('NFC', str(game['file_format']))}")
     lineas.append("x-procedencia: declarada")
 
     if game.get("summary"):
@@ -289,6 +291,8 @@ def aplicar(paquete: Paquete, raiz: Path) -> str:
                 b = mergear_campo_simple(b, campo, game[campo])
         if game.get("format"):
             b = mergear_campo_simple(b, "x-formato", game["format"])
+        if game.get("file_format"):
+            b = mergear_campo_simple(b, "x-formato-archivo", game["file_format"])
         for clave, ruta in assets:
             b = mergear_campo_simple(b, f"assets.{clave}", ruta)
         if game.get("summary"):
