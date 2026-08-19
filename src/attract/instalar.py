@@ -33,6 +33,7 @@ from attract.synopsis import (
 
 SCHEMA_VERSIONS_SOPORTADAS = {"1"}
 CAMPOS_OBLIGATORIOS_GAME = ("schema_version", "system", "set", "title")
+FORMATOS_CONOCIDOS = {"Arcade", "GD-ROM", "PCB", "Cartucho", "Diskette", "CD", "DVD"}
 
 
 class InstalarError(Exception):
@@ -81,6 +82,13 @@ def _leer_game_json(path: Path) -> dict:
         raise InstalarError(
             f"game.json: schema_version '{datos['schema_version']}' no soportada "
             f"(soportadas: {sorted(SCHEMA_VERSIONS_SOPORTADAS)})"
+        )
+
+    fmt = datos.get("format")
+    if fmt and fmt not in FORMATOS_CONOCIDOS:
+        raise InstalarError(
+            f"game.json: format '{fmt}' no es un formato fisico conocido "
+            f"(conocidos: {sorted(FORMATOS_CONOCIDOS)})"
         )
     return datos
 
