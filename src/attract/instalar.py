@@ -34,6 +34,7 @@ from attract.synopsis import (
 SCHEMA_VERSIONS_SOPORTADAS = {"1"}
 CAMPOS_OBLIGATORIOS_GAME = ("schema_version", "system", "set", "title")
 FORMATOS_CONOCIDOS = {"Arcade", "GD-ROM", "PCB", "Cartucho", "Diskette", "CD", "DVD"}
+TRATAMIENTOS_VALIDOS = {"copiar", "descomprimir"}
 
 
 class InstalarError(Exception):
@@ -89,6 +90,13 @@ def _leer_game_json(path: Path) -> dict:
         raise InstalarError(
             f"game.json: format '{fmt}' no es un formato fisico conocido "
             f"(conocidos: {sorted(FORMATOS_CONOCIDOS)})"
+        )
+
+    trat = datos.get("tratamiento")
+    if trat and trat not in TRATAMIENTOS_VALIDOS:
+        raise InstalarError(
+            f"game.json: tratamiento '{trat}' no valido "
+            f"(validos: {sorted(TRATAMIENTOS_VALIDOS)})"
         )
     return datos
 
@@ -247,7 +255,19 @@ def aplicar(paquete: Paquete, raiz: Path) -> str:
     media_dir = sistema_root / "media" / set_id
     media_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. assets (todo lo que NO es data.json), juntando (clave, ruta) de paso
+    # 1. resolver ROM: archivo que matchea game["file"] en el staging
+    archivo_rom = game.get("file") or f"{set_id}.zip"
+    rom_staging = paquete.stage_media / archivo_rom
+    rom_existe = rom_staging.exists() and rom_staging.is_file()
+    tratamiento = game.get("tratamiento")
+
+    if tratamiento and not rom_existe:
+        raise InstalarError(
+            f"tratamiento '{tratamiento}' pero no se encontro "
+            f"'{archivo_rom}' en el paquete"
+        )
+
+    # 2. assets (todo lo que NO es data.json NI el ROM cuando hay tratamiento)
     assets: list[tuple[str, str]] = []
     for origen in paquete.stage_media.rglob("*"):
         if not origen.is_file():
@@ -255,13 +275,24 @@ def aplicar(paquete: Paquete, raiz: Path) -> str:
         rel = origen.relative_to(paquete.stage_media)
         if rel.name == "data.json" and rel.parent == Path("."):
             continue
+        if tratamiento and rel.name == archivo_rom and rel.parent == Path("."):
+            continue   # el ROM se maneja aparte
         destino = media_dir / rel
         destino.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(origen, destino)
         if rel.parent == Path("."):   # directo en media/<set>/, no en _manual/
             assets.append((origen.stem, f"media/{set_id}/{origen.name}"))
 
-    # 2. data.json, preservando mags[] existente si el paquete no trae uno
+    # 3. tratamiento del ROM
+    if rom_existe and tratamiento == "copiar":
+        destino_rom = sistema_root / archivo_rom
+        shutil.copy2(rom_staging, destino_rom)
+    elif rom_existe and tratamiento == "descomprimir":
+        destino_extract = sistema_root / set_id
+        with zipfile.ZipFile(rom_staging) as zf:
+            zf.extractall(destino_extract)
+
+    # 4. data.json, preservando mags[] existente si el paquete no trae uno
     origen_data = paquete.stage_media / "data.json"
     nuevo = json.loads(origen_data.read_text(encoding="utf-8")) if origen_data.exists() else {}
     destino_data = media_dir / "data.json"
@@ -276,7 +307,7 @@ def aplicar(paquete: Paquete, raiz: Path) -> str:
         json.dump(nuevo, f, ensure_ascii=False, indent=2)
         f.write("\n")
 
-    # 3. bloque game:
+    # 5. bloque game:
     texto = metadata_path.read_text(encoding="utf-8")
     bloques = parsear_bloques(texto)
     idx = next(

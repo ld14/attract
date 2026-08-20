@@ -315,3 +315,110 @@ def test_main_ayuda(capsys):
     assert ret == 0
     out = capsys.readouterr().out
     assert "attract import" in out
+
+
+# ---------------------------------------------------------------------------
+# 13. tratamiento: copiar -> copia el zip a la raiz del sistema
+# ---------------------------------------------------------------------------
+
+def test_tratamiento_copiar(tmp_path):
+    raiz = _libreria_minima(tmp_path)
+    rom_data = b"PK fake rom content"
+    zip_path = _zip_paquete(tmp_path, {
+        "game.json": _game_json_minimo(file="sf2ce.zip", tratamiento="copiar").encode(),
+        "media/sf2ce.zip": rom_data,
+        "media/boxFront.png": b"\x89PNG fake",
+    })
+
+    paq = leer_paquete(zip_path)
+    aplicar(paq, raiz)
+
+    rom_destino = raiz / "arcade" / "sf2ce.zip"
+    assert rom_destino.exists()
+    assert rom_destino.read_bytes() == rom_data
+
+    # el ROM NO se copia como asset
+    metadata = (raiz / "arcade" / "metadata.pegasus.txt").read_text(encoding="utf-8")
+    assert "assets.sf2ce:" not in metadata
+    assert "assets.boxFront: media/sf2ce/boxFront.png" in metadata
+
+
+# ---------------------------------------------------------------------------
+# 14. tratamiento: descomprimir -> extrae el zip a <set>/
+# ---------------------------------------------------------------------------
+
+def test_tratamiento_descomprimir(tmp_path):
+    raiz = _libreria_minima(tmp_path)
+    # crear un zip interno con un archivo
+    import io
+    rom_zip_io = io.BytesIO()
+    with zipfile.ZipFile(rom_zip_io, "w") as zf:
+        zf.writestr("game1.rom", b"\x00ROM content")
+        zf.writestr("game2.rom", b"\x01ROM content")
+    rom_data = rom_zip_io.getvalue()
+
+    zip_path = _zip_paquete(tmp_path, {
+        "game.json": _game_json_minimo(file="sf2ce.zip", tratamiento="descomprimir").encode(),
+        "media/sf2ce.zip": rom_data,
+    })
+
+    paq = leer_paquete(zip_path)
+    aplicar(paq, raiz)
+
+    extracted = raiz / "arcade" / "sf2ce"
+    assert extracted.is_dir()
+    assert (extracted / "game1.rom").read_bytes() == b"\x00ROM content"
+    assert (extracted / "game2.rom").read_bytes() == b"\x01ROM content"
+
+    # el ROM NO se copia como asset
+    assert not (raiz / "arcade" / "sf2ce.zip").exists()
+
+
+# ---------------------------------------------------------------------------
+# 15. tratamiento con archivo ROM ausente -> InstalarError
+# ---------------------------------------------------------------------------
+
+def test_tratamiento_sin_archivo_rom_falla(tmp_path):
+    raiz = _libreria_minima(tmp_path)
+    zip_path = _zip_paquete(tmp_path, {
+        "game.json": _game_json_minimo(file="sf2ce.zip", tratamiento="copiar").encode(),
+        # no se incluye sf2ce.zip
+    })
+
+    paq = leer_paquete(zip_path)
+    with pytest.raises(InstalarError, match="no se encontro"):
+        aplicar(paq, raiz)
+
+
+# ---------------------------------------------------------------------------
+# 16. tratamiento con valor invalido -> InstalarError
+# ---------------------------------------------------------------------------
+
+def test_tratamiento_valor_invalido_falla(tmp_path):
+    zip_path = _zip_paquete(tmp_path, {
+        "game.json": _game_json_minimo(tratamiento="borrar").encode(),
+    })
+
+    with pytest.raises(InstalarError, match="tratamiento 'borrar' no valido"):
+        leer_paquete(zip_path)
+
+
+# ---------------------------------------------------------------------------
+# 17. sin tratamiento -> backward compatible, ROM se copia como asset
+# ---------------------------------------------------------------------------
+
+def test_sin_tratamiento_backward_compatible(tmp_path):
+    raiz = _libreria_minima(tmp_path)
+    zip_path = _zip_paquete(tmp_path, {
+        "game.json": _game_json_minimo(file="sf2ce.zip").encode(),
+        "media/sf2ce.zip": b"\x50\x4B fake",
+        "media/boxFront.png": b"\x89PNG fake",
+    })
+
+    paq = leer_paquete(zip_path)
+    aplicar(paq, raiz)
+
+    # sin tratamiento, el ROM se copia como asset normal
+    assert (raiz / "arcade" / "media" / "sf2ce" / "sf2ce.zip").exists()
+    metadata = (raiz / "arcade" / "metadata.pegasus.txt").read_text(encoding="utf-8")
+    assert "assets.sf2ce: media/sf2ce/sf2ce.zip" in metadata

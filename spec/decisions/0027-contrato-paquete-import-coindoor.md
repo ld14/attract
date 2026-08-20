@@ -65,7 +65,8 @@ media/
   "release": "1992-04-10",
   "summary": "...",
   "format": "PCB",
-  "file_format": "zip"
+  "file_format": "zip",
+  "tratamiento": "copiar"
 }
 ```
 
@@ -78,6 +79,10 @@ opcional, igual que el resto del contrato del proyecto.
   muestra como badge.
 - `file_format` → mapea a `x-formato-archivo`: formato de **archivo** del
   ROM (zip, chd, iso, etc.). Informativo, no se muestra en el badge.
+- `tratamiento` → cómo instalar el ROM en la librería:
+  - `"copiar"` — copiar el zip tal cual a `library/<sistema>/` (romset)
+  - `"descomprimir"` — extraer el zip a `library/<sistema>/<set>/`
+  - Si no existe — backward compatible, el ROM no se toca (solo assets)
 
 ### `data.json` — el contrato que ya existe, sin traducir
 
