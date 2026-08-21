@@ -122,13 +122,21 @@ function _clasificar(p, variante) {
 function _partirLibre(texto, variante) {
     var esCodigo = (variante === "codigo");
 
-    // El `+` y la `,` se separan aunque vengan pegados: "→+P" es tres tokens.
-    var crudo = texto.replace(/([+,])/g, " $1 ").split(/\s+/);
+    // El `+` se separa aunque venga pegado: "→+P" es tres tokens.
+    //
+    // La COMA no. Antes se separaba igual que el `+` y despues se descartaba,
+    // asi que toda la puntuacion de una instruccion en prosa desaparecia:
+    // "pulsa arriba, abajo, izquierda" salia "pulsa arriba abajo izquierda", y
+    // "30,000" salia "30 000". Visto con ghost-n-goblins el 2026-08-21. Ningun
+    // data.json usa la coma como separador de notacion, asi que no hay nada
+    // que ganar separandola — y si algun dia hiciera falta, los corchetes ya
+    // resuelven el caso ("[↓],[→]").
+    var crudo = texto.replace(/(\+)/g, " $1 ").split(/\s+/);
 
     var toks = [];
     for (var i = 0; i < crudo.length; i++) {
         var p = crudo[i];
-        if (p === "" || p === ",") continue;
+        if (p === "") continue;
 
         if (p === "+") { toks.push({ tipo: "mas", valor: "+" }); continue; }
 

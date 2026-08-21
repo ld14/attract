@@ -74,6 +74,17 @@ var casos = [
    "una flecha pegada a una letra NO es una direccion"],
   ["START", "combo", [["texto","START"]],
    "en variante combo, START es prosa: los keycaps son de los codigos"],
+
+  // --- puntuacion de la prosa (ghost-n-goblins, 2026-08-21) ---
+  ["pulsa arriba, abajo, izquierda", "codigo",
+   [["texto","pulsa arriba, abajo, izquierda"]],
+   "las comas de una instruccion no se pierden"],
+  ["ajusta \"Bonus Life\" a 30,000 puntos", "codigo",
+   [["texto","ajusta \"Bonus Life\" a 30,000 puntos"]],
+   "la coma de un numero no parte el numero"],
+  ["↓ ↘ →, luego P", "codigo",
+   [["direccion","↓"],["direccion","↘"],["texto","→, luego"],["arcade","P"]],
+   "una flecha con coma pegada deja de ser flecha: usar corchetes si molesta"],
 ];
 
 var colores = {
