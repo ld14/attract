@@ -1,5 +1,5 @@
 # ATTRACT
-.PHONY: help doctor doctor-lib test mcp theme theme-debug setup check-git check-py venv clean
+.PHONY: help doctor doctor-lib test mcp theme theme-debug setup check-git check-py venv clean reset-pegasus
 
 # Si existe .venv lo usa; si no, cae al python3 del sistema.
 # El doctor no tiene dependencias externas: corre con cualquiera de los dos.
@@ -32,6 +32,7 @@ help:
 	@echo "  make test        corre los tests"
 	@echo "  make mcp         corre el servidor MCP (necesita: pip install mcp)"
 	@echo "  make clean       borra .venv y caches"
+	@echo "  make reset-pegasus  deja Pegasus sin juegos (borra library/, pide confirmacion)"
 	@echo ""
 	@echo "  python  -> $(PY)"
 	@echo "  themes  -> $(PEGASUS_THEMES)"
@@ -102,6 +103,9 @@ test:
 
 mcp:
 	@$(PY) -m attract.mcp_server
+
+reset-pegasus:
+	@bash scripts/reset-pegasus.sh
 
 fixtures:
 	@echo "Los fixtures ya estan en fixtures/. Son ROMs falsas de 0 bytes."

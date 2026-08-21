@@ -38,6 +38,7 @@ cítalos, pero recuerda que el destino de su contenido es un ADR.
 | Instalar paquete COINDOOR | `attract import <paquete.zip> [ruta]` (ADR-0027) |
 | Instalar theme | `make theme` (producción) / `make theme-debug` (harness ADR-0001) |
 | Servidor MCP | `make mcp` (necesita `pip install mcp`, ver ADR-0012) |
+| Vaciar Pegasus (carga desde cero) | `make reset-pegasus` (destructivo, pide confirmación) / `DRY=1 bash scripts/reset-pegasus.sh` |
 
 No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 
@@ -53,6 +54,7 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 | `themes/attract/` | **Theme de producción** (feature 005). `Tokens.qml` (singleton `Theme`), `core/` (datos y rutas), `ui/` (dibuja), `screens/`, `overlays/`. Ver `spec/features/005-theme-base/plan.md` |
 | `themes/attract-debug/` | Harness de debug: dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no lo reemplaces, agregá al lado |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. `make theme` no las instala |
+| `scripts/` | Mantenimiento del entorno local, no del código. `reset-pegasus.sh` vacía Pegasus para una carga desde cero |
 | `docs/` | SETUP, CONVENCION (plantilla), baseline, mapeo |
 | `docs/plataforma-pegasus.md` | **Hechos verificados de Pegasus/Qt 5.15**, cada uno con su evidencia. Leelo antes de tocar el theme: la documentación oficial no siempre coincide con el binario |
 | `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía |
@@ -113,6 +115,14 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
   colección desechable para mirar el theme con arte real y compararlo contra
   el diseño de referencia; se borra con `rm -rf library/preview` más sacar su
   línea de `game_dirs.txt` de Pegasus.
+- **Dentro de `library/` y `fixtures/`, el prefijo `_` marca lo que no es una
+  colección de juegos** (`_magazines/`, `_synopsis/`). No es cosmético: es la
+  regla que usa `scripts/reset-pegasus.sh` para decidir qué borrar y qué
+  conservar. Colección nueva → sin prefijo. Datos que acompañan a los juegos
+  pero no son juegos → con `_`.
+- **Pegasus reescribe su config al salir.** Editar `game_dirs.txt`,
+  `favorites.txt` o `settings.txt` con Pegasus abierto no sirve: al cerrarse
+  pisa el archivo con lo que tenía en memoria. Cerralo primero.
 
 ## Fuera de alcance sin preguntar
 
