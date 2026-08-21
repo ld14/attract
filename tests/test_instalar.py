@@ -269,8 +269,8 @@ def test_sistema_sin_metadata_falla(tmp_path):
     paq = leer_paquete(zip_path)
 
     antes = sorted(raiz.rglob("*"))
-    with pytest.raises(InstalarError, match="no existe"):
-        aplicar(paq, raiz)
+    with pytest.raises(InstalarError, match="coleccion no creada"):
+        aplicar(paq, raiz, confirmar=False)
     despues = sorted(raiz.rglob("*"))
     assert antes == despues
 

@@ -54,7 +54,11 @@ class Paquete:
 def _validar_miembro(nombre: str) -> None:
     if nombre.endswith("/"):
         return  # entrada de directorio, se ignora
-    permitido = nombre in ("game.json", "data.json") or nombre.startswith("media/")
+    permitido = (
+        nombre in ("game.json", "data.json")
+        or nombre.startswith("media/")
+        or nombre.startswith("juego/")
+    )
     partes = Path(nombre).parts
     if not permitido or ".." in partes or Path(nombre).is_absolute():
         raise InstalarError(f"miembro de zip no permitido: '{nombre}'")
@@ -141,6 +145,10 @@ def leer_paquete(zip_path: Path) -> Paquete:
                     destino = tmp / "game.json"
                 elif nombre == "data.json":
                     destino = media_dir / "data.json"
+                elif nombre.startswith("juego/"):
+                    rom_name = Path(nombre).name
+                    rom_nfc = unicodedata.normalize("NFC", rom_name)
+                    destino = media_dir / rom_nfc
                 else:
                     # nombre empieza con "media/" (ya validado)
                     resto = nombre[len("media/"):]
@@ -237,20 +245,47 @@ def construir_bloque_declarado(game: dict, assets: list[tuple[str, str]]) -> Blo
 # Aplicacion a la libreria real
 # ---------------------------------------------------------------------------
 
+_GAME_DIRS = Path.home() / "Library" / "Preferences" / "pegasus-frontend" / "game_dirs.txt"
+
 _CAMPOS_SIMPLES = ("developer", "publisher", "genre", "players", "release")
 
 
-def aplicar(paquete: Paquete, raiz: Path) -> str:
+def _registrar_en_game_dirs(ruta: Path) -> None:
+    """Agrega la ruta a game_dirs.txt si no esta."""
+    _GAME_DIRS.parent.mkdir(parents=True, exist_ok=True)
+    lineas = _GAME_DIRS.read_text(encoding="utf-8").splitlines() if _GAME_DIRS.exists() else []
+    if str(ruta) not in lineas:
+        with _GAME_DIRS.open("a", encoding="utf-8") as f:
+            f.write(f"{ruta}\n")
+
+
+def aplicar(paquete: Paquete, raiz: Path, confirmar=None) -> str:
     game = paquete.game
     set_id = game["set"]
     sistema_root = raiz / game["system"]
     metadata_path = sistema_root / "metadata.pegasus.txt"
 
     if not metadata_path.exists():
-        raise InstalarError(
-            f"no existe {metadata_path} - attract import no crea sistemas "
-            "nuevos, crear la coleccion primero (ver spec.md #Fuera de alcance)"
+        if confirmar is None:
+            resp = input(
+                f"no existe {sistema_root} - creo la coleccion "
+                f"'{game['system']}'? [s/N] "
+            )
+            confirmado = resp.strip().lower() in ("s", "si", "sí", "y", "yes")
+        else:
+            confirmado = confirmar
+
+        if not confirmado:
+            raise InstalarError(
+                f"no existe {metadata_path} - coleccion no creada"
+            )
+
+        sistema_root.mkdir(parents=True, exist_ok=True)
+        metadata_path.write_text(
+            f"collection: {game['system'].title()}\n",
+            encoding="utf-8", newline="\n",
         )
+        _registrar_en_game_dirs(sistema_root.resolve())
 
     media_dir = sistema_root / "media" / set_id
     media_dir.mkdir(parents=True, exist_ok=True)
@@ -259,6 +294,20 @@ def aplicar(paquete: Paquete, raiz: Path) -> str:
     archivo_rom = game.get("file") or f"{set_id}.zip"
     rom_staging = paquete.stage_media / archivo_rom
     rom_existe = rom_staging.exists() and rom_staging.is_file()
+
+    # fallback: si file no esta en game.json y el default no existe,
+    # buscar un unico .zip en el staging que no sea data.json
+    if not rom_existe and "file" not in game:
+        zips = [
+            p for p in paquete.stage_media.iterdir()
+            if p.suffix == ".zip" and p.name != "data.json"
+        ]
+        if len(zips) == 1:
+            rom_staging = zips[0]
+            rom_existe = True
+            archivo_rom = zips[0].name
+            game["file"] = archivo_rom
+
     tratamiento = game.get("tratamiento")
 
     if tratamiento and not rom_existe:
@@ -345,19 +394,26 @@ def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
 
     if not argv or argv[0] in ("-h", "--help"):
-        print("uso: attract import <paquete.zip> [ruta]")
+        print("uso: attract import [--yes] <paquete.zip> [ruta]")
         print()
         print("  Instala un paquete COINDOOR (ADR-0027) en <ruta>/<sistema>/.")
-        print("  El sistema tiene que existir ya (metadata.pegasus.txt presente).")
+        print("  Si la coleccion no existe, la crea (pide confirmacion).")
+        print()
+        print("  --yes  crea la coleccion sin preguntar")
         return 0
+
+    si = "--yes" in argv
+    if si:
+        argv = [a for a in argv if a != "--yes"]
 
     zip_path = Path(argv[0])
     raiz = Path(argv[1]) if len(argv) > 1 else Path(".")
+    confirmar = si if si else None
 
     paquete = None
     try:
         paquete = leer_paquete(zip_path)
-        set_id = aplicar(paquete, raiz)
+        set_id = aplicar(paquete, raiz, confirmar=confirmar)
     except InstalarError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
