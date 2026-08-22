@@ -395,6 +395,25 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
   el portón: si `api.keys.isDetails`/`isFilters` no disparan en este binario,
   no hay acceso al orden y la feature cambia de forma.
 
+- **`017-hero-video-preview`** — **escrita e instalada; falta mirarla en
+  Pegasus.** Preview de gameplay ambiental en el hero de Home: aparece a los
+  650ms de quietud sobre un juego con video, se disuelve por debajo de las
+  tarjetas y no recibe foco. Reusa lo que ya dejó la `006` (`MediaPlayer` en
+  loop, `source: ""` para soltar el decoder, nada colgado de `onStopped`).
+
+  **Ya no hay experimento bloqueando**: `themes/experimentos/video-opacitymask.qml`
+  corrió el 2026-08-21 y `OpacityMask` **sí** enmascara un `VideoOutput` sin
+  congelarlo, así que la disolución va por máscara real y el plan B queda
+  descartado. De paso dejó un hecho que vale para todo el theme: **dos
+  `VideoOutput` no pueden compartir un `MediaPlayer`**
+  (`docs/plataforma-pegasus.md` §2).
+
+  Lo que falta es la verificación visual
+  (`spec/features/017-hero-video-preview/tasks.md` §Verificación). Para el
+  criterio principal —recorrer diez juegos sin que el panel parpadee— hace falta
+  **más de un video en `library/`**: hoy hay uno solo y ese criterio no se puede
+  probar.
+
 1. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
    de verdad (`mcp.json` real, tools visibles en la UI). El protocolo en
    sí ya está verificado de punta a punta (ver punto 14 de "Hecho"); lo

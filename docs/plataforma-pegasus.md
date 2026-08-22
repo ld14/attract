@@ -182,8 +182,72 @@ usa siempre `api.keys.*`, nunca una tecla literal.
 - `loops: MediaPlayer.Infinite` **reengancha solo**.
 - **`onStopped` NO se dispara nunca** en un loop continuo. Un contador colgado
   de ahí se queda en cero mientras el video loopea perfecto. Si hace falta
-  detectar el reenganche, la señal es que **la posición retroceda**.
-- Evidencia: `themes/experimentos/multimedia-loop.qml`.
+  detectar el reenganche, la señal es que **la posición retroceda** — o el dip
+  de `status` del punto de abajo.
+- **`play()` durante `status: Loading` se acepta y se descarta en silencio.**
+  El player pone `PlayingState` y vuelve a `StoppedState` **un milisegundo
+  después**, sin error, sin warning y sin volver a intentar. Con
+  `autoPlay: false`, colgar el `play()` de `onSourceChanged` significa que el
+  video **no arranca nunca**: cuando esa señal llega la media todavía no está
+  cargada. Hay que esperar el `status`, no el `playbackState` —
+  `playbackState` no mide carga.
+- **La secuencia de `status` al cargar NO es estable entre reproducciones.** La
+  primera pasó por `Loading → Loaded → Buffered`; las siguientes fueron
+  `Loading → Stalled → Buffered`, **salteándose `Loaded`**. Quien espere la
+  carga tiene que aceptar `Loaded` **y** `Buffered`: gatear solo en `Loaded`
+  funciona la primera vez y falla de la segunda en adelante.
+- **El reenganche del loop se ve como un dip de `status`**: `Buffered → Loaded
+  → Buffered`, mientras `playbackState` se queda quieto en `PlayingState`. Una
+  condición de visibilidad atada a `playbackState` no parpadea en el loop; una
+  atada a `status === Buffered` sí.
+- Evidencia de los tres anteriores: `themes/attract/screens/HeroVideoPreview.qml`,
+  medido el 2026-08-21 con `library/mame/media/ghost-n-goblins/video.mp4`
+  (h264, 15.05s) — tres loops a 15.31 / 15.18 / 15.18s.
+- **Dos `VideoOutput` NO pueden compartir un `MediaPlayer`.** Un player expone
+  un único renderer, así que el primer `VideoOutput` se lo queda y los demás
+  quedan vacíos — sin error, sin warning, solo un rectángulo sin imagen. Si hace
+  falta mostrar el mismo video dos veces, van dos players.
+- **`OpacityMask` SÍ enmascara un `VideoOutput`**, incluso cuando el `Item` que
+  lo contiene tiene `visible: false` para alimentar el efecto. Y el video se
+  **sigue actualizando** por cuadro ahí adentro: no se congela en el primero.
+  Es lo que hace posible disolver un panel de video contra el fondo en vez de
+  cortarlo con un canto recto.
+- Evidencia: `themes/experimentos/multimedia-loop.qml`,
+  `themes/experimentos/video-opacitymask.qml` (2026-08-21).
+- **Un `MediaPlayer` reusado entre archivos deja al `VideoOutput` con la
+  geometría del video ANTERIOR.** El player carga, reproduce y `position`
+  avanza, pero la superficie no se reinicia con el formato del medio nuevo y no
+  llega **un solo cuadro**: el panel queda vacío. Sin error, sin warning, y con
+  `status` en `Buffered` como si todo estuviera bien. El síntoma es
+  intermitente y engaña: volver a pararse sobre el mismo juego lo arregla a
+  veces, porque es otro `setMedia` y otra chance de que la superficie arranque
+  bien.
+  La señal que lo delata es `VideoOutput.sourceRect`: si no coincide con la
+  resolución del archivo recién cargado, no va a haber imagen.
+  El arreglo es **no reusar el player**: un par `MediaPlayer` + `VideoOutput`
+  nuevo por archivo (`Loader` + `sourceComponent`, pasando por `null`), que no
+  puede heredar el formato de nadie.
+  Medido el 2026-08-22 con una grabación de pantalla y `sourceRect` dibujado en
+  pantalla, 36 cuadros a 1 por segundo: con el foco en Street Fighter II
+  (384x224) el `sourceRect` decía 490x360 —Metal Slug— y el panel estaba vacío;
+  cuando coincidían, andaba. Evidencia:
+  `themes/attract/screens/HeroVideoPreview.qml` §reproduccion, que además lleva
+  las tres alternativas que se probaron y NO sirven.
+- **`updateVideoFrame called without AVPlayerLayer` en el log es RUIDO.**
+  Aparece al soltar la fuente y no marca los episodios que fallan: hubo
+  sesiones enteras con el bug de arriba y cero advertencias, y advertencias sin
+  ningún fallo detrás. No perseguirla.
+- **`ShaderEffect.status` MIENTE en este binario: reporta `Error` con el `log`
+  vacío y el shader dibuja igual.** Verificado el 2026-08-22 con `grabToImage`
+  —el compuesto sale con el cuadro del video keyeado— y con cuatro sondas,
+  incluida una **sin shader propio**, que también daban `Error`. Ningún camino
+  del código de Qt 5.15 deja `Error` con el log vacío: si falla el compilador
+  imprime `QQuickCustomMaterialShader: Shader compilation failed` y llena el
+  log; si falla la malla, el log arranca con `*** Mesh ***`. No aparece ninguno
+  de los dos. Un aviso colgado de `status` es una alarma que suena siempre y
+  por nada. Para saber si un `ShaderEffect` dibuja hay que mirar píxeles:
+  `grabToImage` guarda el Item renderizado en disco y se abre como cualquier
+  PNG.
 
 ---
 

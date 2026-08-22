@@ -785,6 +785,46 @@ FocusScope {
         }
     }
 
+    // ------------------------------------------------- preview de gameplay
+    // EL ORDEN DE ESTE BLOQUE EN EL ARBOL ES FUNCIONAL, no estetico: declarado
+    // ANTES que `estantes`, las tarjetas se dibujan encima del video. Ese
+    // cruce es el efecto (feature 017): el panel mide 320 de alto y arranca en
+    // el tope del hero, asi que se mete ~58px por debajo de la primera fila y
+    // se disuelve ahi. Moverlo debajo de `estantes` lo rompe — quedaria un
+    // rectangulo de video tapando las tarjetas.
+    //
+    // Ningun componente del theme usa `z` explicito y no hace falta empezar
+    // aca: todos los hermanos estan en z=0 y el orden de declaracion alcanza.
+    HeroVideoPreview {
+        // Anclado a la DERECHA y no con el `x: 664` del diseño: por ADR-0019 el
+        // lienzo puede ser mas ancho que 1280, y ahi un x fijo despegaria el
+        // panel del margen de contenido. Anclado queda siempre a ras — que es
+        // lo que el diseño pide— y en 1280 da exactamente los 664. Es ademas lo
+        // que ya hace `estantes` justo abajo.
+        anchors { right: parent.right; rightMargin: Theme.gutter }
+        anchors { top: heroBox.top }
+        width: 568
+        // 387 y NO los 320 (16:9) del diseño. El alto del panel y el `y` de
+        // `estantes` estan ATADOS: mover uno sin el otro cambia cuanto del
+        // video tapa la linea de CATALOGO. La cuenta vive abajo, en `estantes.y`
+        // — si tocas esto, recalculala ahi.
+        //
+        // 568x387 da 1.47 en vez de 1.78. Como el video va con
+        // PreserveAspectCrop, un panel menos apaisado RECORTA MENOS un video
+        // 4:3 como el de MAME: se ve mas cuadro, no mas estirado.
+        height: 387
+
+        game: root.juego
+        // root.accent y NUNCA estanteActual.accent: eso cierra un binding loop
+        // y deja todo gris (ver la nota de :36-41).
+        accent: root.accent
+        // Suelta el decoder cuando theme.qml esconde Home — detalle, visor,
+        // trucos, ayuda, overlay de lanzamiento. El popover de orden NO entra
+        // aca a proposito: deja Home `visible` y solo `enabled:false`, porque
+        // se sigue viendo detras.
+        encendido: root.visible
+    }
+
     // ------------------------------------------------------------- estantes
     ListView {
         id: estantes
@@ -801,8 +841,56 @@ FocusScope {
         // ANTES de ese punto, adentro del area que este ListView no recorta.
         // Bug real visto en Pegasus el 2026-08-09.
         anchors { leftMargin: Theme.gutter - 10; rightMargin: Theme.gutter }
-        // top:346px — literal del prototipo (:114).
-        y: 346
+        // El prototipo (:114) decia 346. Ya no: 420.
+        //
+        // El 346 se eligio cuando arriba no habia nada — el hero era solo texto
+        // y a la derecha quedaba lienzo vacio. Con el preview de gameplay
+        // (feature 017) ese espacio ahora tiene contenido, y la cabecera
+        // "CATALOGO" le comia 46 de sus 320 de alto: 14% del video tapado.
+        //
+        // ESTE NUMERO Y EL ALTO DEL PANEL SON UN PAR. No se mueve uno solo.
+        //
+        //   panel:  top 84 (el de heroBox), alto H  ->  termina en 84 + H
+        //   linea:  y + 12 (la cabecera de Shelf mide 24, el rule va al medio)
+        //   tapado: (84 + H) - (y + 12) = 72 + H - y
+        //
+        // Pedido: que la linea tape el 10% del video. Despejando,
+        //
+        //   y = 72 + 0.9 * H
+        //
+        // Con H=387 da y=420. Al reves, si moves `y` primero, el alto que le
+        // corresponde es H = (y - 72) / 0.9.
+        //
+        // EL TECHO DURO de `y` no es estetico, es que el estante entra o no:
+        //
+        //   estantes.height = 720 - y - (footerLeyenda.height + 10)
+        //   un Shelf mide 218  ->  720 - y - 46 >= 218  ->  y <= 456
+        //
+        // Pasado 456 la primera fila se recorta contra el pie. Con y=420 quedan
+        // 254 de viewport: entra el estante y sobran 36 para que el siguiente
+        // asome apenas.
+        //
+        // Y SI VENIS DEL DISEÑO BUSCANDO EL CRUCE CON LAS TARJETAS: ya no esta,
+        // y es a proposito. Las tarjetas arrancan en y+52 = 412 y el panel
+        // termina en 404, asi que pasan 8px por debajo sin tocarlo. Antes de
+        // "arreglarlo", tres cosas:
+        //
+        //   1. No entra. Con la linea tapando el 10%, la cobertura es
+        //      (72 + H - y)/H, lo que fija y = 72 + 0.9H; y las tarjetas cruzan
+        //      solo si y+52 < 84+H, o sea si H > 400. El unico punto que cierra
+        //      las dos condiciones es H=450 / y=477: los estantes arrancarian a
+        //      dos tercios de pantalla, sin el siguiente asomando, para ganar
+        //      5px de solape.
+        //   2. No hay nada que ocluir. El fade inferior del shader deja el
+        //      video en ~9% de alfa a la altura de esta linea y en cero cerca
+        //      de y=380 — 32px antes de que empiecen las tarjetas.
+        //   3. El cruce nunca fue el efecto. El diseño dice que el panel "se
+        //      extiende por debajo de la primera fila de tarjetas. Eso es
+        //      intencional y correcto, PERO DEBE RESOLVERSE VISUALMENTE ASI",
+        //      y lo que sigue es como evitar que quede un canto duro. Era un
+        //      problema a tapar, no una funcion a conservar; el keying por
+        //      luminancia lo elimina de raiz.
+        y: 420
         // El bottom YA NO es el "52" literal del prototipo. Esa cifra
         // calzaba con SU footer, renderizado en su browser; el nuestro mide
         // otra cosa (childrenRect.height + 24 de padding, ui/Leyenda.qml) y

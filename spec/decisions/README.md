@@ -57,6 +57,8 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 | [0025](0025-link-revista-juego-difuso.md) | Linkear revista y juego por coincidencia difusa, proponiendo antes de escribir | accepted | 2026-08-10 |
 | [0026](0026-identidad-declarada-sin-mame.md) | Un `game:` puede crearse con identidad declarada a mano, sin `mame -listxml` | accepted | 2026-08-18 |
 | [0027](0027-contrato-paquete-import-coindoor.md) | Contrato del paquete que COINDOOR exporta y `attract import` instala | accepted | 2026-08-18 |
+| [0028](0028-rollback-transaccional-import.md) | `attract import` revierte todo lo escrito si falla a mitad de camino | proposed | 2026-08-22 |
+| [0029](0029-player-nuevo-por-video.md) | Un `MediaPlayer` + `VideoOutput` nuevo por cada archivo de video | proposed | 2026-08-22 |
 
 **25 ADR en total, 21 vigentes** (0008 quedó superseded por 0010, 0016 por
 0019, 0015 por 0020 y 0010 por 0024 — no se editan, se reemplazan). El razonamiento original de 0006-0009
@@ -102,3 +104,14 @@ evidencia apareció al abrir el programa con datos que no habíamos fabricado.
 0025 salió del problema que la revista real dejó al descubierto en la otra
 punta: su slug editorial (`golden-axe`) no coincide con el set de MAME
 (`goldnaxe`), y ninguna normalización determinística los une.
+
+**0029 es el caso extremo de ese mismo patrón**: no salió de abrir el programa
+sino de *grabarlo*. El fallo era intermitente, silencioso —`status` en
+`Buffered`, `position` avanzando, cero warnings— y encima se "arreglaba" solo al
+volver a pararse sobre el mismo juego, así que ninguna traza puntual lo
+explicaba. Hizo falta dibujar el estado del reproductor **dentro de la pantalla**
+y leerlo de una grabación cuadro por cuadro para ver que el `VideoOutput`
+arrastraba la geometría del video anterior. La lección que deja no es sobre
+video: cuando el instrumento (el log) no llega a disco a tiempo o mide la cosa
+equivocada, el theme puede dibujar su propio diagnóstico y `grabToImage` puede
+guardarlo en un archivo.
