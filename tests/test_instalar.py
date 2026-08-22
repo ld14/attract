@@ -422,3 +422,63 @@ def test_sin_tratamiento_backward_compatible(tmp_path):
     assert (raiz / "arcade" / "media" / "sf2ce" / "sf2ce.zip").exists()
     metadata = (raiz / "arcade" / "metadata.pegasus.txt").read_text(encoding="utf-8")
     assert "assets.sf2ce: media/sf2ce/sf2ce.zip" in metadata
+
+
+# ---------------------------------------------------------------------------
+# 18. fallo despues de escribir -> rollback: instalacion nueva no deja nada
+# ---------------------------------------------------------------------------
+
+def _libreria_con_bloque_roto(tmp_path) -> Path:
+    """Bloque de sf2ce sin linea `file:`: el merge falla en el paso 5, ya
+    con assets y data.json escritos. Es el caso que dejaba media a medias."""
+    raiz = _libreria_minima(tmp_path)
+    meta = raiz / "arcade" / "metadata.pegasus.txt"
+    meta.write_text(
+        meta.read_text(encoding="utf-8")
+        + "\ngame: Street Fighter II\nx-set: sf2ce\n",
+        encoding="utf-8", newline="\n",
+    )
+    return raiz
+
+
+def test_rollback_borra_lo_que_creo(tmp_path):
+    raiz = _libreria_con_bloque_roto(tmp_path)
+    meta = raiz / "arcade" / "metadata.pegasus.txt"
+    antes_meta = meta.read_text(encoding="utf-8")
+
+    zip_path = _zip_paquete(tmp_path, {
+        "game.json": _game_json_minimo(developer="Capcom").encode(),
+        "media/boxFront.png": b"\x89PNG fake",
+        "data.json": b'{"trucos": []}',
+    })
+
+    paq = leer_paquete(zip_path)
+    with pytest.raises(InstalarError, match="sin linea file:"):
+        aplicar(paq, raiz)
+
+    assert not (raiz / "arcade" / "media").exists()
+    assert meta.read_text(encoding="utf-8") == antes_meta
+
+
+def test_rollback_restaura_lo_que_piso(tmp_path):
+    """Reinstalar encima de un juego ya cargado: si falla, vuelve el viejo."""
+    raiz = _libreria_con_bloque_roto(tmp_path)
+    media = raiz / "arcade" / "media" / "sf2ce"
+    media.mkdir(parents=True)
+    (media / "boxFront.png").write_bytes(b"VIEJO")
+    (media / "data.json").write_text('{"mags": ["m1"]}', encoding="utf-8")
+
+    zip_path = _zip_paquete(tmp_path, {
+        "game.json": _game_json_minimo().encode(),
+        "media/boxFront.png": b"NUEVO",
+        "media/logo.png": b"\x89PNG fake",
+        "data.json": b'{"trucos": []}',
+    })
+
+    paq = leer_paquete(zip_path)
+    with pytest.raises(InstalarError, match="sin linea file:"):
+        aplicar(paq, raiz)
+
+    assert (media / "boxFront.png").read_bytes() == b"VIEJO"
+    assert (media / "data.json").read_text(encoding="utf-8") == '{"mags": ["m1"]}'
+    assert not (media / "logo.png").exists()

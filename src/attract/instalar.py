@@ -4,7 +4,8 @@ attract import - instala un paquete COINDOOR (ADR-0027) en la libreria.
 Recibe un zip con game.json, data.json y media/. Valida todo en un
 staging temporal (reusando doctor.py sin modificarlo), y recien despues
 escribe en la libreria real: assets, data.json y bloque game: en ese
-orden (minimiza dano si el proceso se corta a la mitad).
+orden. Si algo falla despues de la primera escritura, se revierte todo
+(ver _Deshacer): o el juego queda instalado entero, o no queda nada.
 
 Filosofia: fallar explicito, nunca escritura parcial ni silenciosa.
 """
@@ -250,16 +251,102 @@ _GAME_DIRS = Path.home() / "Library" / "Preferences" / "pegasus-frontend" / "gam
 _CAMPOS_SIMPLES = ("developer", "publisher", "genre", "players", "release")
 
 
-def _registrar_en_game_dirs(ruta: Path) -> None:
+def _borrar(path: Path) -> None:
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    elif path.exists() or path.is_symlink():
+        path.unlink()
+
+
+class _Deshacer:
+    """Registro de lo que toca aplicar(), para revertirlo si algo falla.
+
+    Regla de uso: llamar `antes_de_escribir(p)` ANTES de crear o pisar `p`.
+    Lo que no existia se borra; lo que existia se respalda y se restaura.
+    Se aplica en orden inverso, asi el ultimo cambio se deshace primero.
+    """
+
+    def __init__(self) -> None:
+        self._acciones: list[tuple[str, Path, Path | None]] = []
+        self._backups: Path | None = None
+
+    def borrar_luego(self, path: Path) -> None:
+        self._acciones.append(("borrar", path, None))
+
+    def antes_de_escribir(self, path: Path) -> None:
+        if not path.exists():
+            self.borrar_luego(path)
+            return
+        if self._backups is None:
+            self._backups = Path(tempfile.mkdtemp(prefix="attract-rollback-"))
+        copia = self._backups / str(len(self._acciones))
+        # ponytail: respalda el directorio entero (media/<set>/ que se
+        # reinstala, ROM ya descomprimido). Si algun dia pesa, ir por archivo.
+        if path.is_dir():
+            shutil.copytree(path, copia, symlinks=True)
+        else:
+            shutil.copy2(path, copia)
+        self._acciones.append(("restaurar", path, copia))
+
+    def deshacer(self) -> None:
+        for accion, path, copia in reversed(self._acciones):
+            try:
+                _borrar(path)
+                if accion == "restaurar":
+                    if copia.is_dir():
+                        shutil.copytree(copia, path, symlinks=True)
+                    else:
+                        shutil.copy2(copia, path)
+            except OSError as e:
+                print(f"aviso: no se pudo revertir {path}: {e}", file=sys.stderr)
+        if self._acciones:
+            print(
+                f"rollback: {len(self._acciones)} cambios revertidos",
+                file=sys.stderr,
+            )
+        self._acciones.clear()
+
+    def limpiar(self) -> None:
+        if self._backups is not None:
+            shutil.rmtree(self._backups, ignore_errors=True)
+            self._backups = None
+
+
+def _crear_dir(path: Path, undo: _Deshacer) -> None:
+    """mkdir -p registrando para rollback solo el tramo que no existia."""
+    if path.exists():
+        return
+    faltante = path
+    while not faltante.parent.exists():
+        faltante = faltante.parent
+    undo.borrar_luego(faltante)
+    path.mkdir(parents=True)
+
+
+def _registrar_en_game_dirs(ruta: Path, undo: _Deshacer) -> None:
     """Agrega la ruta a game_dirs.txt si no esta."""
     _GAME_DIRS.parent.mkdir(parents=True, exist_ok=True)
     lineas = _GAME_DIRS.read_text(encoding="utf-8").splitlines() if _GAME_DIRS.exists() else []
     if str(ruta) not in lineas:
+        undo.antes_de_escribir(_GAME_DIRS)
         with _GAME_DIRS.open("a", encoding="utf-8") as f:
             f.write(f"{ruta}\n")
 
 
 def aplicar(paquete: Paquete, raiz: Path, confirmar=None) -> str:
+    """Instala el paquete. Si algo falla a mitad de camino revierte todo lo
+    escrito: nunca queda un juego cargado a medias."""
+    undo = _Deshacer()
+    try:
+        return _aplicar(paquete, raiz, confirmar, undo)
+    except BaseException:
+        undo.deshacer()
+        raise
+    finally:
+        undo.limpiar()
+
+
+def _aplicar(paquete: Paquete, raiz: Path, confirmar, undo: _Deshacer) -> str:
     game = paquete.game
     set_id = game["set"]
     sistema_root = raiz / game["system"]
@@ -280,15 +367,16 @@ def aplicar(paquete: Paquete, raiz: Path, confirmar=None) -> str:
                 f"no existe {metadata_path} - coleccion no creada"
             )
 
-        sistema_root.mkdir(parents=True, exist_ok=True)
+        _crear_dir(sistema_root, undo)
+        undo.antes_de_escribir(metadata_path)
         metadata_path.write_text(
             f"collection: {game['system'].title()}\n",
             encoding="utf-8", newline="\n",
         )
-        _registrar_en_game_dirs(sistema_root.resolve())
+        _registrar_en_game_dirs(sistema_root.resolve(), undo)
 
     media_dir = sistema_root / "media" / set_id
-    media_dir.mkdir(parents=True, exist_ok=True)
+    _crear_dir(media_dir, undo)
 
     # 1. resolver ROM: archivo que matchea game["file"] en el staging
     archivo_rom = game.get("file") or f"{set_id}.zip"
@@ -327,7 +415,8 @@ def aplicar(paquete: Paquete, raiz: Path, confirmar=None) -> str:
         if tratamiento and rel.name == archivo_rom and rel.parent == Path("."):
             continue   # el ROM se maneja aparte
         destino = media_dir / rel
-        destino.parent.mkdir(parents=True, exist_ok=True)
+        _crear_dir(destino.parent, undo)
+        undo.antes_de_escribir(destino)
         shutil.copy2(origen, destino)
         if rel.parent == Path("."):   # directo en media/<set>/, no en _manual/
             assets.append((origen.stem, f"media/{set_id}/{origen.name}"))
@@ -335,9 +424,11 @@ def aplicar(paquete: Paquete, raiz: Path, confirmar=None) -> str:
     # 3. tratamiento del ROM
     if rom_existe and tratamiento == "copiar":
         destino_rom = sistema_root / archivo_rom
+        undo.antes_de_escribir(destino_rom)
         shutil.copy2(rom_staging, destino_rom)
     elif rom_existe and tratamiento == "descomprimir":
         destino_extract = sistema_root / set_id
+        undo.antes_de_escribir(destino_extract)
         with zipfile.ZipFile(rom_staging) as zf:
             zf.extractall(destino_extract)
 
@@ -352,6 +443,7 @@ def aplicar(paquete: Paquete, raiz: Path, confirmar=None) -> str:
                 nuevo["mags"] = existente["mags"]
         except json.JSONDecodeError:
             pass   # el archivo instalado ya estaba roto, no es este comando el que arregla eso
+    undo.antes_de_escribir(destino_data)
     with destino_data.open("w", encoding="utf-8", newline="\n") as f:
         json.dump(nuevo, f, ensure_ascii=False, indent=2)
         f.write("\n")
@@ -381,6 +473,7 @@ def aplicar(paquete: Paquete, raiz: Path, confirmar=None) -> str:
     else:
         bloques.append(construir_bloque_declarado(game, assets))
 
+    undo.antes_de_escribir(metadata_path)
     metadata_path.write_text(escribir(bloques), encoding="utf-8", newline="\n")
 
     return set_id
