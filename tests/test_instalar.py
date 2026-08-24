@@ -373,6 +373,13 @@ def test_tratamiento_descomprimir(tmp_path):
     # el ROM NO se copia como asset
     assert not (raiz / "arcade" / "sf2ce.zip").exists()
 
+    # y el file: apunta al directorio extraido, no al zip que ya no esta:
+    # Pegasus verifica que exista y si no descarta la coleccion entera
+    metadata = (raiz / "arcade" / "metadata.pegasus.txt").read_text(encoding="utf-8")
+    assert "file: sf2ce\n" in metadata
+    assert "file: sf2ce.zip" not in metadata
+    assert (raiz / "arcade" / "sf2ce").exists()
+
 
 # ---------------------------------------------------------------------------
 # 15. tratamiento con archivo ROM ausente -> InstalarError

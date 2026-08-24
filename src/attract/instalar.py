@@ -206,11 +206,16 @@ def mergear_campo_simple(bloque: Bloque, clave: str, valor: str) -> Bloque:
     return Bloque(lineas=nuevas, es_game=bloque.es_game)
 
 
-def construir_bloque_declarado(game: dict, assets: list[tuple[str, str]]) -> Bloque:
+def construir_bloque_declarado(
+    game: dict, assets: list[tuple[str, str]], archivo: str | None = None
+) -> Bloque:
     """Crea un bloque game: nuevo a partir de identidad DECLARADA (ADR-0026),
-    sin pasar por mame -listxml. Mismo espiritu que ingest.construir_bloque."""
+    sin pasar por mame -listxml. Mismo espiritu que ingest.construir_bloque.
+
+    `archivo` es lo que va en `file:`: donde quedo el juego en la libreria,
+    que no siempre es el nombre que traia el paquete (ver _aplicar paso 3)."""
     set_id = game["set"]
-    archivo = game.get("file") or f"{set_id}.zip"
+    archivo = archivo or game.get("file") or f"{set_id}.zip"
 
     lineas = [
         f"game: {unicodedata.normalize('NFC', game['title'])}",
@@ -432,6 +437,11 @@ def _aplicar(paquete: Paquete, raiz: Path, confirmar, undo: _Deshacer) -> str:
         with zipfile.ZipFile(rom_staging) as zf:
             zf.extractall(destino_extract)
 
+    # `file:` apunta a donde quedo el juego en la libreria, no al nombre que
+    # traia el paquete: con "descomprimir" el zip ya no existe ahi, y Pegasus
+    # (general.verify-files) descarta el juego -y con el la coleccion entera-.
+    archivo_juego = set_id if tratamiento == "descomprimir" else archivo_rom
+
     # 4. data.json, preservando mags[] existente si el paquete no trae uno
     origen_data = paquete.stage_media / "data.json"
     nuevo = json.loads(origen_data.read_text(encoding="utf-8")) if origen_data.exists() else {}
@@ -458,6 +468,8 @@ def _aplicar(paquete: Paquete, raiz: Path, confirmar, undo: _Deshacer) -> str:
 
     if idx is not None:
         b = bloques[idx]
+        if tratamiento:   # sin tratamiento el ROM no se toca: no sabemos donde esta
+            b = mergear_campo_simple(b, "file", archivo_juego)
         for campo in _CAMPOS_SIMPLES:
             if game.get(campo) not in (None, ""):
                 b = mergear_campo_simple(b, campo, game[campo])
@@ -471,7 +483,7 @@ def _aplicar(paquete: Paquete, raiz: Path, confirmar, undo: _Deshacer) -> str:
             b = mergear_summary(b, str(game["summary"]))
         bloques[idx] = b
     else:
-        bloques.append(construir_bloque_declarado(game, assets))
+        bloques.append(construir_bloque_declarado(game, assets, archivo_juego))
 
     undo.antes_de_escribir(metadata_path)
     metadata_path.write_text(escribir(bloques), encoding="utf-8", newline="\n")

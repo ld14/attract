@@ -11,6 +11,7 @@ fi
 
 ZIP="$1"
 RAIZ="${2:-.}"
+RAIZ="${RAIZ%/}"
 
 if [ ! -f "$ZIP" ]; then
     echo "error: no existe $ZIP"
@@ -47,7 +48,24 @@ if [ -n "$SET" ] && [ -n "$SYSTEM" ]; then
         ls -lh "$MEDIA" | tail -n +2 | sed 's/^/    /'
     fi
     if [ -f "$META" ]; then
-        echo "  bloque game: nuevo"
-        grep -A1 "game: The Simpsons" "$META" | sed 's/^/    /'
+        # el bloque del set (parrafo que contiene su x-set:), sin el summary
+        BLOQUE=$(awk -v s="x-set: $SET" 'BEGIN{RS=""} index($0, s)' "$META")
+        echo "  bloque game:"
+        printf '%s\n' "$BLOQUE" | grep -v '^summary:' | sed 's/^/    /'
+
+        # Pegasus (general.verify-files) descarta el juego si el file: no
+        # existe, y sin juegos validos descarta la coleccion entera: es un
+        # fallo silencioso salvo que se mire lastrun.log. Se chequea aca.
+        FILE=$(printf '%s\n' "$BLOQUE" | sed -n 's/^file: //p' | head -1)
+        if [ -z "$FILE" ]; then
+            echo "  ERROR: el bloque no tiene linea file:"
+            exit 1
+        fi
+        if [ ! -e "$RAIZ/$SYSTEM/$FILE" ]; then
+            echo "  ERROR: file: '$FILE' no existe en $RAIZ/$SYSTEM/"
+            echo "         Pegasus va a descartar el juego y la coleccion entera."
+            exit 1
+        fi
+        echo "  file: OK -> $RAIZ/$SYSTEM/$FILE"
     fi
 fi
