@@ -410,9 +410,45 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
 
   Lo que falta es la verificación visual
   (`spec/features/017-hero-video-preview/tasks.md` §Verificación). Para el
-  criterio principal —recorrer diez juegos sin que el panel parpadee— hace falta
-  **más de un video en `library/`**: hoy hay uno solo y ese criterio no se puede
-  probar.
+  criterio principal —recorrer diez juegos sin que el panel parpadee— hacía
+  falta **más de un video en `library/`**. Ya no es un bloqueo: al 2026-08-27 hay
+  **ocho**, uno por cada paquete COINDOOR instalado. Lo que falta es sentarse a
+  mirarlo.
+
+- **`018-theme-galeria`** — **especificada** (spec + plan + tasks), sin código.
+  Galería de imágenes y videos por juego en el detalle: una tarjeta más en
+  CONTENIDO EXTRA que abre un modal a pantalla completa con visor, flechas,
+  contador y riel de miniaturas.
+
+  **La galería se compone de dos fuentes** ([`ADR-0030`](../decisions/0030-contrato-gallery-data-json.md)):
+  los assets nativos del juego (`video`, `screenshot`, `boxFront`, `poster`,
+  `marquee`) más las piezas curadas que COINDOOR deja en `media/<set>/_gallery/`
+  y declara en `gallery`. Ese contrato **ya existía y nadie lo había
+  documentado**: `final-fight.coindoor.zip` lo emite, `attract import` ya lo
+  instala (`instalar.py:155` copia el subárbol `media/` entero), `doctor` no lo
+  valida y ADR-0027 no lo nombraba. La feature lo consume y lo valida; el
+  productor no se toca.
+
+  Sale de un prototipo HTML que **ya se corrió** (`docs/gallery-spec.md`), así
+  que llega con cuatro modos de falla medidos, no supuestos: `source` evaluado
+  vacío durante la construcción del componente, la leyenda mostrando los atajos
+  del detalle adentro del modal, la leyenda pintando encima del riel, y los
+  índices de foco de Hacks/Manual corridos al insertar la tarjeta en el ciclo.
+  Cada uno tiene su mitigación en `spec/features/018-theme-galeria/plan.md`
+  §Riesgos y su criterio de aceptación en el `spec.md`.
+
+  Tres decisiones tomadas al especificarla: el botón de volver del detalle pasa a
+  **"◄ BIBLIOTECA"** (chocaba con la tarjeta nueva, y el nombre equivocado era el
+  del botón — esa pantalla se llama `libreria` en todo el código), y la tarjeta
+  **está siempre** aunque el juego no tenga galería, porque CONVENCION #2.3 le
+  gana al diseño de referencia, que la pedía condicional. Lo segundo además deja
+  el ciclo de foco de largo fijo, que es lo que evita el cuarto bug de arriba.
+  La tercera es de layout y sale de medir, no de gusto: **las tres tarjetas de
+  CONTENIDO EXTRA bajan de 250 a 200px**, porque tres de 250 chocan con la
+  columna derecha del detalle según el largo del veredicto de la reseña. El
+  costo es que el subtítulo achica su presupuesto de texto, así que el de la
+  galería cuenta piezas (`"13 piezas"`) y el de Hacks necesita un nivel más
+  corto para no caer a `"Ver detalle"`.
 
 1. **`003-attract-mcp`** — probar contra **Claude Desktop o Claude Code**
    de verdad (`mcp.json` real, tools visibles en la UI). El protocolo en

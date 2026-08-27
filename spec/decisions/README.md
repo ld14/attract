@@ -59,8 +59,9 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 | [0027](0027-contrato-paquete-import-coindoor.md) | Contrato del paquete que COINDOOR exporta y `attract import` instala | accepted | 2026-08-18 |
 | [0028](0028-rollback-transaccional-import.md) | `attract import` revierte todo lo escrito si falla a mitad de camino | proposed | 2026-08-22 |
 | [0029](0029-player-nuevo-por-video.md) | Un `MediaPlayer` + `VideoOutput` nuevo por cada archivo de video | proposed | 2026-08-22 |
+| [0030](0030-contrato-gallery-data-json.md) | La galería se compone de los assets nativos del juego más las piezas curadas de `_gallery/`, declaradas como `gallery` en `data.json` | proposed | 2026-08-27 |
 
-**25 ADR en total, 21 vigentes** (0008 quedó superseded por 0010, 0016 por
+**30 ADR en total, 26 vigentes** (0008 quedó superseded por 0010, 0016 por
 0019, 0015 por 0020 y 0010 por 0024 — no se editan, se reemplazan). El razonamiento original de 0006-0009
 está en
 [`docs/decisiones/2026-07-23.md`](../../docs/decisiones/2026-07-23.md), que
