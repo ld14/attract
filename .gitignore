@@ -39,6 +39,13 @@ venv/
 # Config local de Claude Code (la compartida, .claude/settings.json, SI va)
 .claude/settings.local.json
 
+# Los paquetes COINDOOR son entrada, no fuente: traen el video del juego y
+# pesan entre 1 y 23 MB cada uno. Mismo criterio que library/. La excepcion es
+# ghost-n-goblins, que ya estaba versionado como paquete de prueba de
+# `attract import`. Si hace falta uno nuevo para un test, pesalo antes.
+files_install/*.zip
+!files_install/ghost-n-goblins.coindoor.zip
+
 # El prototipo del handoff de diseno es byte a byte IDENTICO a
 # docs/mockup-referencia.html, que ya esta versionado. Commitear los dos son
 # 87K duplicados que se desincronizan a la primera. El README.md de esa

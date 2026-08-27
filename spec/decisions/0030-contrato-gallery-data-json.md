@@ -257,7 +257,11 @@ contrato del paquete), sin reemplazar a ninguno — igual que
 
 - `files_install/final-fight.coindoor.zip` — el paquete que fija el contrato
   real. Los otros siete de `files_install/` son la evidencia de que `_gallery/`
-  es opcional y de que los nativos están siempre.
+  es opcional y de que los nativos están siempre. **Ninguno de los ocho está
+  versionado** (`.gitignore`: pesan entre 1 y 23 MB porque traen el video del
+  juego; la única excepción es `ghost-n-goblins`, que ya estaba). Los datos que
+  este ADR cita se contaron sobre ellos el 2026-08-27; para repetir la cuenta
+  hacen falta los paquetes en disco.
 - [`spec/features/018-theme-galeria/`](../features/018-theme-galeria/spec.md) —
   la feature que fuerza la decisión.
 - [`docs/gallery-spec.md`](../../docs/gallery-spec.md) — diseño de referencia,
