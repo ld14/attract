@@ -148,7 +148,8 @@
       "Bash(reusado\\\\|MIENTE en *)",
       "Bash(grep -n \"MediaPlayer` reusado\\\\|MIENTE en este binario\\\\|es RUIDO\" docs/plataforma-pegasus.md)",
       "Bash(python3 \"/private/tmp/claude-501/-Users-familyhouse-workplace-attract/1164a87e-d966-4792-9b0a-c3ff731ee61b/scratchpad/audio.py\")",
-      "Bash(git restore *)"
+      "Bash(git restore *)",
+      "Bash(awk '{print $2}')"
     ],
     "additionalDirectories": [
       "/Users/familyhouse/Library/Preferences/pegasus-frontend/themes/attract-debug",
