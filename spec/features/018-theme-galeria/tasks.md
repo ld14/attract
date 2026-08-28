@@ -126,18 +126,27 @@ marca `[x]` al completarlas._
 ## Cierre
 
 - [ ] Validar contra todos los criterios de aceptación de `spec.md`.
-- [ ] `make test` en verde (los tests nuevos de `gallery` en
+- [x] `make test` en verde (los tests nuevos de `gallery` en
       `tests/test_doctor.py`: contrato, archivo faltante, `src: ""` como aviso).
-- [ ] `make doctor` y `make doctor-lib` sin errores nuevos.
-- [ ] Documentar `gallery` en `docs/CONVENCION.md` §1 (la tabla de campos) y en
-      §2.3 (qué muestra la tarjeta sin galería).
-- [ ] Sumar `_gallery/` al bloque de estructura de `media/<set>/` en
-      `spec/constitution/tech-stack.md` (~línea 86, donde ya están `data.json` y
-      `_manual/`), al pasar el ADR-0030 a `accepted`.
-- [ ] Actualizar el índice de ADRs de `CLAUDE.md` (dice "0001-0025, 21
-      vigentes"; van hasta 0030). Es una línea y ya se está tocando ese archivo
-      por la excepción de fixtures.
+      **204 passed, 2 skipped** (2026-08-28).
+- [x] `make doctor` y `make doctor-lib` sin errores nuevos (2026-08-28):
+      fixtures 0 errores / 2 avisos —uno es el `file: ""` de `dino`, esperado—,
+      y los 4 errores de `doctor-lib` son `.DS_Store` preexistentes.
+- [x] Documentar `gallery` en `docs/CONVENCION.md` §1 (la tabla de campos) y en
+      §2.3 (qué muestra la tarjeta sin galería). Quedó como fila en §2.1,
+      **Nota 4** con el orden de las dos fuentes y el contrato, y dos viñetas
+      en §2.3 (tarjeta apagada, placeholder con `label`). §1.4 nombra
+      `_gallery/` junto a `_manual/`.
+- [x] Sumar `_gallery/` al bloque de estructura de `media/<set>/` en
+      `spec/constitution/tech-stack.md` (donde ya están `data.json` y
+      `_manual/`). Hecho con ADR-0030 todavía en `proposed`: el código ya lo
+      instala y lo valida, así que la estructura describe lo que hay.
+- [ ] Pasar ADR-0030 de `proposed` a `accepted` (decisión del autor; 0028 y
+      0029 están igual, con su código ya en `main`).
+- [x] Actualizar el índice de ADRs de `CLAUDE.md` (decía "0001-0025, 21
+      vigentes"; van hasta 0030, 26 vigentes). De paso se corrigieron el conteo
+      de tests y el estado de las features, que también venían atrasados.
 - [ ] Avisar a COINDOOR de los `label` de basura: `final-fight.coindoor.zip`
       trae `"label": "url-10"` en la última pieza, un placeholder filtrado del
       scraping. `doctor` puede exigir que no esté vacío, no que diga algo.
-- [ ] Mover la feature a "Hecho" en `../../constitution/roadmap.md`.
+- [x] Mover la feature a "Hecho" en `../../constitution/roadmap.md` (punto 25).

@@ -1,6 +1,6 @@
 # 013 · `attract rasterize` — el PDF del manual a páginas
 
-**Estado:** borrador
+**Estado:** implementada (`src/attract/rasterize.py`, 41 tests).
 
 ## Qué hace
 

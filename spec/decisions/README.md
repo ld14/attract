@@ -64,8 +64,8 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 **30 ADR en total, 26 vigentes** (0008 quedó superseded por 0010, 0016 por
 0019, 0015 por 0020 y 0010 por 0024 — no se editan, se reemplazan). El razonamiento original de 0006-0009
 está en
-[`docs/decisiones/2026-07-23.md`](../../docs/decisiones/2026-07-23.md), que
-puede archivarse ahora que su contenido vive formalizado acá. 0010 salió de
+[`docs/decisiones/archivadas/2026-07-23.md`](../../docs/decisiones/archivadas/2026-07-23.md), ya
+archivado: su contenido vive formalizado acá. 0010 salió de
 una verificación de esta misma sesión, no del handoff original — un
 `magazine.json` real no coincidía con el contrato inventado en 0008. 0011
 salió de especificar la primera feature real (`001-synopsis`,

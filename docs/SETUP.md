@@ -251,7 +251,7 @@ editar / codear
      ↓
 make doctor        ← 9 chequeos        (no viajás si esto falla)
      ↓
-make test          ← 50 tests
+make test          ← 206 tests
      ↓
 git push  ────────────────────────────▶ git pull
                                             ↓

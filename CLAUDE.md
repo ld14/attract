@@ -16,8 +16,8 @@ luego las tareas, y solo entonces el código. Ver `spec/README.md`.
 **La constitución manda.** Si una feature choca con `spec/constitution/`, se
 replantea la feature, no la constitución.
 
-**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0025,
-21 vigentes — 0008 superseded por 0010, 0016 por 0019, 0015 por 0020,
+**Decisiones de arquitectura (ADRs) viven en `spec/decisions/`** (0001-0030,
+26 vigentes — 0008 superseded por 0010, 0016 por 0019, 0015 por 0020,
 0010 por 0024; formato con frontmatter — ver
 `spec/decisions/_TEMPLATE.md`). Se crean con `/new-adr`.
 
@@ -31,7 +31,7 @@ cítalos, pero recuerda que el destino de su contenido es un ADR.
 | Acción | Comando |
 |---|---|
 | Setup | `make setup` (git config + venv + verificación) |
-| Tests | `make test` (pytest, 184 tests) |
+| Tests | `make test` (pytest, 206 tests — 204 + 2 salteados sin `mame`/`mcp`) |
 | Doctor (fixtures) | `make doctor` |
 | Doctor (librería real) | `make doctor-lib` |
 | Linkear revistas ↔ juegos | `attract mags library` (dry-run) / `--apply` (ADR-0025) |
@@ -48,20 +48,20 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 |---|---|
 | `src/attract/` | CLI Python: `doctor` (validador), `synopsis` (primer escritor de `metadata.pegasus.txt`), `mcp` (servidor MCP, M5), `ingest` (crea `game:` nuevo vía `mame -listxml`, M7), `instalar` (importa paquete COINDOOR, ADR-0027), `rasterize` (PDF del manual → páginas, ADR-0022), `magazines` (linkea revistas con juegos, ADR-0025) |
 | `.claude/skills/attract/` | Claude Skill de proyecto: le dice a un agente cuándo correr `doctor`/`synopsis` (M4, `spec/features/002-attract-skill/`) |
-| `tests/` | 184 tests (66 `doctor` + 14 `synopsis` + 9 `mcp` + 14 `ingest` + 41 `rasterize` + 28 `magazines` + 12 `instalar`), cada uno reproduce un bug real o un caso del contrato |
+| `tests/` | 206 tests (79 `doctor` + 14 `synopsis` + 9 `mcp` + 14 `ingest` + 41 `rasterize` + 30 `magazines` + 19 `instalar`), cada uno reproduce un bug real o un caso del contrato |
 | `fixtures/` | ROMs falsas de 0 bytes + `_magazines/` (cuatro revistas de mentira, en la **raíz** de `fixtures/` — ADR-0024). Portables y versionables |
 | `library/` | Librería real del autor. NO va a git |
-| `themes/attract/` | **Theme de producción** (feature 005). `Tokens.qml` (singleton `Theme`), `core/` (datos y rutas), `ui/` (dibuja), `screens/`, `overlays/`. Ver `spec/features/005-theme-base/plan.md` |
+| `themes/attract/` | **Theme de producción** (features 005-008, 017-018). `Tokens.qml` (singleton `Theme`), `core/` (datos y rutas), `ui/` (dibuja), `screens/`, `overlays/`. Ver `spec/features/005-theme-base/plan.md` |
 | `themes/attract-debug/` | Harness de debug: dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no lo reemplaces, agregá al lado |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. `make theme` no las instala |
 | `scripts/` | Mantenimiento del entorno local, no del código. `reset-pegasus.sh` vacía Pegasus para una carga desde cero |
-| `docs/` | SETUP, CONVENCION (plantilla), baseline, mapeo |
+| `docs/` | SETUP, CONVENCION (el documento central de campos y estructura), baseline, mapeo, `guides/cargar-un-juego-nuevo.md` (el manual del día a día), `contrato-paquete-coindoor.md`, `gallery-spec.md` |
 | `docs/plataforma-pegasus.md` | **Hechos verificados de Pegasus/Qt 5.15**, cada uno con su evidencia. Leelo antes de tocar el theme: la documentación oficial no siempre coincide con el binario |
-| `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía |
+| `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía. `archivadas/` son los que ya viajaron a un ADR |
 | `spec/constitution/` | Reglas estables: misión, stack, roadmap |
-| `spec/decisions/` | ADRs. 0001-0030, 22 vigentes (0008 superseded por 0010, 0016 por 0019, 0015 por 0020, 0010 por 0024) |
-| `spec/features/NNN-*/` | spec + plan + tasks por feature. `001`-`006` implementadas; `007-theme-trucos` es la que falta |
-| `themes/attract/` (feature 005-006) | Librería, detalle, video, carrusel de revistas y visor de documentos. Verificado contra Pegasus real |
+| `spec/decisions/` | ADRs. 0001-0030, 26 vigentes (0008 superseded por 0010, 0016 por 0019, 0015 por 0020, 0010 por 0024) |
+| `spec/features/NNN-*/` | spec + plan + tasks por feature. Todas tienen código salvo `015-carga-guiada`. Ojo: varios `tasks.md` y `spec.md` dicen "borrador" con la feature ya escrita — el código manda, los checkboxes van atrás |
+| `themes/attract/` (features 005-008, 017-018) | Librería, detalle, video, carrusel de revistas, visor de documentos, overlay de ayuda, preview de gameplay en el hero y galería a pantalla completa. Verificado contra Pegasus real salvo lo anotado en cada `tasks.md` §Verificación |
 
 ## Reglas de trabajo
 

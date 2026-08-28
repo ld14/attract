@@ -1,6 +1,6 @@
 # 014 · Más de un manual por juego
 
-**Estado:** borrador
+**Estado:** implementada (ADR-0023, `manual` como lista en `core/DocModel.qml`).
 
 ## Qué hace
 

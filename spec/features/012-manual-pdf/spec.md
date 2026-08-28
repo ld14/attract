@@ -1,6 +1,6 @@
 # 012 · Manual en PDF, abierto por el sistema operativo
 
-**Estado:** borrador
+**Estado:** implementada (ADR-0021, `Qt.openUrlExternally` en `core/Paths.qml`).
 
 ## Qué hace
 

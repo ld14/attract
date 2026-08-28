@@ -1,6 +1,7 @@
 # 009 · Librería con estantes — Spec
 
-**Estado:** borrador
+**Estado:** implementada (`1299e67`). Falta medir performance y memoria con
+la librería real de 1200+ juegos.
 
 ## Qué hace
 

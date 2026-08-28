@@ -123,9 +123,14 @@ alfabéticamente de las carpetas de juego y evita que choque si algún día un
 <Según ADR-0001.>
 
 Fuera de `metadata.pegasus.txt`. Cada juego tiene un `data.json` en su propia
-`media/<juego>/` con lo que le pertenece solo a él (`review`, `cheats`) más
-una referencia a la revista por `ref` (`mags: [{ref: "<revista>-<número>"}]`)
-— nunca copia las páginas. El theme lee `data.json` con `XMLHttpRequest` y lo
+`media/<juego>/` con lo que le pertenece solo a él (`review`, `cheats`,
+`gallery`) más una referencia a la revista por `ref`
+(`mags: [{ref: "<revista>-<número>"}]`) — nunca copia las páginas. Los
+archivos que ese `data.json` declara viven en subcarpetas con `_` de la misma
+`media/<juego>/`: `_manual/` las páginas del manual
+([`ADR-0014`](../spec/decisions/0014-manual-digitalizado.md)) y `_gallery/`
+las piezas curadas de la galería
+([`ADR-0030`](../spec/decisions/0030-contrato-gallery-data-json.md)). El theme lee `data.json` con `XMLHttpRequest` y lo
 parsea con `JSON.parse`. Ver ADR-0001 (accepted) para el detalle completo y
 la evidencia del experimento del Bloque 3.
 
@@ -159,6 +164,7 @@ externo a ATTRACT; el juego lo recibe, no lo genera. Ver
 | `mags[]` | `data.json → mags` (ADR-0001) | No | `"Sin cobertura en revistas"` — §2.3 |
 | `cheats` | `data.json → cheats` (ADR-0001) | No | `"No Disponible"` |
 | `manual` | `data.json` / `x-` | No | `"No Disponible"` |
+| `gallery` | assets nativos + `data.json → gallery` (ADR-0030) | No | `"No Disponible"` — la tarjeta sigue estando, apagada. Ver nota 4 |
 | badge FORMATO | `x-formato` | **Sí** — se conoce siempre por el sistema/tipo de ROM | — (§2.3, ya resuelto) |
 
 **Nota 1 — `players` → resuelto.** Se acepta el default `1` de Pegasus tal
@@ -185,6 +191,41 @@ Dos niveles de "sin dato", no uno:
   (pasa en la práctica: reseñas parciales, con algunas categorías evaluadas
   y otras no) → esa categoría muestra `"-"` en vez de número/barra, el resto
   de las categorías que sí tienen dato se muestran normal.
+
+**Nota 4 — `gallery` es el único campo con dos fuentes.** La galería no sale
+solo de `data.json`: es la suma de los assets nativos que Pegasus ya
+auto-descubre y de las piezas curadas que COINDOOR deja en
+`media/<set>/_gallery/`. El orden lo fija
+[`ADR-0030`](../spec/decisions/0030-contrato-gallery-data-json.md) y es
+siempre el mismo:
+
+```
+1. video       (nativo)   → "Gameplay"
+2. screenshot  (nativo)   → "Captura"
+3. gallery[]   (curado, en el orden del array, con los labels escritos a mano)
+4. boxFront    (nativo)   → "Carátula"
+5. poster      (nativo)   → "Póster"
+6. marquee     (nativo)   → "Marquesina"
+```
+
+Primero lo que se mueve, después lo curado, al final el arte de empaque y
+gabinete. Un asset ausente **se saltea**, no deja hueco. `logo` queda afuera a
+propósito: es un recurso de interfaz, no contenido para mirar a pantalla
+completa.
+
+El contrato de `gallery` en `data.json` — el que COINDOOR ya emite:
+
+| Campo | Regla |
+|---|---|
+| `gallery` | Lista de 1 a N piezas, en el orden en que se muestran. Ausente y `[]` son lo mismo: el juego no tiene piezas curadas |
+| `file` | Nombre de archivo **suelto** dentro de `media/<set>/_gallery/`, no una ruta. `""` es un estado declarado válido: la pieza existe en el guion, el archivo todavía no |
+| `label` | String no vacío. Se muestra en el encabezado del modal y dentro del placeholder |
+
+**El tipo sale de la extensión**, no de un campo: `.png` `.jpg` `.jpeg`
+`.webp` son imagen, `.mp4` `.webm` `.mov` son video, cualquier otra es error
+de `attract doctor` y el theme la saltea. `doctor` valida además que cada
+`file` no vacío exista de verdad en `_gallery/` (error) y marca `file: ""`
+como aviso, no como error.
 
 ### 2.2 Cadenas de fallback
 <Escribilas. Un arcade no tiene caja: Maze of the Kings tiene `marquee` y `poster`.>
@@ -235,6 +276,22 @@ mantiene siempre igual, tenga datos o no — lo que cambia es el contenido:
   segundo es más informativo y evita que un juego con revistas y uno sin
   se lean igual de "vacíos". Mensaje: **`"Sin cobertura en revistas"`**.
   El theme lo muestra cuando `data.json → mags` es `[]` o no existe.
+
+- **GALERÍA sin piezas → la tarjeta está igual, apagada.** Es la regla
+  general de arriba aplicada al pie de la letra, y acá le gana al diseño de
+  referencia, que la pedía condicional: la tarjeta de CONTENIDO EXTRA está
+  siempre, dice `"No Disponible"` y aceptarla no hace nada. Además de la
+  convención hay una razón técnica: con la tarjeta siempre presente el ciclo
+  de foco queda de largo fijo, y los índices de Hacks y Manual no se corren
+  según el juego. Cuando sí hay piezas, el subtítulo las cuenta
+  (`"13 piezas"`) — el presupuesto de texto de la tarjeta es corto y un
+  conteo entra siempre.
+
+- **Pieza declarada con `file: ""` → placeholder con su `label`.** No
+  desaparece de la galería ni la corta: ocupa su lugar en el riel y muestra
+  el nombre de lo que falta. Es la diferencia entre "esta máquina no tiene
+  foto del gabinete" y "todavía no la conseguimos", y por eso `attract doctor`
+  lo pasa como aviso y no como error.
 
 **Pendiente menor:** el mensaje de "Sin cobertura en revistas" lo propuse yo
 — si no te cierra el tono, cambialo, es solo texto de UI.

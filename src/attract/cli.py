@@ -1,7 +1,7 @@
 """attract - CLI.
 
-doctor, synopsis, mcp e ingest. Los proximos modulos del bootcamp se
-agregan aca cuando existan.
+Siete subcomandos: doctor, synopsis, mcp, ingest, import, rasterize y
+mags. Uno nuevo se agrega a COMANDOS y a la ayuda de main(), nada mas.
 
 Hay DOS dependencias externas, las dos opcionales y las dos con import
 perezoso: `mcp` en mcp_server (ADR-0012) y `pymupdf` en rasterize

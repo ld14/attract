@@ -15,30 +15,42 @@
 
 | Ruta | Responsabilidad |
 |---|---|
-| `src/attract/cli.py` | Entry point. Dispatch de subcomandos: `doctor`, `synopsis`, `mcp`, `ingest`, `import` |
+| `src/attract/cli.py` | Entry point. Dispatch de subcomandos: `doctor`, `synopsis`, `mcp`, `ingest`, `import`, `rasterize`, `mags` |
 | `src/attract/doctor.py` | Validador preflight: todo lo que Windows rechazaría debe fallar en el Mac |
 | `src/attract/synopsis.py` | Primer módulo que **escribe** `metadata.pegasus.txt` — merge quirúrgico del campo `summary:` desde `_synopsis/<set>.json` (ADR-0011) |
-| `src/attract/mcp_server.py` | Servidor MCP (M5) — tools `attract_doctor`/`attract_synopsis`. Única dependencia externa del proyecto, opcional e import perezoso (ADR-0012) |
+| `src/attract/mcp_server.py` | Servidor MCP (M5) — tools `attract_doctor`/`attract_synopsis`. Una de las dos dependencias externas del proyecto, opcional e import perezoso (ADR-0012) |
 | `src/attract/ingest.py` | Primer módulo que **crea** un `game:` nuevo (M7) — identidad vía `mame -listxml` (stdlib `xml.etree.ElementTree`) |
-| `src/attract/instalar.py` | Importa paquetes COINDOOR (ADR-0027) — valida en staging con `doctor.py`, instala assets/data/bloque en la librería |
-| `tests/test_doctor.py` | 34 tests, cada uno reproduce un bug real ya visto o un caso del contrato |
-| `tests/test_synopsis.py` | 11 tests: merge de campo, idempotencia, casos límite/fallo |
-| `tests/test_mcp_server.py` | 8 tests: aislamiento sin `mcp` instalado, lógica de las tools, registro contra el SDK real (se saltea si `mcp` no está) |
+| `src/attract/instalar.py` | Importa paquetes COINDOOR (ADR-0027) — valida en staging con `doctor.py`, instala assets/data/bloque en la librería. Revierte todo lo escrito si falla a mitad de camino (ADR-0028) |
+| `src/attract/rasterize.py` | Convierte el PDF del manual a páginas `p001.jpg…` (ADR-0022). Segunda y última dependencia externa: `pymupdf`, opcional e import perezoso |
+| `src/attract/magazines.py` | `attract mags` — linkea revistas con juegos por coincidencia difusa (`difflib`, umbral 0.85) y escribe `mags[]`. Dry-run por defecto (ADR-0025) |
+| `tests/test_doctor.py` | 79 tests, cada uno reproduce un bug real ya visto o un caso del contrato |
+| `tests/test_synopsis.py` | 14 tests: merge de campo, idempotencia, casos límite/fallo |
+| `tests/test_mcp_server.py` | 9 tests: aislamiento sin `mcp` instalado, lógica de las tools, registro contra el SDK real (se saltea si `mcp` no está) |
 | `tests/test_ingest.py` | 14 tests: 10 contra XML sintético, 1 contra la ausencia real del binario (PATH vacío) y 3 de integración contra el `mame` instalado (se saltean si no hay) |
-| `tests/test_instalar.py` | 12 tests: caso feliz (set nuevo/existente), paquete mínimo, path traversal, campos faltantes, data.json inválido, reimportación idempotente, preservación de mags, sistema inexistente |
+| `tests/test_instalar.py` | 19 tests: caso feliz (set nuevo/existente), paquete mínimo, path traversal, campos faltantes, data.json inválido, reimportación idempotente, preservación de mags, sistema inexistente, rollback transaccional |
+| `tests/test_rasterize.py` | 41 tests: contrato de páginas, PDF ausente/corrupto, aislamiento sin `pymupdf` instalado |
+| `tests/test_magazines.py` | 30 tests: umbral de coincidencia difusa, dry-run vs. `--apply`, merge idempotente sobre `mags[]` |
 | `fixtures/` | ROMs falsas de 0 bytes + `metadata.pegasus.txt` de ejemplo, para validar el doctor sin la librería real |
 | `library/` | Librería real del autor (ROMs, CHDs, assets). Nunca se commitea |
-| `themes/attract/` | Theme de producción (feature 005). Tres capas según quién sabe de qué: `core/` datos y rutas, `ui/` dibuja, `screens/`+`overlays/` componen. Un solo singleton (`Theme`, el archivo es `Tokens.qml` — ver su encabezado) |
+| `themes/attract/` | Theme de producción (features 005-009, 017-018). Tres capas según quién sabe de qué: `core/` datos y rutas, `ui/` dibuja, `screens/`+`overlays/` componen. Un solo singleton (`Theme`, el archivo es `Tokens.qml` — ver su encabezado) |
 | `themes/attract-debug/` | Theme QML de debug: harness del Bloque 3, dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no se pisa |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. No las instala `make theme` |
 | `docs/plataforma-pegasus.md` | Hechos verificados de Pegasus/Qt, consolidados con puntero a su evidencia. No duplica los ADR: ahí van decisiones, acá qué hace la plataforma |
-| `spec/decisions/` | Decisiones de arquitectura. 0001-0018, 17 vigentes (0008 superseded por 0010) |
+| `spec/decisions/` | Decisiones de arquitectura. 0001-0030, 26 vigentes (0008 superseded por 0010, 0016 por 0019, 0015 por 0020, 0010 por 0024) |
 | `spec/features/001-synopsis/` | Primera feature con spec/plan/tasks — `attract synopsis`, implementada |
 | `spec/features/002-attract-skill/` | `.claude/skills/attract/SKILL.md`, implementada |
 | `spec/features/003-attract-mcp/` | Servidor MCP, implementada |
 | `spec/features/004-attract-ingest/` | `attract ingest`, implementada y verificada contra `mame` real |
 | `spec/features/005-theme-base/` | Theme de producción: librería y detalle. Implementada y verificada |
 | `spec/features/006-theme-documentos/` | Video, carrusel de revistas y visor paginado. Implementada y verificada |
+| `spec/features/007-theme-trucos/` | Tokenizer de inputs (`core/InputTokens.js`) y overlay de trucos. Implementada |
+| `spec/features/008-theme-ayuda/` | Overlay "Cómo cargar un juego nuevo". Implementada |
+| `spec/features/009-theme-estantes/` | Librería con estantes, orden y filtro. Implementada |
+| `spec/features/012-manual-pdf/` a `014-manual-multiple/` | Manual: PDF al SO (ADR-0021), `attract rasterize` (ADR-0022), varios manuales con pestañas (ADR-0023). Implementadas |
+| `spec/features/015-carga-guiada/` | Carga guiada de un juego. **Especificada, sin código** — la única sin implementar |
+| `spec/features/016-import-coindoor/` | `attract import`. Implementada |
+| `spec/features/017-hero-video-preview/` | Preview de gameplay en el hero de Home. Implementada, falta la verificación visual |
+| `spec/features/018-theme-galeria/` | Galería de piezas multimedia a pantalla completa (ADR-0030). Implementada, falta la verificación visual |
 
 ## Comandos
 
@@ -49,6 +61,9 @@
 | Doctor (fixtures) | `make doctor` |
 | Doctor (librería real) | `make doctor-lib` |
 | Instalar theme | `make theme` (producción) / `make theme-debug` (harness) |
+| Linkear revistas ↔ juegos | `attract mags library` (dry-run) / `--apply` |
+| Instalar paquete COINDOOR | `attract import <paquete.zip> [ruta]` |
+| Vaciar Pegasus | `make reset-pegasus` (destructivo) / `DRY=1 bash scripts/reset-pegasus.sh` |
 | Lint | <PENDIENTE: no configurado> |
 
 ## Modelo de datos / dominio
@@ -83,9 +98,12 @@ Datos ricos que **no** viven en `metadata.pegasus.txt` (ADR-0001):
    ├─ metadata.pegasus.txt
    └─ media/<set>/
       ├─ boxFront.jpg …     # assets nativos, auto-descubiertos por Pegasus
-      ├─ data.json          # accent, cheats, review, manual: [{label?,pages?,file?}] + mags: [{ref: "<rev>-<n>"}]
-      └─ _manual/           # páginas del/los manual(es), PLANO (no lleva pages/)
-         └─ p001.jpg … pNNN.jpg
+      ├─ data.json          # accent, cheats, review, manual: [{label?,pages?,file?}],
+      │                     # mags: [{ref: "<rev>-<n>"}], gallery: [{file,type,label?}]
+      ├─ _manual/           # páginas del/los manual(es), PLANO (no lleva pages/)
+      │  └─ p001.jpg … pNNN.jpg
+      └─ _gallery/          # piezas curadas de la galería (ADR-0030), declaradas en `gallery`
+         └─ g001.png · clip.mp4 …
 ```
 
 Contrato completo de `data.json` en
@@ -126,8 +144,10 @@ página de información por familia, variantes como `file:` múltiples).
 - Todo chequeo cross-Mac/Windows nuevo se agrega a `CHEQUEOS_UNIVERSALES` en
   `doctor.py`, no como script aparte.
 - `.gitattributes` fuerza LF en texto y `binary` en assets — no tocar sin razón.
-- Convención formal de campos/estructura de carpetas: **pendiente**, se escribe
-  en `docs/CONVENCION.md` (es un ejercicio del bootcamp, no la completes vos).
+- Convención formal de campos/estructura de carpetas: escrita en
+  `docs/CONVENCION.md` (§1 estructura, §2 campos, §3 procedencia, §4 validación).
+  Es un ejercicio del bootcamp: se amplía cuando aparece un campo nuevo, no se
+  reescribe.
 
 ## Límites duros
 

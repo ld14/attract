@@ -158,4 +158,4 @@ habría que aplicarla en N lugares.
 ## Referencias
 
 - Experimento Bloque 3 / opción C, corrido contra `themes/attract-debug/`.
-- Ajuste 2026-07-23 documentado en [`docs/decisiones/2026-07-23.md`](../../docs/decisiones/2026-07-23.md).
+- Ajuste 2026-07-23 documentado en [`docs/decisiones/2026-07-23.md`](../../docs/decisiones/archivadas/2026-07-23.md).

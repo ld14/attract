@@ -1,6 +1,7 @@
 # 018 · Galería de imágenes y videos del juego
 
-**Estado:** borrador
+**Estado:** implementada (`f332a76`). Falta la verificación visual contra
+Pegasus real — ver `tasks.md` §Verificación.
 
 _El diseño de referencia está en [`docs/gallery-spec.md`](../../../docs/gallery-spec.md),
 escrito contra un prototipo HTML que ya se corrió. Las cuatro trampas que ese

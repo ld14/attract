@@ -326,6 +326,37 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     merge idempotente sobre `mags[]` — `data.json` lo escribe una persona y
     esta herramienta es dueña de un solo campo.
 
+25. **`018-theme-galeria` — implementada, 2026-08-28.** Galería de piezas
+    multimedia a pantalla completa: una tarjeta más en CONTENIDO EXTRA que abre
+    `overlays/GalleryOverlay.qml` con visor, flechas, contador y riel de
+    miniaturas. `core/GameData` y `core/Paths` arman la lista uniendo las dos
+    fuentes de [`ADR-0030`](../decisions/0030-contrato-gallery-data-json.md):
+    los assets nativos del juego (`video`, `screenshot`, `boxFront`, `poster`,
+    `marquee`) y las piezas curadas de `media/<set>/_gallery/` declaradas en
+    `gallery`.
+
+    **El contrato ya existía y nadie lo había documentado.**
+    `final-fight.coindoor.zip` lo emite, `attract import` ya lo instalaba
+    (copia el subárbol `media/` entero), `doctor` no lo validaba y ADR-0027 no
+    lo nombraba. La feature lo consume y lo valida; el productor no se toca.
+    `chk_data_contrato` ahora valida forma, extensión conocida, existencia en
+    disco (error) y `file: ""` como aviso — una pieza declarada sin archivo es
+    un estado válido, no un archivo roto.
+
+    **`crtScanlines` se apaga también con la galería**, no solo con el visor de
+    documentos: el efecto CRT sobre un video a pantalla completa es ruido, y la
+    condición estaba escrita para un solo overlay.
+
+    **Dos fixtures nuevos de galería** en `fixtures/arcade/media/dino/_gallery/`
+    (~1 KB cada uno) más una pieza con `file: ""`, tercera excepción a la regla
+    de los 0 bytes y por el mismo motivo que las anteriores: con todo vacío
+    `Image` siempre da `Error` y no se distingue "cargó" de "no cargó".
+    **206 tests en total.**
+
+    Falta la verificación visual contra Pegasus real
+    (`spec/features/018-theme-galeria/tasks.md` §Verificación) y pasar
+    ADR-0030 de `proposed` a `accepted`.
+
 ## Siguiente 🔜
 
 0. **El theme de producción — `005` / `006` / `007`.** Es el trabajo grande
@@ -343,9 +374,9 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
      del plan va tal como está. Faltan `Paths`, `GameData`, los átomos
      restantes y las dos pantallas.
    - **`006-theme-documentos`** — implementada y verificada (ver punto 22).
-   - **`007-theme-trucos`** — **especificada** (spec + plan + tasks). Tokenizer
-     de inputs y overlay de trucos & combos. Es la última: con ella, todo lo
-     que el handoff describe queda implementado.
+   - **`007-theme-trucos`** — **implementada** (`c103b9f`). Tokenizer de inputs
+     (`core/InputTokens.js`) y overlay de trucos & combos. Con ella, todo lo
+     que el handoff de detalle describe quedó implementado.
 
      Tiene una particularidad que ordena su plan: **el tokenizer es la única
      pieza del theme que se puede verificar sin abrir Pegasus**, porque es una
@@ -361,9 +392,9 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
    abierto al lado, que se hace contra `library/preview/` porque tiene
    carátulas reales.
 
-- **`008-theme-ayuda`** — código escrito contra un diseño de referencia de
-  alta fidelidad (`design_handoff_help/`), sin verificar contra Pegasus real
-  todavía. Overlay "Cómo cargar un juego nuevo" de dos columnas (nav de 8
+- **`008-theme-ayuda`** — **implementada** (`1299e67`), contra un diseño de
+  referencia de alta fidelidad (`design_handoff_help/`). Sin verificar contra
+  Pegasus real todavía. Overlay "Cómo cargar un juego nuevo" de dos columnas (nav de 8
   pasos + contenido), disparado con un ícono `?` junto al reloj/año en
   Librería y Detalle — mismo componente en las dos pantallas, mismo
   mecanismo `Loader` que `007-theme-trucos`. Ver
@@ -371,7 +402,9 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
   con el gabinete o el Mac con Pegasus corriendo.
 
 - **`009-theme-estantes` / `010-theme-buscar` / `011-theme-ediciones`** —
-  especificada la primera, las otras dos solo nombradas. Salen de un handoff
+  la primera **implementada** (`1299e67`: `core/Catalog.qml`,
+  `core/Teclas.qml`, `screens/Shelf.qml`, `screens/GameCard.qml`,
+  `overlays/SortPanel.qml`), las otras dos solo nombradas, sin carpeta. Salen de un handoff
   **nuevo** (`design_handoff_home/`) para la pantalla principal: librería con
   estantes tipo Netflix sobre 1200+ juegos, orden/filtro por
   letra/año/nota/jugados, búsqueda con teclado en pantalla, y selector de
@@ -390,10 +423,11 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
   orden pasa a un panel navegable en `X`, porque en el prototipo es
   clickeable puro y en un gabinete sin mouse no existe.
 
-  **Bloqueada por tres experimentos** (`teclas-xy`, `estantes-perf`,
-  `memoria`, en `themes/experimentos/`), escritos y sin correr. El primero es
-  el portón: si `api.keys.isDetails`/`isFilters` no disparan en este binario,
-  no hay acceso al orden y la feature cambia de forma.
+  **El portón de los tres experimentos** (`teclas-xy`, `estantes-perf`,
+  `memoria`, en `themes/experimentos/`) ya no bloquea: `core/Teclas.qml`
+  resuelve `esA/esB/esX/esY` y el panel de orden está escrito. Lo que queda
+  de los otros dos —performance con 1200+ juegos y memoria— es medición contra
+  la librería real, no diseño pendiente.
 
 - **`017-hero-video-preview`** — **escrita e instalada; falta mirarla en
   Pegasus.** Preview de gameplay ambiental en el hero de Home: aparece a los
@@ -415,7 +449,8 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
   **ocho**, uno por cada paquete COINDOOR instalado. Lo que falta es sentarse a
   mirarlo.
 
-- **`018-theme-galeria`** — **especificada** (spec + plan + tasks), sin código.
+- **`018-theme-galeria`** — **implementada** (ver punto 25 de "Hecho"); lo que
+  queda es mirarla en Pegasus.
   Galería de imágenes y videos por juego en el detalle: una tarjeta más en
   CONTENIDO EXTRA que abre un modal a pantalla completa con visor, flechas,
   contador y riel de miniaturas.
@@ -425,9 +460,9 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
   `marquee`) más las piezas curadas que COINDOOR deja en `media/<set>/_gallery/`
   y declara en `gallery`. Ese contrato **ya existía y nadie lo había
   documentado**: `final-fight.coindoor.zip` lo emite, `attract import` ya lo
-  instala (`instalar.py:155` copia el subárbol `media/` entero), `doctor` no lo
-  valida y ADR-0027 no lo nombraba. La feature lo consume y lo valida; el
-  productor no se toca.
+  instala (`instalar.py:155` copia el subárbol `media/` entero), ADR-0027 no lo
+  nombraba y `doctor` no lo validaba — ahora sí. La feature lo consume y lo
+  valida; el productor no se toca.
 
   Sale de un prototipo HTML que **ya se corrió** (`docs/gallery-spec.md`), así
   que llega con cuatro modos de falla medidos, no supuestos: `source` evaluado

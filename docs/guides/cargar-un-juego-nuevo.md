@@ -161,7 +161,7 @@ revistas" en vez de fallar (`attract doctor`, `chk_mags_ref`).
 
 `library/<sistema>/media/<juego>/data.json` — todo lo que le pertenece solo
 a ese juego: color de acento, trucos, reseña, referencia a revista(s),
-manual digitalizado. **Todos los campos son opcionales**; un juego sin este
+manual digitalizado, piezas de galería. **Todos los campos son opcionales**; un juego sin este
 archivo es válido, solo menos enriquecido (contrato completo:
 [`ADR-0015`](../../spec/decisions/0015-contrato-data-json.md)).
 
@@ -172,7 +172,13 @@ archivo es válido, solo menos enriquecido (contrato completo:
 
   "mags": [ { "ref": "micromania-16" } ],
 
-  "manual": { "pages": ["p001.jpg", "p002.jpg"] },
+  "manual": [ { "label": "Manual", "pages": ["p001.jpg", "p002.jpg"] } ],
+
+  "gallery": [
+    { "file": "g001.png", "label": "Panel de control" },
+    { "file": "clip.mp4", "label": "Demo del jefe final" },
+    { "file": "",         "label": "Gabinete" }
+  ],
 
   "cheats": {
     "combos":   [ { "name": "Patada giratoria", "input": "↓ ↘ → + K" } ],
@@ -198,8 +204,26 @@ Notas que importan al cargar:
   `review` ausente o `null` (no un objeto vacío) es "no hay reseña".
 - Si hay manual digitalizado, las páginas van en
   `library/<sistema>/media/<juego>/_manual/p001.jpg…` (mismo patrón de
-  ceros a la izquierda que las revistas) y se listan en
-  `manual.pages[]` — ver [`ADR-0014`](../../spec/decisions/0014-manual-digitalizado.md).
+  ceros a la izquierda que las revistas) y se listan en `pages[]` —
+  ver [`ADR-0014`](../../spec/decisions/0014-manual-digitalizado.md).
+  `manual` es una **lista**, aunque haya uno solo: un juego puede declarar
+  varios (manual, folleto, mapa) y el visor los muestra en pestañas
+  ([`ADR-0023`](../../spec/decisions/0023-manual-multiple-con-pestanas.md)).
+  El `label` sólo es obligatorio si hay más de uno — con la pestaña única no
+  hay nada que distinguir. Cada documento lleva `pages[]`, `file` (el PDF,
+  que abre la app del sistema) o los dos.
+  Si sólo tenés un PDF sin rasterizar, `attract rasterize` lo convierte a
+  páginas ([`ADR-0022`](../../spec/decisions/0022-rasterizar-pdf-a-paginas.md)).
+- `gallery` son las piezas **curadas** que se ven a pantalla completa desde
+  la tarjeta GALERÍA del detalle. Los archivos van en
+  `library/<sistema>/media/<juego>/_gallery/`, y en `data.json` va sólo el
+  nombre suelto, nunca una ruta. El tipo sale de la extensión (`.png`
+  `.jpg` `.jpeg` `.webp` son imagen; `.mp4` `.webm` `.mov` son video) y
+  `label` es obligatorio. **No hace falta declarar los assets nativos**
+  (`video`, `screenshot`, `boxFront`, `poster`, `marquee`): la galería los
+  suma sola. Un `file: ""` es válido a propósito — es "esta pieza existe en
+  el guion, el archivo todavía no", y sale como aviso de `doctor`, no como
+  error ([`ADR-0030`](../../spec/decisions/0030-contrato-gallery-data-json.md)).
 - `accent`/`accent2` son hex `#rrggbb` de 6 dígitos — `attract doctor`
   rechaza formas cortas tipo `#fb0`.
 

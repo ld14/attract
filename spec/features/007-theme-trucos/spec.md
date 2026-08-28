@@ -1,7 +1,7 @@
 # 007 · Trucos & combos — Spec
 
-**Estado:** especificada, sin implementar. Nada la bloquea: los cuatro
-experimentos corrieron durante la 005 y los datos ya están en los fixtures.
+**Estado:** implementada (`c103b9f`). Los checkboxes de `tasks.md` quedaron
+sin tildar; el código manda.
 
 ## Qué hace
 

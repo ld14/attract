@@ -1,6 +1,7 @@
 # 017 · Preview de gameplay en el hero de Home
 
-**Estado:** en curso
+**Estado:** implementada (`a966831`). Falta la verificación visual contra
+Pegasus real — ver `tasks.md` §Verificación.
 
 _El diseño de referencia está en [`design/hero-video-preview.md`](design/hero-video-preview.md)._
 

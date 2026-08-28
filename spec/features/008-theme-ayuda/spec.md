@@ -1,6 +1,7 @@
 # 008 · Overlay de ayuda — Spec
 
-**Estado:** especificada, sin implementar.
+**Estado:** implementada (`1299e67`). Sin verificar contra Pegasus real
+todavía — ver `tasks.md` §4.
 
 ## Qué hace
 
