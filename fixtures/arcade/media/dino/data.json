@@ -60,5 +60,19 @@
       "label": "Manual de servicio",
       "file": "service.pdf"
     }
+  ],
+  "gallery": [
+    {
+      "file": "g001.png",
+      "label": "Panel de control"
+    },
+    {
+      "file": "g002.png",
+      "label": "Placa PCB"
+    },
+    {
+      "file": "",
+      "label": "Gabinete"
+    }
   ]
 }

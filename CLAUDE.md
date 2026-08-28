@@ -59,7 +59,7 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
 | `docs/plataforma-pegasus.md` | **Hechos verificados de Pegasus/Qt 5.15**, cada uno con su evidencia. Leelo antes de tocar el theme: la documentación oficial no siempre coincide con el binario |
 | `docs/decisiones/` | Handoffs de sesión: decidido pero sin ADR todavía |
 | `spec/constitution/` | Reglas estables: misión, stack, roadmap |
-| `spec/decisions/` | ADRs. 0001-0025, 21 vigentes (0008 superseded por 0010, 0016 por 0019, 0015 por 0020, 0010 por 0024) |
+| `spec/decisions/` | ADRs. 0001-0030, 22 vigentes (0008 superseded por 0010, 0016 por 0019, 0015 por 0020, 0010 por 0024) |
 | `spec/features/NNN-*/` | spec + plan + tasks por feature. `001`-`006` implementadas; `007-theme-trucos` es la que falta |
 | `themes/attract/` (feature 005-006) | Librería, detalle, video, carrusel de revistas y visor de documentos. Verificado contra Pegasus real |
 
@@ -110,6 +110,15 @@ No hay build ni lint configurados. `PYTHONPATH=src` lo exporta el Makefile.
     Ese fue el punto ciego que dejó pasar el bug de ADR-0024 hasta que llegó
     una revista real que arranca en `p002`. Un fixture nuevo que arranque en
     `p002` paga solo.
+  - Las **piezas de galería** de `fixtures/arcade/media/dino/_gallery/`
+    (dos PNG generados ~1 KB cada uno) y la pieza con `file: ""` en su
+    `data.json`. Con todo en 0 bytes `Image` siempre da `Error` y no hay
+    forma de distinguir "cargó la imagen" de "no cargó nada". Estas dos
+    hacen observable el placeholder declarado (pieza sin archivo) y el
+    camino normal de render (pieza con archivo que carga). La pieza `vid`
+    se verifica contra `library/` (Final Fight), no contra el fixture:
+    sumar un mp4 sería una tercera excepción a la regla de los 0 bytes
+    para verificar algo que la librería real ya permite verificar.
 - **Las carátulas de verdad van en `library/`, nunca en `fixtures/`.** Son
   arte con copyright y `fixtures/` se versiona. `library/preview/` es una
   colección desechable para mirar el theme con arte real y compararlo contra

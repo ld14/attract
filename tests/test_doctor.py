@@ -617,3 +617,103 @@ def test_guia_es_un_type_conocido(tmp_path):
     datos["articles"][0]["type"] = "guía"
     _escribir_magazine(tmp_path, datos)
     assert revisar(tmp_path).ok
+
+
+# --- gallery (ADR-0030, extiende ADR-0015) --------------------------------
+#
+# Cada pieza tiene la forma { file, label } que COINDOOR ya emite.
+# El tipo sale de la extension, no de un campo.
+
+def _escribir_gallery(tmp_path, gallery, set_id="x"):
+    """data.json con `gallery` y los archivos que existan en _gallery/."""
+    d = tmp_path / "media" / set_id
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "data.json").write_text(json.dumps({"gallery": gallery}), encoding="utf-8")
+    return d
+
+
+def test_gallery_vacio_es_valido(tmp_path):
+    _escribir_gallery(tmp_path, [])
+    rep = revisar(tmp_path)
+    assert rep.ok
+
+
+def test_gallery_sin_campo_es_valido(tmp_path):
+    d = tmp_path / "media" / "x"
+    d.mkdir(parents=True)
+    (d / "data.json").write_text("{}", encoding="utf-8")
+    assert revisar(tmp_path).ok
+
+
+def test_gallery_como_string_es_error(tmp_path):
+    _escribir_gallery(tmp_path, "no es una lista")
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_gallery_item_no_dict_es_error(tmp_path):
+    _escribir_gallery(tmp_path, ["no es un objeto"])
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_gallery_file_no_string_es_error(tmp_path):
+    _escribir_gallery(tmp_path, [{"file": 123, "label": "Foto"}])
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_gallery_label_ausente_es_error(tmp_path):
+    _escribir_gallery(tmp_path, [{"file": "g001.png"}])
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_gallery_label_vacio_es_error(tmp_path):
+    _escribir_gallery(tmp_path, [{"file": "g001.png", "label": "   "}])
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_gallery_extension_desconocida_es_error(tmp_path):
+    _escribir_gallery(tmp_path, [{"file": "g001.bmp", "label": "Foto"}])
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_gallery_archivo_que_no_existe_es_error(tmp_path):
+    _escribir_gallery(tmp_path, [{"file": "g001.png", "label": "Foto"}])
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_gallery_file_vacio_es_aviso_no_error(tmp_path):
+    # file: "" es un estado declarado valido (pendiente de conseguir).
+    rep = revisar(_escribir_gallery(tmp_path, [{"file": "", "label": "Pendiente"}]))
+    assert rep.ok
+    assert "data-contrato" in {h.chequeo for h in rep.avisos}
+
+
+def test_gallery_piezas_validas_no_reportan(tmp_path):
+    d = _escribir_gallery(tmp_path, [
+        {"file": "g001.png", "label": "Panel de control"},
+        {"file": "g002.jpg", "label": "Placa PCB"},
+        {"file": "g003.mp4", "label": "Gameplay"},
+    ])
+    (d / "_gallery").mkdir()
+    (d / "_gallery" / "g001.png").write_bytes(b"")
+    (d / "_gallery" / "g002.jpg").write_bytes(b"")
+    (d / "_gallery" / "g003.mp4").write_bytes(b"")
+    assert revisar(tmp_path).ok
+
+
+def test_gallery_extension_en_mayusculas_es_valida(tmp_path):
+    d = _escribir_gallery(tmp_path, [{"file": "G001.PNG", "label": "Foto"}])
+    (d / "_gallery").mkdir()
+    (d / "_gallery" / "G001.PNG").write_bytes(b"")
+    assert revisar(tmp_path).ok
+
+
+def test_gallery_mezcla_archivo_y_vacio_es_valido(tmp_path):
+    d = _escribir_gallery(tmp_path, [
+        {"file": "g001.png", "label": "Foto real"},
+        {"file": "", "label": "Pendiente"},
+    ])
+    (d / "_gallery").mkdir()
+    (d / "_gallery" / "g001.png").write_bytes(b"")
+    rep = revisar(tmp_path)
+    assert rep.ok
+    assert "data-contrato" in {h.chequeo for h in rep.avisos}

@@ -1,5 +1,5 @@
-// Las tarjetas de CONTENIDO EXTRA del detalle: Hacks (trucos y combos) y
-// Manual digitalizado.
+// Las tarjetas de CONTENIDO EXTRA del detalle: Galería, Hacks (trucos y
+// combos) y Manual digitalizado.
 //
 // LAS REVISTAS NO ESTAN ACA A PROPOSITO. El handoff es explicito: viven solo
 // en el carrusel de la columna izquierda, no se duplican como tarjeta. Ese
@@ -7,11 +7,15 @@
 //
 // DIVERGENCIA CONSCIENTE RESPECTO DEL HANDOFF: el handoff omite la tarjeta
 // cuando el juego no tiene ese contenido, y muestra una fila punteada solo
-// cuando no tiene NINGUNO. CONVENCION #2.3 dice lo contrario y gana: las dos
+// cuando no tiene NINGUNO. CONVENCION #2.3 dice lo contrario y gana: las tres
 // tarjetas estan siempre, y la que no tiene contenido dice "No Disponible".
 // El motivo es que la estructura de la pantalla no cambie de juego en juego —
 // que el ojo encuentre las cosas en el mismo lugar siempre. Consecuencia: la
 // fila punteada del handoff no existe, porque su caso nunca se da.
+//
+// Las tres tarjetas miden 200px (no 250): tres de 250 con spacing 14 miden
+// 764 y pisan la columna derecha segun el largo de la resena (plan §Decisiones).
+// Con 200px la fila mide 628 y entra sin tocar nada.
 
 import QtQuick 2.0
 import ".."
@@ -40,6 +44,13 @@ Column {
         Repeater {
             model: [
                 {
+                    tipo: "galeria",
+                    glifo: "▣",
+                    etiqueta: "Galería",
+                    hay: root.datos ? root.datos.hayGaleria : false,
+                    sub: root.datos ? root._subGaleria() : ""
+                },
+                {
                     tipo: "cheats",
                     glifo: "☠",
                     etiqueta: "Hacks",
@@ -49,7 +60,7 @@ Column {
                 {
                     tipo: "manual",
                     glifo: "❐",
-                    etiqueta: "Manual digitalizado",
+                    etiqueta: "Manual",
                     hay: root.datos ? root.datos.hayManual : false,
                     sub: root.datos ? root._subManual() : ""
                 }
@@ -57,7 +68,7 @@ Column {
 
             Item {
                 id: tarjeta
-                width: 250
+                width: 200
                 height: 66
 
                 readonly property bool enfocada: root.foco === index
@@ -138,14 +149,12 @@ Column {
         }
     }
 
-    // Cuanto entra en el subtitulo sin romper la tarjeta (250px fijos, texto
+    // Cuanto entra en el subtitulo sin romper la tarjeta (200px fijos, texto
     // en Theme.fontMono a Theme.sizeMonoSm=10 -> ~6px/caracter, y el icono +
-    // los margenes ya se comen buena parte del ancho). NO es "el detalle
-    // completo cabe si tiene pocos grupos": eso fue el bug real. "4 combos ·
-    // 2 códigos secretos" son solo DOS grupos y ya desborda, porque lo que
-    // importa es cuanto TEXTO entra, no cuantos items hay. Se mide el string
-    // armado, no se cuenta.
-    readonly property int _anchoSubtitulo: 22
+    // los margenes ya se comen buena parte del ancho). Con 200px caben ~13
+    // caracteres, que es mucho menos que antes (22). El desglose
+    // "1 video · 12 imágenes" no entra nunca; cae a "N piezas".
+    readonly property int _anchoSubtitulo: 13
 
     // Tres niveles, cada uno mas corto que el anterior, y el ultimo SIEMPRE
     // entra sin importar los datos: es la garantia de que la tarjeta no
@@ -154,6 +163,20 @@ Column {
         if (detalle.length <= _anchoSubtitulo) return detalle;
         if (resumen && resumen.length <= _anchoSubtitulo) return resumen;
         return "Ver detalle";
+    }
+
+    // Subtitulo de la galería: desglose por tipo ("1 video · 5 imágenes"),
+    // o resumen ("N piezas"). Un conteo en cero no imprime su parte.
+    function _subGaleria() {
+        if (!datos || !datos.hayGaleria) return "";
+        var partes = [];
+        var v = datos.galeriaVideos;
+        var im = datos.galeriaImagenes;
+        if (v > 0) partes.push(v + " " + (v === 1 ? "video" : "videos"));
+        if (im > 0) partes.push(im + " " + (im === 1 ? "imagen" : "imágenes"));
+        var detalle = partes.join("  ·  ");
+        var resumen = datos.galeria.length + " " + (datos.galeria.length === 1 ? "pieza" : "piezas");
+        return _acortar(detalle, resumen);
     }
 
     // Con MAS de un documento (ADR-0023) el desglose por pagina/PDF pasa a
@@ -175,6 +198,10 @@ Column {
     // nombre propio no aparecia en el subtitulo aunque tuviera entradas. El
     // detalle completo esta a un A de distancia, adentro del overlay - el
     // subtitulo es un adelanto, no tiene que decirlo todo.
+    //
+    // Con 200px de ancho el presupuesto es ~13 caracteres, asi que el
+    // resumen intermedio "6 entradas · 2 grupos" (21 chars) tampoco entra.
+    // Se agrega un tercer nivel: "N entradas" (mas corto).
     function _subCheats() {
         if (!datos || !datos.hayCheats) return "";
         var g = datos.gruposCheats;
@@ -183,10 +210,13 @@ Column {
         for (var i = 0; i < g.length; i++)
             p.push(g[i].items.length + " " + g[i].label.replace(/^[▶★]\s*/, "").toLowerCase());
         var detalle = p.join("  ·  ");
-        // Separador angosto a proposito: es el segundo nivel, tiene que
-        // aprovechar cada caracter para no caer directo al CTA generico.
-        var resumen = datos.cheatsCount + " entradas · " + g.length + " grupos";
+        var resumenCorto = datos.cheatsCount + " entradas";
+        var resumenLargo = datos.cheatsCount + " entradas · " + g.length + " grupos";
 
-        return _acortar(detalle, resumen);
+        // Tres niveles: detalle, resumen largo, resumen corto, "Ver detalle".
+        if (detalle.length <= _anchoSubtitulo) return detalle;
+        if (resumenLargo.length <= _anchoSubtitulo) return resumenLargo;
+        if (resumenCorto.length <= _anchoSubtitulo) return resumenCorto;
+        return "Ver detalle";
     }
 }

@@ -110,6 +110,12 @@ QtObject {
         return base === "" ? "" : base + "_manual/";
     }
 
+    // media/<set>/_gallery/ (ADR-0030). Misma forma que manualDe().
+    function galeriaDe(game) {
+        var base = baseDe(game);
+        return base === "" ? "" : base + "_gallery/";
+    }
+
     // El PDF del manual, listo para abrirAfuera() (ADR-0021). "" si no hay
     // base o no hay nombre.
     //

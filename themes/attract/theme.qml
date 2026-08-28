@@ -71,8 +71,9 @@ FocusScope {
     // Se apaga mientras el visor de documentos esta activo (revista O manual,
     // el mismo visor para los dos): la textura estorba la lectura de una
     // pagina escaneada, que ya trae su propio grano de escaneo — dos texturas
-    // encima no suman, restan legibilidad.
-    readonly property bool crtScanlines: !visor.active
+    // encima no suman, restan legibilidad. Tambien mientras la galeria esta
+    // abierta: las piezas multimedia se ven nubladas por las scanlines.
+    readonly property bool crtScanlines: !visor.active && !galeria.active
 
     Rectangle { anchors.fill: parent; color: Theme.screen }
 
@@ -165,8 +166,8 @@ FocusScope {
             anchors.fill: parent
             paths: paths
             game: root.juegoDetalle
-            visible: root.pantalla === "detail" && !lanzando.active && !ayuda.active
-            focus: root.pantalla === "detail" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active && !aviso.active
+            visible: root.pantalla === "detail" && !lanzando.active && !ayuda.active && !galeria.active
+            focus: root.pantalla === "detail" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active && !aviso.active && !galeria.active
             enabled: visible
 
             onVolver: root.pantalla = "library"
@@ -175,6 +176,7 @@ FocusScope {
             onAbrirExtra: {
                 if (tipo === "manual") root.abrirManual();
                 else if (tipo === "cheats") trucos.active = true;
+                else if (tipo === "galeria") galeria.active = true;
             }
             onAbrirAyuda: ayuda.active = true
         }
@@ -225,6 +227,22 @@ FocusScope {
                 fondo: detalle
                 focus: true
                 onCerrar: trucos.active = false
+            }
+        }
+
+        Loader {
+            id: galeria
+            anchors.fill: parent
+            active: false
+            focus: active
+
+            sourceComponent: GalleryOverlay {
+                piezas: detalle.datosDelJuego ? detalle.datosDelJuego.galeria : []
+                titulo: root.juegoDetalle ? root.juegoDetalle.title : ""
+                accent: root.accent
+                fondo: detalle
+                focus: true
+                onCerrar: galeria.active = false
             }
         }
 

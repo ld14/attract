@@ -51,7 +51,7 @@ FocusScope {
 
         Boton {
             anchors.left: parent.left
-            texto: "GALERIA"
+            texto: "BIBLIOTECA"
             glifo: "◄"
             variant: "glass"
             accent: root.accent
@@ -363,13 +363,13 @@ FocusScope {
     // caso especial: el carrusel pasa de pagina con arriba/abajo porque es lo
     // que hace "actuar dentro" de un carrusel.
     //
-    // Orden: [JUGAR] -> [video] -> [carrusel] -> [Hacks] -> [Manual]. JUGAR
+    // Orden: [JUGAR] -> [video] -> [carrusel] -> [Galería] -> [Hacks] -> [Manual]. JUGAR
     // primero aunque el video este arriba en pantalla: la accion principal se
     // enfoca al entrar, no un control secundario. El orden no es estrictamente
     // espacial en el prototipo tampoco (el carrusel esta a la izquierda y los
     // extras a la derecha).
     property int foco: 0
-    readonly property int _targets: 5
+    readonly property int _targets: 6
 
     signal abrirExtra(string tipo)
     signal abrirRevista(int i)
@@ -397,8 +397,9 @@ FocusScope {
             event.accepted = true;
         } else if (api.keys.isAccept(event)) {
             if (root.foco === 0) root.lanzar(root.game);
-            else if (root.foco === 3 && datos.hayCheats) root.abrirExtra("cheats");
-            else if (root.foco === 4 && datos.hayManual) root.abrirExtra("manual");
+            else if (root.foco === 3 && datos.hayGaleria) root.abrirExtra("galeria");
+            else if (root.foco === 4 && datos.hayCheats) root.abrirExtra("cheats");
+            else if (root.foco === 5 && datos.hayManual) root.abrirExtra("manual");
             event.accepted = true;
         }
     }

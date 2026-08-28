@@ -34,6 +34,12 @@ BASURA_MACOS = re.compile(r"^(\._|\.DS_Store$|\.Spotlight-V100$|\.Trashes$)")
 
 EXT_TEXTO = {".txt", ".qml", ".cfg", ".md", ".json", ".yml", ".yaml"}
 
+# Extensiones conocidas de galeria (ADR-0030). El theme no puede dibujar
+# cualquier cosa: una extension fuera de estas se reporta como error.
+GALLERY_EXT_IMG = {".png", ".jpg", ".jpeg", ".webp"}
+GALLERY_EXT_VID = {".mp4", ".webm", ".mov"}
+GALLERY_EXT_TODAS = GALLERY_EXT_IMG | GALLERY_EXT_VID
+
 
 @dataclass
 class Hallazgo:
@@ -460,6 +466,73 @@ def chk_data_contrato(path: Path, rep: Reporte) -> None:
                             f"review.cats['{clave}']",
                             f"tiene que ser un number entre 0 y 100, llego {val!r}",
                         )
+
+    # --- gallery (ADR-0030, extiende ADR-0015) ---
+    #
+    # Piezas curadas en media/<set>/_gallery/, declaradas en data.json.
+    # El tipo sale de la extension, no de un campo: el theme lo infiere.
+    # file: "" es aviso (pieza declarada, pendiente), no error.
+    gallery = datos.get("gallery")
+    if gallery is not None:
+        if not isinstance(gallery, list):
+            falla("gallery", "tiene que ser una lista")
+        else:
+            # avisa es una funcion local que usa rep.aviso, no falla
+            # (que es rep.error). El precedente es chk_mags_ref.
+            def avisa(campo: str, motivo: str) -> None:
+                rep.aviso("data-contrato", path, f"'{campo}': {motivo}")
+
+            for i, piece in enumerate(gallery):
+                _chk_gallery_piece(piece, i, path, falla, avisa)
+
+
+def _chk_gallery_piece(piece, i: int, path: Path, falla, avisa) -> None:
+    """Un elemento de la lista `gallery` (ADR-0030). { file, label }."""
+    prefijo = f"gallery[{i}]"
+
+    if not isinstance(piece, dict):
+        falla(prefijo, "tiene que ser un objeto")
+        return
+
+    # --- file ---
+    archivo = piece.get("file")
+    if not isinstance(archivo, str):
+        falla(f"{prefijo}.file", "obligatorio, string")
+        return
+
+    # file: "" es un estado declarado valido (pendiente de conseguir),
+    # no un archivo roto. Se evalua ANTES que la regla de extension
+    # para que no caiga en "extension desconocida".
+    if not archivo.strip():
+        avisa(
+            f"{prefijo}.file",
+            "pieza declarada sin archivo (pendiente de conseguir)",
+        )
+        return
+
+    # Sin separadores: es un nombre suelto dentro de _gallery/.
+    if "/" in archivo or "\\" in archivo:
+        falla(f"{prefijo}.file", f"tiene que ser un nombre suelto, sin rutas: {archivo!r}")
+        return
+
+    # Extension conocida.
+    ext = Path(archivo).suffix.lower()
+    if ext not in GALLERY_EXT_TODAS:
+        falla(
+            f"{prefijo}.file",
+            f"extension {ext!r} no soportada "
+            f"(validas: {', '.join(sorted(GALLERY_EXT_TODAS))})",
+        )
+        return
+
+    # Existencia en disco.
+    if not (path.parent / "_gallery" / archivo).is_file():
+        falla(f"{prefijo}.file", f"'{archivo}' no existe en {path.parent / '_gallery'}")
+
+    # --- label ---
+    label = piece.get("label")
+    if not isinstance(label, str) or not label.strip():
+        falla(f"{prefijo}.label", "obligatorio, string no vacio")
 
 
 def _numero_0_100(v) -> bool:

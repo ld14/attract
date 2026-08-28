@@ -163,6 +163,85 @@ QtObject {
 
     readonly property int manualPaginas: hayManualPaginas ? manualActivo.pages.length : 0
 
+    // --- galeria (ADR-0030) -----------------------------------------------
+    //
+    // La composicion de piezas: assets nativos + piezas curadas, en el orden
+    // fijo del ADR. Cada pieza viaja como { tipo, src, label }.
+    // El `file` del contrato solo existe adentro de GameData; de ahi para
+    // afuera la pieza viaja como `src`.
+    //
+    // Extensiones conocidas: img (.png/.jpg/.jpeg/.webp), vid (.mp4/.webm/.mov).
+    // Una extension desconocida se descarta silenciosamente (doctor ya la atrapo).
+    readonly property var galeria: {
+        if (!game || !paths) return [];
+        var out = [];
+        var base = paths.galeriaDe(game);
+
+        // 1. video (asset nativo)
+        _agregarNativo(out, "video", "Gameplay");
+        // 2. screenshot (asset nativo)
+        _agregarNativo(out, "screenshot", "Captura");
+        // 3. gallery[] (curado, orden del array)
+        if (datos && Array.isArray(datos.gallery)) {
+            for (var i = 0; i < datos.gallery.length; i++) {
+                var p = datos.gallery[i];
+                if (!p || typeof p !== "object") continue;
+                var archivo = typeof p.file === "string" ? p.file : "";
+                var label = typeof p.label === "string" ? p.label : "";
+                var src = "";
+                if (archivo.trim() !== "") {
+                    var ext = archivo.split(".").pop().toLowerCase();
+                    var esImg = ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "webp";
+                    var esVid = ext === "mp4" || ext === "webm" || ext === "mov";
+                    if (!esImg && !esVid) continue;
+                    src = base + archivo;
+                }
+                var tipo = _tipoDeExt(archivo);
+                out.push({ tipo: tipo, src: src, label: label || "Galería" });
+            }
+        }
+        // 4. boxFront (asset nativo)
+        _agregarNativo(out, "boxFront", "Carátula");
+        // 5. poster (asset nativo)
+        _agregarNativo(out, "poster", "Póster");
+        // 6. marquee (asset nativo)
+        _agregarNativo(out, "marquee", "Marquesina");
+        return out;
+    }
+
+    function _agregarNativo(lista, clave, label) {
+        if (!game || !game.assets) return;
+        var v = game.assets[clave];
+        if (v) {
+            var tipo = _tipoDeExt(v);
+            lista.push({ tipo: tipo, src: v, label: label });
+        }
+    }
+
+    function _tipoDeExt(url) {
+        if (!url) return "img";
+        var lower = String(url).toLowerCase();
+        if (lower.indexOf(".mp4") >= 0 || lower.indexOf(".webm") >= 0 || lower.indexOf(".mov") >= 0)
+            return "vid";
+        return "img";
+    }
+
+    readonly property bool hayGaleria: galeria.length > 0
+
+    readonly property int galeriaVideos: {
+        var n = 0;
+        for (var i = 0; i < galeria.length; i++)
+            if (galeria[i].tipo === "vid") n++;
+        return n;
+    }
+
+    readonly property int galeriaImagenes: {
+        var n = 0;
+        for (var i = 0; i < galeria.length; i++)
+            if (galeria[i].tipo === "img") n++;
+        return n;
+    }
+
     // Una categoria de la resena, o null si esa categoria puntual no tiene
     // dato. Los DOS niveles de "sin dato" de CONVENCION #2.3: sin review el
     // bloque entero dice "Sin Informacion"; con review parcial, la categoria
