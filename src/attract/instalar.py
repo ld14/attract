@@ -251,7 +251,10 @@ def construir_bloque_declarado(
 # Aplicacion a la libreria real
 # ---------------------------------------------------------------------------
 
-_GAME_DIRS = Path.home() / "Library" / "Preferences" / "pegasus-frontend" / "game_dirs.txt"
+_GAME_DIRS = (
+    Path.home() / "Library" / "Preferences" / "pegasus-frontend" / "game_dirs.txt"
+    if sys.platform == "darwin" else None
+)
 
 _CAMPOS_SIMPLES = ("developer", "publisher", "genre", "players", "release")
 
@@ -330,6 +333,10 @@ def _crear_dir(path: Path, undo: _Deshacer) -> None:
 
 def _registrar_en_game_dirs(ruta: Path, undo: _Deshacer) -> None:
     """Agrega la ruta a game_dirs.txt si no esta."""
+    # En Windows el configurador resuelve normal/portable y cierra Pegasus
+    # antes de escribir. Nunca crear una falsa config de macOS en Windows.
+    if _GAME_DIRS is None:
+        return
     _GAME_DIRS.parent.mkdir(parents=True, exist_ok=True)
     lineas = _GAME_DIRS.read_text(encoding="utf-8").splitlines() if _GAME_DIRS.exists() else []
     if str(ruta) not in lineas:
@@ -460,6 +467,12 @@ def _aplicar(paquete: Paquete, raiz: Path, confirmar, undo: _Deshacer) -> str:
 
     # 5. bloque game:
     texto = metadata_path.read_text(encoding="utf-8")
+    cabecera = re.split(r"^game:", texto, maxsplit=1, flags=re.MULTILINE)[0]
+    if not any(re.match(r"^collection:\s*\S", linea) for linea in cabecera.splitlines()):
+        # Metadata preexistente vacia o sin coleccion: Pegasus descarta todos
+        # sus juegos. Reparar desde la fuente, conservando el resto del archivo.
+        cabecera_limpia = re.sub(r"^collection:[ \t]*$\n?", "", cabecera, flags=re.MULTILINE)
+        texto = f"collection: {game['system'].title()}\n" + cabecera_limpia + texto[len(cabecera):]
     bloques = parsear_bloques(texto)
     idx = next(
         (i for i, b in enumerate(bloques) if b.es_game and identificar_set(b) == set_id),

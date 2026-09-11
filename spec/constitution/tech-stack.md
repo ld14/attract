@@ -30,6 +30,9 @@
 | `tests/test_instalar.py` | 19 tests: caso feliz (set nuevo/existente), paquete mínimo, path traversal, campos faltantes, data.json inválido, reimportación idempotente, preservación de mags, sistema inexistente, rollback transaccional |
 | `tests/test_rasterize.py` | 41 tests: contrato de páginas, PDF ausente/corrupto, aislamiento sin `pymupdf` instalado |
 | `tests/test_magazines.py` | 30 tests: umbral de coincidencia difusa, dry-run vs. `--apply`, merge idempotente sobre `mags[]` |
+| `tests/test_configure_pegasus_windows.py` | 5 tests de integración PowerShell: fallback/idempotencia, portable, raíz externa y fallos sin escrituras; se saltean fuera de Windows |
+| `tests/test_configure_pegasus_macos.py` | 4 tests de integración Bash: fallback/idempotencia, portable y fallos/dry-run sin escrituras; omiten control de procesos y `open` fuera del Mac real |
+| `tests/test_install_windows.py`, `tests/test_launchers_wsl.py` | Instalación y reparación por PowerShell; argumentos con espacios y propagación de errores en lanzadores WSL |
 | `fixtures/` | ROMs falsas de 0 bytes + `metadata.pegasus.txt` de ejemplo, para validar el doctor sin la librería real |
 | `library/` | Librería real del autor (ROMs, CHDs, assets). Nunca se commitea |
 | `themes/attract/` | Theme de producción (features 005-009, 017-018). Tres capas según quién sabe de qué: `core/` datos y rutas, `ui/` dibuja, `screens/`+`overlays/` componen. Un solo singleton (`Theme`, el archivo es `Tokens.qml` — ver su encabezado) |

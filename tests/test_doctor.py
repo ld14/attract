@@ -5,11 +5,24 @@ from pathlib import Path
 
 import pytest
 
-from attract.doctor import revisar
+from attract.doctor import Reporte, chk_nombre_windows, revisar
 
 
 def chequeos(rep):
     return {h.chequeo for h in rep.errores}
+
+
+@pytest.mark.parametrize("cabecera", ["", "collection: \n", "# collection: Arcade\n"])
+def test_juego_sin_coleccion_es_descartado_por_pegasus(tmp_path, cabecera):
+    (tmp_path / "metadata.pegasus.txt").write_text(cabecera + "game: Elvira\nfile: elvira\n", encoding="utf-8")
+    assert "coleccion-faltante" in chequeos(revisar(tmp_path))
+
+
+def test_coleccion_dentro_de_summary_no_asigna_juegos(tmp_path):
+    (tmp_path / "metadata.pegasus.txt").write_text(
+        "game: Elvira\nsummary: texto\n  collection: Msdos\n", encoding="utf-8"
+    )
+    assert "coleccion-faltante" in chequeos(revisar(tmp_path))
 
 
 def test_fixtures_limpios_pasan():
@@ -30,15 +43,16 @@ def test_crlf(tmp_path):
 
 def test_dos_puntos_en_nombre(tmp_path):
     # Street Fighter II: Champion Edition -> ilegal en Windows, OK en macOS
-    d = tmp_path / "Street Fighter II: Champion Edition"
-    d.mkdir()
-    (d / "x.zip").write_bytes(b"")
-    assert "nombre-windows" in chequeos(revisar(tmp_path))
+    rep = Reporte()
+    # Validar la ruta sin crearla: Windows rechaza mkdir antes del doctor.
+    chk_nombre_windows(Path("Street Fighter II: Champion Edition/x.zip"), rep)
+    assert "nombre-windows" in chequeos(rep)
 
 
 def test_nombre_reservado(tmp_path):
-    (tmp_path / "AUX.zip").write_bytes(b"")
-    assert "nombre-windows" in chequeos(revisar(tmp_path))
+    rep = Reporte()
+    chk_nombre_windows(Path("AUX.zip"), rep)
+    assert "nombre-windows" in chequeos(rep)
 
 
 def test_nfd_en_nombre(tmp_path):

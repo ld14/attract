@@ -11,6 +11,44 @@ import pytest
 from attract.instalar import InstalarError, aplicar, leer_paquete, main
 
 
+@pytest.fixture(autouse=True)
+def aislar_config_pegasus(tmp_path, monkeypatch):
+    # Ningun test debe registrar librerias temporales en el Pegasus del usuario.
+    monkeypatch.setattr("attract.instalar._GAME_DIRS", tmp_path / "config" / "game_dirs.txt")
+
+
+@pytest.mark.parametrize("cabecera", ["", "collection: \n", "# sin cabecera\n"])
+def test_reimportar_repara_coleccion_sin_perder_juegos(tmp_path, cabecera):
+    raiz = _libreria_minima(tmp_path)
+    metadata = raiz / "arcade" / "metadata.pegasus.txt"
+    metadata.write_text(cabecera + "\ngame: Otro\nfile: otro.zip\nx-set: otro\n", encoding="utf-8")
+    zip_path = _zip_paquete(tmp_path, {"game.json": _game_json_minimo().encode()})
+    paquete = leer_paquete(zip_path)
+    aplicar(paquete, raiz)
+    primera = metadata.read_bytes()
+    assert primera.startswith(b"collection: Arcade\n")
+    assert b"game: Otro\nfile: otro.zip" in primera
+    assert primera.count(b"collection:") == 1
+    aplicar(paquete, raiz)
+    assert metadata.read_bytes() == primera
+
+
+def test_reimportar_conserva_nombre_coleccion(tmp_path):
+    raiz = _libreria_minima(tmp_path)
+    metadata = raiz / "arcade" / "metadata.pegasus.txt"
+    metadata.write_text("collection: Mis favoritos\nlaunch: /emulador\n", encoding="utf-8")
+    paquete = leer_paquete(_zip_paquete(tmp_path, {"game.json": _game_json_minimo().encode()}))
+    aplicar(paquete, raiz)
+    assert metadata.read_text(encoding="utf-8").startswith("collection: Mis favoritos\nlaunch: /emulador\n")
+
+
+def test_sin_registro_macos_no_escribe_config(tmp_path, monkeypatch):
+    monkeypatch.setattr("attract.instalar._GAME_DIRS", None)
+    paquete = leer_paquete(_zip_paquete(tmp_path, {"game.json": _game_json_minimo().encode()}))
+    aplicar(paquete, tmp_path / "library", confirmar=True)
+    assert not (tmp_path / "config").exists()
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

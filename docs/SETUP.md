@@ -115,6 +115,52 @@ Datos útiles de MAME en Mac:
 Bajalo de la página oficial de descargas. Abrilo una vez aunque esté vacío, para que
 cree su config en `~/Library/Preferences/pegasus-frontend/`.
 
+### Configurador automático de macOS
+
+Desde Finder, hacé doble clic en:
+
+```text
+configure-pegasus-macos.command
+```
+
+El configurador cierra Pegasus, deja backups, instala y selecciona ATTRACT,
+registra las colecciones válidas y apaga los providers externos de ADR-0017.
+Si `library/` todavía no tiene juegos, usa `fixtures/arcade` como demostración
+y lo avisa. Nunca crea ni edita `metadata.pegasus.txt`.
+
+Los dos archivos se distribuyen como ejecutables. Si llegaron dentro de un ZIP
+que perdió permisos Unix, reparalos una vez desde Terminal:
+
+```bash
+chmod +x configure-pegasus-macos.command scripts/configure-pegasus-macos.sh
+```
+
+Detecta la configuración normal en
+`~/Library/Preferences/pegasus-frontend/`. Si encuentra `portable.txt` junto al
+binario dentro de `Pegasus.app`, usa el `config/` de ese directorio.
+
+Opciones útiles:
+
+```bash
+# Ver el plan sin escribir ni cerrar Pegasus
+./scripts/configure-pegasus-macos.sh --dry-run
+
+# Elegir una colección y no abrir Pegasus al terminar
+./scripts/configure-pegasus-macos.sh \
+  --game-directory "$PWD/library/arcade" \
+  --skip-launch
+
+# Pegasus o configuración en otra ubicación
+./scripts/configure-pegasus-macos.sh \
+  --pegasus-app "/Applications/Pegasus.app" \
+  --config-directory "$HOME/Library/Preferences/pegasus-frontend"
+```
+
+Una ruta explícita sin metadata válida falla antes de cerrar Pegasus o tocar
+archivos. Los settings y game dirs previos quedan como
+`.bak-AAAAMMDD-HHMMSS`; los themes quedan bajo `backups/themes/`, fuera del
+directorio que escanea Pegasus.
+
 ## 1.5 El repo
 
 ```bash
@@ -202,6 +248,77 @@ Deja toda la config en `<dir del programa>/config/`, que podés versionar y copi
 > en **absoluto** en vez de relativo. Puede estar arreglado. Verificalo antes de
 > depender de eso.
 
+## 2.4 Configurador automático de Windows
+
+Desde la raíz del repo, hacé doble clic en:
+
+```text
+configure-pegasus-windows.bat
+```
+
+El configurador valida todo antes de escribir, cierra Pegasus, deja backups con
+timestamp, instala y selecciona ATTRACT, registra las colecciones y apaga Steam,
+GOG, EmulationStation, LaunchBox, Logiqx, Playnite y Skraper según ADR-0017.
+Después vuelve a abrir Pegasus.
+
+Busca colecciones válidas directamente bajo `library/`: cada una necesita un
+`metadata.pegasus.txt` no vacío con `collection:` antes de los bloques `game:`.
+Si encuentra juegos sin colección, falla e indica reimportar el paquete.
+Si todavía no
+hay ninguna, usa `fixtures/arcade` y avisa que es una demostración. Nunca crea
+ni edita metadata real.
+
+Si hay un `portable.txt` junto a `pegasus-fe.exe`, detecta el modo portable y
+escribe en `pegasus/config/`. En otro caso usa `%LOCALAPPDATA%\pegasus-frontend`.
+
+Opciones útiles desde PowerShell:
+
+```powershell
+# Ver qué haría, sin cambiar nada
+.\scripts\configure-pegasus-windows.ps1 -WhatIf
+
+# Elegir una colección y no abrir Pegasus al terminar
+.\scripts\configure-pegasus-windows.ps1 `
+  -GameDirectory "D:\Juegos\attract\library\arcade" `
+  -SkipLaunch
+
+# Instalación o config ubicadas en otro lugar
+.\scripts\configure-pegasus-windows.ps1 `
+  -PegasusExe "E:\Pegasus\pegasus-fe.exe" `
+  -ConfigDirectory "E:\Pegasus\config"
+```
+
+Una ruta explícita sin metadata válida falla antes de cerrar Pegasus o tocar la
+configuración. Ejecutarlo otra vez es seguro: vuelve a copiar el estado anterior
+a archivos `.bak-AAAAMMDD-HHMMSS`; los themes anteriores quedan bajo
+`backups/themes/`, fuera del directorio que escanea Pegasus.
+
+### Desde WSL: instalación y configuración
+
+```bash
+cd /mnt/d/Juegos/attract
+bash ./install-coindoor-wsl.sh /mnt/d/Juegos/COINDOOR/games/exports/elvira.coindoor.zip library/
+bash ./configure-pegasus-wsl.sh library/
+```
+
+Los dos lanzadores aceptan rutas Linux con espacios entre comillas y las
+convierten a Windows. El segundo acepta una raíz externa; si se omite usa
+`library/` junto al script. No uses `bash configure-pegasus-windows.bat` ni
+ejecutes el `.bat` directamente en Bash.
+
+El importador instala contenido; el configurador registra sus colecciones en
+la configuración normal o portable de Pegasus. Un `game_dirs.txt` en la raíz
+de ATTRACT no configura Pegasus y no se versiona. Repetí el paso de
+configuración tras instalar para que Pegasus vuelva a leer la librería.
+
+Si el log dice `The game 'Elvira' does not belong to any collections, ignored`,
+reimportá el paquete con el instalador actualizado y configurá otra vez.
+La cabecera se regenera desde `game.json → system`, sin editar el artefacto
+a mano. El diagnóstico también aparece en `attract doctor`.
+
+Para una instalación Windows en otra ubicación, usá PowerShell con
+`-PegasusExe`, `-ConfigDirectory` y `-LibraryRoot` según corresponda.
+
 ---
 
 # 3 · El puente
@@ -251,7 +368,7 @@ editar / codear
      ↓
 make doctor        ← 9 chequeos        (no viajás si esto falla)
      ↓
-make test          ← 206 tests
+make test          ← 228 tests
      ↓
 git push  ────────────────────────────▶ git pull
                                             ↓

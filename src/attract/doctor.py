@@ -156,9 +156,19 @@ def chk_metadata(path: Path, rep: Reporte) -> None:
     """Chequeos especificos de metadata.pegasus.txt."""
     texto = path.read_text(encoding="utf-8")
 
+    tiene_coleccion = False
     for n, linea in enumerate(texto.splitlines(), 1):
         if not linea.strip() or linea.lstrip().startswith("#"):
             continue
+
+        if re.match(r"^collection:\s*\S", linea):
+            tiene_coleccion = True
+        if linea.startswith("game:") and not tiene_coleccion:
+            rep.error(
+                "coleccion-faltante", f"{path}:{n}",
+                "game: sin collection: previa. Pegasus descarta el juego. "
+                "Reimporta el paquete para regenerar la cabecera.",
+            )
 
         # --- NFC en el CONTENIDO ---
         # git NO te salva aca: la ruta escrita adentro del archivo es texto,

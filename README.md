@@ -3,7 +3,7 @@
 Fábrica de metadata y assets para un frontend Pegasus de máquina recreativa.
 
 **Estado:** el CLI y el theme de producción están escritos y corriendo contra
-Pegasus real. 30 ADR, 18 features, 206 tests. Nació como Módulo 0 de un
+Pegasus real. 30 ADR, 21 features, 228 tests. Nació como Módulo 0 de un
 bootcamp y se quedó como el software que carga la máquina.
 
 ## Qué hace ATTRACT
@@ -31,9 +31,64 @@ el manual del día a día, distinto de `SETUP.md` que es instalación de máquin
 make setup       # config de git (precomposeUnicode)
 make check-git   # verificá que quedó
 make doctor      # el validador contra los fixtures
-make test        # 206 tests, cada uno reproduce un bug real o un caso del contrato
+make test        # 228 tests, cada uno reproduce un bug real o un caso del contrato
 make theme       # instala el theme de producción en Pegasus (make theme-debug para el harness)
 ```
+
+En Windows, la instalación completa de Pegasus se puede configurar con doble
+clic en `configure-pegasus-windows.bat`. Instala ATTRACT, registra las
+colecciones válidas, apaga providers externos y deja backups. Si la librería
+real todavía está vacía, abre los fixtures de Arcade como demostración.
+
+En macOS, el equivalente es `configure-pegasus-macos.command`. Si una copia ZIP
+perdió los permisos Unix, ejecutá una sola vez
+`chmod +x configure-pegasus-macos.command scripts/configure-pegasus-macos.sh`.
+
+### Instalar un paquete en Windows
+
+Desde PowerShell, con Python 3.12 o posterior y ATTRACT en `D:\Juegos\attract`:
+
+```powershell
+cd D:\Juegos\attract
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install-coindoor.ps1 "D:\Juegos\COINDOOR\games\exports\elvira.coindoor.zip" "D:\Juegos\attract\library"
+```
+
+`Bypass` se aplica solo a ese proceso. No modifica la política del sistema.
+Usar rutas Windows (`D:\...`), no las rutas `/mnt/d/...` de WSL.
+El script usa su propio repo. Para usar otro, agregar `-AttractPath "C:\ruta\attract"`.
+La raíz destino es opcional (por defecto, el directorio actual); las rutas
+relativas se interpretan desde donde se ejecuta el comando.
+
+El lanzador lista el paquete, delega en `attract.instalar` y verifica el archivo
+del juego indicado en la metadata. Conserva las confirmaciones del instalador
+y detiene el proceso ante errores. Necesita el código de ATTRACT, pero no Bash
+ni `unzip`. El script original `install-coindoor.sh` de Mac sigue intacto.
+
+Desde WSL, usar el lanzador `.sh` de **ATTRACT**, con rutas Linux:
+
+```bash
+cd /mnt/d/Juegos/attract
+bash ./install-coindoor-wsl.sh /mnt/d/Juegos/COINDOOR/games/exports/elvira.coindoor.zip library/
+```
+
+Se ejecuta en la misma consola. Convierte las rutas y llama al `.ps1`
+automáticamente. `library/` como destino relativo se refiere al directorio
+actual; indicar la ruta completa para instalar en la librería de ATTRACT.
+
+Después de instalar, registrá la librería y reiniciá Pegasus desde WSL:
+
+```bash
+bash ./configure-pegasus-wsl.sh library/
+```
+
+Usá la misma raíz que pasaste al instalador. El configurador cierra Pegasus
+antes de cambiar su configuración y vuelve a abrirlo. No ejecutes el `.bat`
+con Bash: ese lanzador es para Windows. En PowerShell, el equivalente es
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\configure-pegasus-windows.ps1 -LibraryRoot .\library`.
+
+Si Pegasus descarta un juego por falta de `collection:`, volvé a importar su
+paquete: el importador repara la cabecera y conserva los demás juegos.
+`attract doctor library --target windows` también detecta ese problema.
 
 ## El CLI
 
@@ -145,7 +200,7 @@ src/        attract doctor + synopsis + mcp + ingest + import + rasterize + mags
 themes/     attract ← theme de producción (005-009, 017-018) · attract-debug ← harness del Bloque 3 · experimentos/ ← pruebas cerradas
 fixtures/   ROMs falsas de 0 bytes + revistas, manuales y galería de mentira. Portables, suficientes
 library/    tu librería real. NO va al repo
-tests/      206 tests. Cada uno reproduce un bug real o un caso del contrato
+tests/      228 tests. Cada uno reproduce un bug real o un caso del contrato
 ```
 
 ## Lo que ya aprendimos a los golpes

@@ -35,6 +35,8 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+.tmp-import/
+/game_dirs.txt
 
 # Config local de Claude Code (la compartida, .claude/settings.json, SI va)
 .claude/settings.local.json

@@ -4,6 +4,11 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
 
 ## Hecho ✅
 
+- [021 · Instalador Windows y WSL](../features/021-instalador-windows/spec.md):
+  lanzadores para paquetes COINDOOR y configuración desde WSL; reparación
+  transaccional de cabeceras ausentes y detección en doctor/configuradores.
+  Script Mac conservado. Suite actual: 228 tests.
+
 1. **Módulo 0 · `attract doctor`** — validador preflight (encoding, CRLF,
    nombres ilegales en Windows, NFC en nombre y en contenido, basura de
    macOS, assets referenciados que no existen). `src/attract/doctor.py`,
@@ -356,6 +361,27 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
     Falta la verificación visual contra Pegasus real
     (`spec/features/018-theme-galeria/tasks.md` §Verificación) y pasar
     ADR-0030 de `proposed` a `accepted`.
+
+26. **`019-configurador-pegasus-windows` — implementada y verificada,
+    2026-09-11.** Un launcher de doble clic y un script PowerShell configuran
+    una instalación Windows sin dependencias: cierran Pegasus, respaldan
+    settings/game dirs/theme, instalan y seleccionan ATTRACT, aplican
+    ADR-0017 y vuelven a abrir el frontend. Detecta config portable mediante
+    `portable.txt`; si no hay colección real con juegos usa `fixtures/arcade`
+    como demo explícita. Preflight, `-WhatIf`, UTF-8 sin BOM, idempotencia y
+    backups fuera del escaneo de themes fueron probados en configs temporales
+    y quedaron cubiertos por 3 tests de integración (209 tests en total).
+    La corrida real terminó con un solo theme ATTRACT, 4 juegos y 0 errores.
+
+27. **`020-configurador-pegasus-macos` — implementada; falta la corrida en
+    Mac real, 2026-09-11.** Un `.command` de doble clic y un script Bash 3.2
+    llevan a macOS el mismo contrato de la 019: preflight, biblioteca real o
+    demo explícita, config normal/portable, backups fuera de `themes/`,
+    ADR-0017 y arranque nativo. La sintaxis, el cwd independiente, dry-run,
+    fallback, biblioteca real, portable, fallo sin escrituras e idempotencia
+    pasaron en Git Bash y quedaron en 3 tests (212 tests en total). Falta abrir
+    el `.command` desde Finder en macOS y confirmar `osascript`, `open` y el log
+    real de Pegasus.
 
 ## Siguiente 🔜
 
