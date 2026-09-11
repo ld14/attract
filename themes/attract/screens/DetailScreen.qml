@@ -174,12 +174,14 @@ FocusScope {
 
     // -------------------------------------------------- columna de info
     Column {
+        id: info
         anchors { top: barra.bottom; topMargin: 30 }
         anchors { left: izquierda.right; leftMargin: 48 }
         anchors { right: derecha.left; rightMargin: 32 }
         spacing: 18
 
         Text {
+            id: titulo
             width: Math.min(parent.width, 600)
             height: 102                      // dos renglones a 51px
             wrapMode: Text.WordWrap
@@ -201,6 +203,7 @@ FocusScope {
         // Los chips no desaparecen cuando falta el dato: muestran
         // "Sin Informacion" (§2.3). Chip centraliza esa regla.
         Flow {
+            id: chips
             width: Math.min(parent.width, 600)
             spacing: 8
 
@@ -236,14 +239,37 @@ FocusScope {
         }
 
         SectionLabel {
+            id: etiquetaSinopsis
             text: "SINOPSIS"
             activo: true
             accent: root.accent
         }
 
         Text {
+            id: sinopsis
             width: Math.min(parent.width, 600)
+            // El resumen es texto de largo libre (attract synopsis, ADR-0011)
+            // y ExtrasList esta anclado aparte, al pie de pantalla (linea
+            // 341) — sin tope, un resumen largo crece y se mete debajo de
+            // las tarjetas de CONTENIDO EXTRA. El alto se calcula contra la
+            // posicion real de `extras`, no un numero de lineas adivinado:
+            // mismo motivo que el spacer de la columna izquierda (linea
+            // 144-161) — a mano funciona hasta que un titulo de 2 renglones
+            // o un chip de mas cambia algo que este bloque no controla.
+            //
+            // El texto se tiene que leer entero: se corta la fuente, no el
+            // contenido. Mismo mecanismo que el titulo (linea 197,
+            // fontSizeMode: Text.Fit + minimumPixelSize) en vez de elide.
+            // clip + elide quedan como ultimo respaldo, por si ni al piso de
+            // tamaño entra un resumen desmesurado.
+            height: Math.max(Theme.sizeBody * 2.2,
+                extras.y - info.y - titulo.height - chips.height
+                - etiquetaSinopsis.height - info.spacing * 4)
+            clip: true
             wrapMode: Text.WordWrap
+            fontSizeMode: Text.Fit
+            minimumPixelSize: Theme.sizeMono
+            elide: Text.ElideRight
             color: Theme.textBody
             font.family: Theme.fontBody
             font.pixelSize: Theme.sizeBody
