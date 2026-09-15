@@ -1,16 +1,10 @@
-// Un estante: encabezado + fila horizontal de tarjetas.
+// Un estante o una fila del catalogo; el scroll vertical vive en Home.
 //
 // No sabe de donde salieron sus juegos ni por que estan en ese orden — eso lo
 // decide core/Catalog.qml. Recibe un objeto {tipo, etiqueta, conteo, juegos} y
 // lo dibuja.
 //
-// EL FOCO ANIDADO FUNCIONA SIN AYUDA, y se midio antes de escribir esto
-// (themes/experimentos/estantes-perf.qml, 2026-08-05): este ListView
-// horizontal se queda con izquierda/derecha y deja pasar arriba/abajo al
-// ListView vertical de BrowseScreen. Cuando no puede moverse mas —primera o
-// ultima tarjeta— tampoco acepta el evento, y ahi es donde la pantalla lo
-// aprovecha para volver a la barra. El plan B (manejar las cuatro direcciones
-// desde el FocusScope de la pantalla) quedo sin usar.
+// Las filas del catalogo dejan arriba/abajo al scroll vertical de Home.
 
 import QtQuick 2.0
 import ".."
@@ -22,6 +16,11 @@ FocusScope {
     // { tipo, etiqueta, conteo, juegos: [game] }
     property var datos: null
     property var paths: null
+    property bool enFilas: datos && datos.tipo === "catalogo"
+    property real anchoCelda: 164
+    property int indiceFila: 0
+    readonly property bool continuacion: datos && datos.continuacion
+    signal salirVertical(int columna)
 
     // Si este es el estante enfocado de la pantalla. Decide si sus tarjetas se
     // ven al 62% (vecinas) o al 50% (otro estante).
@@ -53,7 +52,7 @@ FocusScope {
     // para dar margen de verdad, no para calzar con el prototipo pixel a
     // pixel: cabecera(24) + margen(28) = 52 antes de la primera tarjeta, con
     // 8px de sobra despues de que la tarjeta enfocada suba sus ~20px.
-    height: 218
+    height: continuacion ? 194 : 218
 
     // El maximo de la fila, para que la barra de CONTINUAR JUGANDO sea
     // relativa a algo. Se calcula una vez por estante y no por tarjeta.
@@ -86,7 +85,8 @@ FocusScope {
         // solo que ahora hay 10px de aire de mas a su izquierda, adentro del
         // area sin recorte.
         anchors { top: parent.top; left: parent.left; leftMargin: 10; right: parent.right }
-        height: 24
+        height: root.continuacion ? 0 : 24
+        visible: !root.continuacion
 
         // La regla que se extiende hacia la derecha, como en el diseño. Va
         // ANCLADA al Row y no dentro de el: un hijo de Row que quiere ocupar
@@ -171,11 +171,12 @@ FocusScope {
         // BrowseScreen.qml sobre `estantes`) — sin esto la primera tarjeta
         // enfocada de cada estante crece hacia la izquierda al escalar y
         // choca contra el borde de clip de `estantes`.
-        anchors { left: parent.left; leftMargin: 10; right: parent.right }
+        anchors { left: parent.left; leftMargin: 10; right: parent.right; rightMargin: root.enFilas ? 6 : 0 }
         height: 166
 
         orientation: ListView.Horizontal
-        spacing: 16
+        spacing: root.enFilas ? root.anchoCelda - 148 : 16
+        boundsBehavior: root.enFilas ? Flickable.StopAtBounds : Flickable.DragAndOvershootBounds
         model: root.juegos
         focus: true
         keyNavigationWraps: false
@@ -190,20 +191,27 @@ FocusScope {
         // del margen. ApplyRange respeta los limites del contenido.
         preferredHighlightBegin: 148 + 16
         preferredHighlightEnd: 2 * (148 + 16)
-        highlightRangeMode: ListView.ApplyRange
+        highlightRangeMode: root.enFilas ? ListView.NoHighlightRange : ListView.ApplyRange
         highlightMoveDuration: 260
 
         // Una pantalla de tarjetas a cada lado. Con el pico medido en 47
         // delegates vivos, el margen alcanza para que scrollear rapido no
         // muestre huecos sin instanciar de mas.
-        cacheBuffer: 400
+        cacheBuffer: root.enFilas ? 0 : 400
+
+        Keys.onPressed: {
+            if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
+                root.salirVertical(currentIndex);
+                event.accepted = false;
+            }
+        }
 
         delegate: GameCard {
             game: modelData
             paths: root.paths
-            variacion: index
-            activo: ListView.isCurrentItem
-            atenuado: !root.enfocado
+            variacion: index + (root.datos ? root.datos.inicio || 0 : 0)
+            activo: ListView.isCurrentItem && (!root.enFilas || root.enfocado)
+            atenuado: !root.enFilas && !root.enfocado
 
             rango: (root.datos && root.datos.tipo === "jugados") ? index + 1 : -1
             progreso: (root.datos && root.datos.tipo === "continuar"
@@ -214,8 +222,11 @@ FocusScope {
                 // Patron TV: el primer toque enfoca, el segundo abre. En un
                 // gabinete con joystick, entrar al primer toque hace imposible
                 // recorrer la libreria.
-                if (lista.currentIndex === index) root.activado(modelData);
-                else lista.currentIndex = index;
+                var abrir = root.enfocado && lista.currentIndex === index;
+                root.ListView.view.currentIndex = root.indiceFila;
+                root.forceActiveFocus();
+                lista.currentIndex = index;
+                if (abrir) root.activado(modelData);
             }
         }
     }

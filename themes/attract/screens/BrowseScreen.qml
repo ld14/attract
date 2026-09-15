@@ -17,6 +17,7 @@
 import QtQuick 2.0
 import ".."
 import "../core"
+import "../core/CatalogRows.js" as CatalogRows
 import "../ui"
 
 FocusScope {
@@ -903,7 +904,56 @@ FocusScope {
         // footer". +10 de aire minimo entre el ultimo estante y el pie.
         height: parent.height - y - (footerLeyenda.height + 10)
 
-        model: root.catalogo ? root.catalogo.estantes : []
+        readonly property int columnas: CatalogRows.columns(width - 16)
+        readonly property var originales: root.catalogo ? root.catalogo.estantes : []
+        property int columnaDeseada: 0
+        property bool reconstruyendo: false
+        model: []
+
+        function reconstruir(conservar) {
+            var anterior = currentItem;
+            var game = conservar && anterior ? anterior.juego : null;
+            var origen = anterior && anterior.datos ? anterior.datos.origen : 0;
+            var filas = CatalogRows.project(originales, columnas);
+            var destino = CatalogRows.locate(filas, origen, game);
+            reconstruyendo = true;
+            model = filas;
+            currentIndex = destino.row;
+            columnaDeseada = destino.column;
+            reconstruyendo = false;
+            Qt.callLater(restaurarColumna);
+            Qt.callLater(asegurarFilaVisible);
+        }
+        function restaurarColumna() {
+            if (currentItem)
+                currentItem.indice = Math.min(columnaDeseada,
+                                              currentItem.juegos.length - 1);
+        }
+        function mostrarCatalogo() {
+            if (!root.catalogo) return;
+            columnaDeseada = 0;
+            currentIndex = CatalogRows.firstRow(model, root.catalogo.indiceCatalogo);
+            restaurarColumna();
+            Qt.callLater(asegurarFilaVisible);
+        }
+        function asegurarFilaVisible() {
+            if (reconstruyendo || currentIndex < 0 || count === 0 || height <= 0) return;
+            // El modelo puede haber cambiado en este tick. Resolver primero
+            // las alturas de las filas (con y sin encabezado).
+            forceLayout();
+            positionViewAtIndex(currentIndex, ListView.Contain);
+        }
+        onColumnasChanged: reconstruir(true)
+        onOriginalesChanged: reconstruir(false)
+        Component.onCompleted: reconstruir(false)
+        onCurrentItemChanged: {
+            if (!reconstruyendo) {
+                restaurarColumna();
+                Qt.callLater(asegurarFilaVisible);
+            }
+        }
+        onCurrentIndexChanged: Qt.callLater(asegurarFilaVisible)
+        onHeightChanged: Qt.callLater(asegurarFilaVisible)
         spacing: 18
         clip: true
         keyNavigationWraps: false
@@ -915,16 +965,16 @@ FocusScope {
         // orden en que corran los onCompleted.
         focus: true
 
-        // El estante enfocado arriba de todo, con el siguiente asomando.
-        // 218: el alto real de Shelf (ver su comentario — diverge a
-        // proposito de los 192 del prototipo).
-        preferredHighlightBegin: 0
-        preferredHighlightEnd: 218
-        highlightRangeMode: ListView.ApplyRange
-        highlightMoveDuration: 300
+        // La unidad visible es la fila completa, incluido el margen del foco.
+        // Un rango de highlight no garantiza contener filas de distinto alto.
+        // El posicionamiento explicito evita que la segunda quede bajo el pie.
+        highlightRangeMode: ListView.NoHighlightRange
 
         delegate: Shelf {
             width: estantes.width
+            indiceFila: index
+            anchoCelda: (estantes.width - 16) / estantes.columnas
+            onSalirVertical: estantes.columnaDeseada = columna
             datos: modelData
             paths: root.paths
             accent: root.accent
@@ -951,7 +1001,7 @@ FocusScope {
             function onFiltroAplicado() {
                 if (!root.catalogo) return;
                 estantes.focus = true;
-                estantes.currentIndex = root.catalogo.indiceCatalogo;
+                estantes.mostrarCatalogo();
                 Qt.callLater(function() {
                     if (estantes.currentItem) estantes.currentItem.indice = 0;
                 });
@@ -976,9 +1026,9 @@ FocusScope {
         // en particular, el cambio pasaba desapercibido.
         Connections {
             target: root.catalogo
-            function onCriterioChanged() { estantes.currentIndex = root.catalogo.indiceCatalogo; }
-            function onDireccionChanged() { estantes.currentIndex = root.catalogo.indiceCatalogo; }
-            function onModoChanged() { estantes.currentIndex = root.catalogo.indiceCatalogo; }
+            function onCriterioChanged() { Qt.callLater(estantes.mostrarCatalogo); }
+            function onDireccionChanged() { Qt.callLater(estantes.mostrarCatalogo); }
+            function onModoChanged() { Qt.callLater(estantes.mostrarCatalogo); }
         }
     }
 

@@ -30,6 +30,7 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 
 | # | Título | Estado | Fecha |
 |---|---|---|---|
+| [0031](0031-catalogo-en-filas.md) | Catálogo en filas dentro del scroll vertical existente | accepted | 2026-09-15 |
 | [0001](0001-transporte-datos-ricos.md) | Transporte de datos ricos al theme vía data.json externo | accepted | 2026-07-17 |
 | [0002](0002-metadata-fuente-o-artefacto.md) | La metadata es artefacto de build, no fuente | accepted | 2026-07-28 |
 | [0003](0003-cross-platform.md) | Estrategia cross-platform: git como puente, doctor como frontera | accepted | 2026-07-28 |
@@ -61,7 +62,7 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 | [0029](0029-player-nuevo-por-video.md) | Un `MediaPlayer` + `VideoOutput` nuevo por cada archivo de video | proposed | 2026-08-22 |
 | [0030](0030-contrato-gallery-data-json.md) | La galería se compone de los assets nativos del juego más las piezas curadas de `_gallery/`, declaradas como `gallery` en `data.json` | proposed | 2026-08-27 |
 
-**30 ADR en total, 26 vigentes** (0008 quedó superseded por 0010, 0016 por
+**31 ADR en total, 27 vigentes** (0008 quedó superseded por 0010, 0016 por
 0019, 0015 por 0020 y 0010 por 0024 — no se editan, se reemplazan). El razonamiento original de 0006-0009
 está en
 [`docs/decisiones/archivadas/2026-07-23.md`](../../docs/decisiones/archivadas/2026-07-23.md), ya

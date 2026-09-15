@@ -2,6 +2,12 @@
 
 _Orden y estado de las features. Cada entrada apunta a su carpeta en `../features/`._
 
+## Implementado, pendiente de verificación visual
+
+- [022 · Catálogo en filas](../features/022-catalogo-en-filas/spec.md): ancho
+  adaptable, scroll vertical único y filas virtualizadas. Cuatro pruebas de
+  proyección/geometría pasan; falta validar foco y renderizado en Pegasus.
+
 ## Hecho ✅
 
 - [021 · Instalador Windows y WSL](../features/021-instalador-windows/spec.md):
