@@ -35,6 +35,9 @@ FocusScope {
     signal volver()
     signal lanzar(var game)
     signal abrirAyuda()
+    signal alternarFavorito(var game)
+
+    readonly property bool esFavorito: game ? game.favorite : false
 
     GameData {
         id: datos
@@ -282,11 +285,21 @@ FocusScope {
     // ------------------------------------------- columna derecha (190px)
     // Box art + badge de FORMATO + resena, apilados. Es lo que pide el
     // handoff; no es una variante.
-    Column {
+    Flickable {
         id: derecha
         anchors { top: barra.bottom; topMargin: 30 }
         anchors { right: parent.right; rightMargin: Theme.gutter }
+        anchors { bottom: parent.bottom; bottomMargin: 26 }
         width: 190
+        contentWidth: width
+        contentHeight: contenidoDerecha.height
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        interactive: contentHeight > height
+
+        Column {
+        id: contenidoDerecha
+        width: derecha.width
         spacing: 14
 
         Item {
@@ -360,6 +373,37 @@ FocusScope {
             datos: datos
             accent: root.accent
         }
+
+        Column {
+            width: parent.width
+            spacing: 8
+
+            Boton {
+                width: parent.width
+                texto: root.esFavorito ? "QUITAR" : "MARCAR"
+                glifo: root.esFavorito ? "★" : "☆"
+                variant: root.esFavorito ? "accent" : "glass"
+                accent: root.accent
+                activo: root.foco === 6
+                enabled: root.game !== null
+                onActivado: { root.foco = 6; root.alternarFavorito(root.game); }
+            }
+            Text {
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                text: root.esFavorito ? "EN FAVORITOS" : "MARCAR FAVORITO"
+                color: root.esFavorito ? root.accent : Theme.textMuted
+                font { family: Theme.fontMono; pixelSize: 10 }
+            }
+            Text {
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                text: "D / Enter al seleccionar"
+                color: Theme.textFaint
+                font { family: Theme.fontMono; pixelSize: 9 }
+            }
+        }
+        }
     }
 
     // ------------------------------------------------- contenido extra
@@ -389,13 +433,17 @@ FocusScope {
     // caso especial: el carrusel pasa de pagina con arriba/abajo porque es lo
     // que hace "actuar dentro" de un carrusel.
     //
-    // Orden: [JUGAR] -> [video] -> [carrusel] -> [Galería] -> [Hacks] -> [Manual]. JUGAR
+    // Orden: [JUGAR] -> [video] -> [carrusel] -> [Galería] -> [Hacks] -> [Manual] -> [Favoritos]. JUGAR
     // primero aunque el video este arriba en pantalla: la accion principal se
     // enfoca al entrar, no un control secundario. El orden no es estrictamente
     // espacial en el prototipo tampoco (el carrusel esta a la izquierda y los
     // extras a la derecha).
     property int foco: 0
-    readonly property int _targets: 6
+    readonly property int _targets: 7
+    onFocoChanged: {
+        if (foco === 6 && derecha) derecha.contentY = Math.max(0, derecha.contentHeight - derecha.height);
+    }
+    onGameChanged: { foco = 0; if (derecha) derecha.contentY = 0; }
 
     signal abrirExtra(string tipo)
     signal abrirRevista(int i)
@@ -426,6 +474,7 @@ FocusScope {
             else if (root.foco === 3 && datos.hayGaleria) root.abrirExtra("galeria");
             else if (root.foco === 4 && datos.hayCheats) root.abrirExtra("cheats");
             else if (root.foco === 5 && datos.hayManual) root.abrirExtra("manual");
+            else if (root.foco === 6 && !event.isAutoRepeat) root.alternarFavorito(root.game);
             event.accepted = true;
         }
     }

@@ -541,3 +541,10 @@ Implementada: entrada única por título, género, desarrolladora, editora,
 plataforma/colección y año; resultados en vivo y regreso desde detalle.
 Pruebas de lógica correctas. Verificación visual en Pegasus pendiente.
 Ver [spec](../features/023-busqueda-global/spec.md).
+
+## Favoritos desde el detalle (024)
+
+Implementado el control bajo Nota de la crítica, con actualización del catálogo
+y su contador. Tres pruebas de lógica correctas. Verificación visual y
+persistencia al reiniciar Pegasus pendientes.
+Ver [spec](../features/024-favoritos-detalle/spec.md).

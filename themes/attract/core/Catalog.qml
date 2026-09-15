@@ -216,6 +216,13 @@ QtObject {
         return _juegosDe(_ordenar(encontrados, 0, 1));
     }
 
+    function alternarFavorito(game) {
+        if (!game) return;
+        game.favorite = !game.favorite;
+        // Los estantes y contadores usan claves cacheadas, no el QObject.
+        cargar();
+    }
+
     // La letra bajo la que se agrupa un titulo. Todo lo que no sea A-Z cae en
     // "#" — un juego que empieza con numero o con simbolo tiene que poder
     // encontrarse igual, y el diseño no le da casilla propia.

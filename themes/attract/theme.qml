@@ -186,6 +186,7 @@ FocusScope {
             enabled: visible
 
             onVolver: { root.pantalla = "library"; if (buscador.active) buscador.item.enfocar(); }
+            onAlternarFavorito: catalogo.alternarFavorito(game)
             onLanzar: root.lanzar(game)
             onAbrirRevista: root.abrirRevista(i)
             onAbrirExtra: {
