@@ -142,10 +142,10 @@ FocusScope {
             // pero deja de reaccionar al teclado mientras el popover esta
             // arriba.
             visible: root.pantalla === "library" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active
-            focus: root.pantalla === "library" && !lanzando.active && !visor.active && !ayuda.active && !orden.active
+            focus: root.pantalla === "library" && !lanzando.active && !visor.active && !ayuda.active && !orden.active && !buscador.active
             // Sin esto, los estantes siguen comiendose las flechas desde atras
             // mientras el detalle esta arriba.
-            enabled: root.pantalla === "library" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active && !orden.active
+            enabled: root.pantalla === "library" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active && !orden.active && !buscador.active
 
             onAbrirDetalle: {
                 root.juegoDetalle = game;
@@ -155,12 +155,27 @@ FocusScope {
             onAbrirAyuda: ayuda.active = true
             onAbrirOrden: orden.active = true
             onCerrarOrden: orden.active = false
-            // Buscar es la fase 010. Hasta que exista, Y no hace nada — y eso
-            // es mejor que un boton que promete y no cumple: la pastilla
-            // BUSCAR de la barra ya esta dibujada porque es parte del diseño,
-            // pero el atajo no miente si no hay a donde ir.
+            onAbrirBuscar: buscador.active = true
         }
 
+        Loader {
+            id: buscador
+            anchors.fill: parent
+            active: false
+            visible: active && root.pantalla === "library"
+            enabled: visible
+            focus: visible
+            sourceComponent: SearchOverlay {
+                catalogo: root.catalogoInstancia
+                accent: root.accent
+                focus: true
+                onCerrar: { buscador.active = false; libreria.forceActiveFocus(); }
+                onAbrirDetalle: {
+                    root.juegoDetalle = game;
+                    root.pantalla = "detail";
+                }
+            }
+        }
         DetailScreen {
             id: detalle
             anchors.fill: parent
@@ -170,7 +185,7 @@ FocusScope {
             focus: root.pantalla === "detail" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active && !aviso.active && !galeria.active
             enabled: visible
 
-            onVolver: root.pantalla = "library"
+            onVolver: { root.pantalla = "library"; if (buscador.active) buscador.item.enfocar(); }
             onLanzar: root.lanzar(game)
             onAbrirRevista: root.abrirRevista(i)
             onAbrirExtra: {

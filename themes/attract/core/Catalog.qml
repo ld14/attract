@@ -19,6 +19,7 @@
 // no en cada pantalla.
 
 import QtQuick 2.0
+import "Search.js" as Search
 
 QtObject {
     id: cat
@@ -176,6 +177,7 @@ QtObject {
             var g = gs[i];
             ks.push({
                 i: i,
+                busqueda: Search.indexGame(g),
                 // sortBy es el titulo canonico de Pegasus (sin articulos
                 // iniciales); si esta vacio cae al titulo.
                 orden: String(g.sortBy || g.title || "").toLowerCase(),
@@ -203,6 +205,15 @@ QtObject {
         if (!fecha || typeof fecha.getTime !== "function") return 0;
         var t = fecha.getTime();
         return isNaN(t) ? 0 : t;
+    }
+
+    // Siempre toda la biblioteca, independiente de los filtros de Home.
+    function buscar(texto) {
+        var encontrados = [];
+        for (var i = 0; i < _claves.length; i++) {
+            if (Search.matches(_claves[i].busqueda, texto)) encontrados.push(_claves[i]);
+        }
+        return _juegosDe(_ordenar(encontrados, 0, 1));
     }
 
     // La letra bajo la que se agrupa un titulo. Todo lo que no sea A-Z cae en

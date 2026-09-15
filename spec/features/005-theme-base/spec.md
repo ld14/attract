@@ -145,3 +145,9 @@ que sí. Si no, la salida es aplanar el árbol y reemplazar los singletons por
 un `QtObject` instanciado una vez en `theme.qml` — es un cambio mecánico,
 pero conviene descubrirlo con el esqueleto vacío y no con veinte componentes
 escritos encima.
+
+## Ajuste de teclado (2026-09-15)
+
+Los indicadores visibles usan el teclado configurado por el usuario: D/Enter
+para aceptar, C/Esc para volver, X para criterio y B para Buscar.
+Buscar sigue pendiente; este ajuste solo cambia las indicaciones existentes.

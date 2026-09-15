@@ -189,14 +189,10 @@ FocusScope {
         font.family: Theme.fontMono
         font.pixelSize: Theme.sizeMonoSm
         font.letterSpacing: Theme.trackingLabel * Theme.sizeMonoSm
-        // Nombrar UNA tecla es mentira la mitad del tiempo: este Pegasus
-        // mapea `keys.cancel: Esc,Backspace,GamepadB` — la B es la del
-        // gamepad, en teclado no existe. El gabinete va a tener joystick
-        // y el Mac de desarrollo no, asi que se nombran las dos.
-        // (El diseno asumia joystick y decia solo "B".)
+        // Teclas del perfil local: D/Enter acepta y C/Esc vuelve.
         text: root.modo === "confirmar"
-              ? "— A · ENTER ABRIR    B · ESC VOLVER —"
-              : "— B · ESC PARA VOLVER —"
+              ? "— D · ENTER ABRIR    C · ESC VOLVER —"
+              : "— C · ESC PARA VOLVER —"
     }
 
     // Solo en "lanzando". Una pregunta que se contesta sola no es una pregunta,

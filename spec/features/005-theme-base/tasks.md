@@ -419,3 +419,9 @@ _Ninguno de estos aparece leyendo el codigo. Salieron de abrir Pegasus._
 - [x] Mover `005-theme-base` a "Hecho" en `../../constitution/roadmap.md`, y
       agregar `themes/attract/` al mapa de `CLAUDE.md` y a
       `../../constitution/tech-stack.md`.
+
+## Ajuste de teclado (2026-09-15)
+
+- [x] Actualizar botones y leyendas existentes.
+- [x] Verificar diff y copia instalada (hash de los cuatro archivos coincide).
+- [ ] Verificar render visual en Pegasus al reabrir.

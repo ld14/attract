@@ -351,7 +351,7 @@ FocusScope {
                 implicitHeight: 30
                 texto: "BUSCAR"
                 glifo: "⌕"
-                atajo: "Y"
+                atajo: "B"
                 variant: "glass"
                 accent: root.accent
                 activo: barra.focoClamp === barra._indiceDe("buscar")
@@ -753,7 +753,7 @@ FocusScope {
                     implicitHeight: 42
                     texto: "VER DETALLE"
                     glifo: "▤"
-                    atajo: "A"
+                    atajo: "D"
                     variant: "accent"
                     accent: root.accent
                     onActivado: root.abrirDetalle(root.juego)
@@ -1071,8 +1071,8 @@ FocusScope {
             id: leyenda
             anchors.centerIn: parent
             accent: root.accent
-            atajos: [{ k: "◄ ► ▲ ▼", l: "Navegar" }, { k: "A", l: "Detalle" },
-                     { k: "X", l: "Criterio" }, { k: "Y", l: "Buscar" }]
+            atajos: [{ k: "◄ ► ▲ ▼", l: "Navegar" }, { k: "D / Enter", l: "Detalle" },
+                     { k: "X", l: "Criterio" }, { k: "B", l: "Buscar" }]
         }
     }
 

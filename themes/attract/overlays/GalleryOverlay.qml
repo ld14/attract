@@ -358,7 +358,7 @@ FocusScope {
         font.family: Theme.fontMono
         font.pixelSize: 7
         font.letterSpacing: Theme.trackingLabel * 7
-        text: "◄ ► Imagen / video   B / Esc Cerrar"
+        text: "◄ ► Imagen / video   C / Esc Cerrar"
 
         SequentialAnimation on opacity {
             running: root.visible

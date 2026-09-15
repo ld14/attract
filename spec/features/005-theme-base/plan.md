@@ -283,3 +283,9 @@ ADR-0001 y el archivo sobre el que se copian los experimentos.
   prototipo automáticamente. La verificación es abrir los dos al lado y
   comparar — por eso el canvas fijo (ADR-0016) importa: hace que la
   comparación tenga sentido.
+
+## Ajuste de teclado (2026-09-15)
+
+Reemplazar los rótulos de mando en Home, galería, trucos y confirmación
+por las teclas configuradas. Conservar api.keys para procesar eventos.
+Copiar los archivos modificados al theme instalado con respaldo previo.

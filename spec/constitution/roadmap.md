@@ -534,3 +534,10 @@ _Orden y estado de las features. Cada entrada apunta a su carpeta en `../feature
 
 > Cada feature nueva se crea como `features/NNN-nombre/` con `spec.md`,
 > `plan.md` y `tasks.md` **antes** de tocar código.
+
+## Búsqueda global por teclado (023)
+
+Implementada: entrada única por título, género, desarrolladora, editora,
+plataforma/colección y año; resultados en vivo y regreso desde detalle.
+Pruebas de lógica correctas. Verificación visual en Pegasus pendiente.
+Ver [spec](../features/023-busqueda-global/spec.md).
