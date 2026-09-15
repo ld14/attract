@@ -8,3 +8,7 @@
 4. theme.qml coordina el modal y el regreso desde detalle sin modificar Home.
 5. Verificar lógica con Node, diff y copia instalada con respaldo. La validación
    de foco y render requiere Pegasus real.
+
+## Ajuste de leyenda
+
+Quitar únicamente la entrada Buscar del modelo de Leyenda en BrowseScreen.

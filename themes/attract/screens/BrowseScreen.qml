@@ -22,6 +22,7 @@ import "../ui"
 
 FocusScope {
     id: root
+    property bool sonidoSilenciado: false
 
     property var paths: null
     property var teclas: null
@@ -824,6 +825,7 @@ FocusScope {
         // aca a proposito: deja Home `visible` y solo `enabled:false`, porque
         // se sigue viendo detras.
         encendido: root.visible
+        silenciado: root.sonidoSilenciado
     }
 
     // ------------------------------------------------------------- estantes
@@ -1072,7 +1074,8 @@ FocusScope {
             anchors.centerIn: parent
             accent: root.accent
             atajos: [{ k: "◄ ► ▲ ▼", l: "Navegar" }, { k: "D / Enter", l: "Detalle" },
-                     { k: "X", l: "Criterio" }, { k: "B", l: "Buscar" }]
+                     { k: "X", l: "Criterio" },
+                     { k: "S", l: root.sonidoSilenciado ? "Activar sonido" : "Silenciar" }]
         }
     }
 
@@ -1080,6 +1083,13 @@ FocusScope {
     // Solo llega lo que ningun ListView quiso: ▲ desde el primer estante, y
     // los atajos globales, que nadie mas mira.
     Keys.onPressed: {
+        // Atajo de Home pedido por el usuario; Buscar conserva la S como texto.
+        if (event.key === Qt.Key_S
+                && !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) {
+            if (!event.isAutoRepeat) root.sonidoSilenciado = !root.sonidoSilenciado;
+            event.accepted = true;
+            return;
+        }
         if (!root.teclas) return;
 
         // sort-select-spec.md §Atajo de teclado/joystick: "X = equivalente

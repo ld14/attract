@@ -153,3 +153,10 @@ existe para evitar.
   si aparece, el ajuste es subir el delay, no cachear.
 - **`loops` en Windows** — sigue siendo el riesgo abierto de la feature 006
   (`plataforma-pegasus.md` §5). Esta feature lo hereda, no lo agrava.
+
+## Silenciar Home con S
+
+BrowseScreen conserva un booleano y captura Qt.Key_S sin Ctrl/Alt/Meta, por
+petición explícita del usuario. HeroVideoPreview recibe ese booleano y lo
+enlaza a MediaPlayer.muted: cada player nuevo hereda el estado de Home.
+No cambia el volumen ni la reproducción. Instalar ambos QML con respaldo.

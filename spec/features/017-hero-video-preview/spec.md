@@ -75,3 +75,10 @@ sobre un juego lo muestre en movimiento, sin que nadie apriete nada.
   sus propias reglas; esto es solo Home.
 - **Precarga o caché de decoders.** Un juego a la vez, decoder liberado al
   moverse.
+
+## Silenciar Home con S (2026-09-15)
+
+S alterna el sonido del preview sin detener el video. La leyenda indica
+Silenciar o Activar sonido según el estado. Mantener la tecla pulsada alterna
+una sola vez. El estado dura durante la sesión, incluso al cambiar de juego
+o volver del detalle. Solo actúa en Home; en Buscar la S se escribe.

@@ -17,3 +17,8 @@ Una consulta vacía invita a escribir. Cero coincidencias muestra un mensaje.
 - Cerrar recupera Home con su selección, orden y filtros anteriores.
 - Los datos ausentes no producen coincidencias ficticias (año 0 incluido).
 - No se leen assets ni JSON adicionales, ni se instalan dependencias.
+
+## Ajuste de leyenda
+
+Buscar se anuncia solo en el encabezado; se elimina su duplicado del pie.
+El atajo B sigue funcionando.

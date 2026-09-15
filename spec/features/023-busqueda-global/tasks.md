@@ -13,3 +13,5 @@ El runner node --test no puede crear subprocesos en el sandbox; ambas suites
 se ejecutaron directamente, sin cambiar las pruebas. git diff --check correcto.
 No hay qmlscene/qmllint ni control gráfico nativo disponibles; foco y render
 quedan pendientes de comprobar en Pegasus.
+
+- [x] Quitar Buscar del pie e instalar BrowseScreen con respaldo; diff y hash verificados.

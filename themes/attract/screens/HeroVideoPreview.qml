@@ -49,6 +49,7 @@ Item {
     // Lo apaga la pantalla cuando Home deja de verse. Es lo que suelta el
     // decoder: sin esto, abrir el detalle deja dos videos decodificando.
     property bool encendido: true
+    property bool silenciado: false
 
     readonly property bool hayVideo:
         game !== null && game.assets && game.assets.video ? true : false
@@ -183,7 +184,7 @@ Item {
                 // `loops` antes.
                 autoPlay: false
                 loops: MediaPlayer.Infinite
-                muted: false
+                muted: root.silenciado
 
                 // EL VOLUMEN CUELGA DE `activo`, Y ESO ES LO QUE HACE QUE ESTO
                 // SEA TOLERABLE. El panel suena solo cuando se lo ve.

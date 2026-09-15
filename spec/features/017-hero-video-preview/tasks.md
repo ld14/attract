@@ -139,3 +139,10 @@ cambio de un `.qml` instalado exige `make theme`, ⌘Q y reabrir
 - [x] Actualizar la entrada de `../../constitution/roadmap.md` — decía que el
       componente no estaba escrito y que el experimento bloqueaba la feature.
 - [ ] Mover la feature a "Hecho" en `../../constitution/roadmap.md`.
+
+## Silenciar Home con S
+
+- [x] Conectar tecla, estado, leyenda y muted del preview.
+- [x] Verificar diff (git diff --check correcto).
+- [x] Instalar con respaldo: reintento autorizado completado; hashes de los dos archivos verificados.
+- [ ] Comprobar audio y teclado en Pegasus real.
