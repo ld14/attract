@@ -407,11 +407,16 @@ FocusScope {
     }
 
     // ------------------------------------------------- contenido extra
-    // Anclado abajo, como el margin-top:auto del diseno.
+    // Anclado abajo, como el margin-top:auto del diseno. El bottomMargin
+    // (62) es el mismo pie que usa el carrusel de revistas de la columna
+    // izquierda (ver el espaciador de "izquierda", root.height - 62): antes
+    // era 72 sin motivo, y quedaba 10px mas arriba que el pie del carrusel
+    // sin necesidad — ajustado el 2026-09-29 para que los dos "pies" de la
+    // pantalla queden a la misma altura.
     ExtrasList {
         id: extras
         anchors { left: izquierda.right; leftMargin: 48 }
-        anchors { bottom: parent.bottom; bottomMargin: 72 }
+        anchors { bottom: parent.bottom; bottomMargin: 62 }
         datos: datos
         accent: root.accent
         // 0 = JUGAR, 1 = video, 2 = carrusel; de ahi, las tarjetas

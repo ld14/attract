@@ -175,13 +175,38 @@ marca `[x]` al completarlas._
       `implicitHeight: 40` fijo), así que las tarjetas quedan un toque más
       altas que ese botón, no exactas. Medidas finales: 145×45px, ícono
       20×20, fuente del glifo 11px, chevron 13px, márgenes 10/8/8.
+
+      **Dos ajustes más, confirmados en Pegasus real (2026-09-29):**
+      1. **Alineación con el pie de pantalla.** El bloque quedaba 10px más
+         arriba que el pie del carrusel de revistas sin motivo (`bottomMargin:
+         72` contra los `root.height - 62` del carrusel, ver el espaciador de
+         `izquierda` en `DetailScreen.qml`) — bajado a `bottomMargin: 62` para
+         que los dos "pies" de la pantalla queden a la misma altura.
+      2. **Bug: la fila se corría al enfocar/desenfocar una tarjeta.** La
+         línea de subtítulo compartida (decisión 8b) tiene alto variable
+         (vacía sin foco, una línea con foco) y `ExtrasList` es un `Column`
+         anclado por el borde inferior en `DetailScreen.qml` — al variar el
+         alto de esa línea, variaba el alto total de la columna y, con el
+         ancla inferior fija, el borde SUPERIOR (donde está la fila de
+         tarjetas) se corría de lugar. Dos intentos parciales (ocultar con
+         `visible` en vez de siempre mostrar; después un `height` fijo en la
+         línea sola) no alcanzaron — la fila seguía moviéndose. La corrección
+         que sí funcionó: el `Column` raíz tiene ahora un `height` explícito
+         que solo referencia cantidades que nunca dependen del foco (el
+         texto constante de la etiqueta, el alto fijo de la fila, y el
+         literal `14` de la línea de subtítulo, no una referencia a su
+         alto) — así la altura de la columna, y por lo tanto dónde cae la
+         fila, no tiene ningún camino posible para depender del foco.
 - [x] "Cómo se juega" abre con Enter/click aunque el juego no tenga `guia`.
       **Confirmado (2026-09-29):** Pacman, de `library/` real, no tiene
       bloque `guia` y la tarjeta abrió igual con la ayuda general.
-- [ ] Con `dino` (fixture): objetivo, 3 acciones, 3 primeros pasos, 3 reglas,
+- [x] Con `dino` (fixture): objetivo, 3 acciones, 3 primeros pasos, 3 reglas,
       multijugador cooperativo/3 jugadores se ven completos.
-- [ ] Con `library/arcade/media/pacman` (0 botones reales): el diagrama no
+      **Confirmado (2026-09-29):** los cinco coinciden con
+      `fixtures/arcade/media/dino/data.json`.
+- [x] Con `library/arcade/media/pacman` (0 botones reales): el diagrama no
       dibuja ninguna fila de botones y no queda vacío ni roto.
+      **Confirmado (2026-09-29):** no se dibujó nada, como corresponde.
 - [ ] Con `library/arcade/media/simpsons` (tiene `guia`... **no todavía**:
       falta que COINDOOR la exporte o escribirla a mano en `library/` — ver
       nota abajo).

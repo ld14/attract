@@ -52,13 +52,27 @@ Column {
 
     spacing: 12
 
+    // Alto FIJO a proposito, no implicito. `Column.height` por defecto es la
+    // suma de sus hijos + spacing, y cambiaba con el foco aunque la linea de
+    // subtitulo (mas abajo) tuviera `height` explicito - visto en Pegasus
+    // real (2026-09-29): la fila de tarjetas se corria de lugar cada vez que
+    // el subtitulo entraba o salia de foco. Esta expresion referencia solo
+    // cantidades que NUNCA dependen de `root.foco` (el texto de la etiqueta
+    // es constante, `fila.height` es fijo, y el `14` es un literal, no una
+    // referencia al alto del subtitulo) - asi la altura de la columna, y por
+    // lo tanto donde cae `fila`, no tiene ningun camino posible para
+    // depender del foco.
+    height: etiqueta.implicitHeight + spacing + fila.height + spacing + 14
+
     SectionLabel {
+        id: etiqueta
         text: "CONTENIDO EXTRA"
         activo: root.foco >= 0
         accent: root.accent
     }
 
     Row {
+        id: fila
         // 4×145 + 3×10 = 610px de fila, contra un presupuesto real de
         // ~634px (ver encabezado del archivo).
         spacing: 10
@@ -180,9 +194,23 @@ Column {
     // La linea compartida (decision 8b): el detalle de la tarjeta enfocada,
     // o nada con foco -1. Reemplaza al subtitulo que antes vivia dentro de
     // cada tarjeta.
+    //
+    // SIEMPRE VISIBLE Y CON ALTO FIJO, aunque el texto quede vacio. Dos
+    // motivos, los dos vistos en Pegasus real (2026-09-29) despues de
+    // corregir uno y encontrar que la fila seguia moviendose:
+    //   1. Un Column de QtQuick no reserva espacio para un hijo con
+    //      `visible: false` (los positioners saltean los hijos invisibles
+    //      al calcular el layout) - por eso siempre visible.
+    //   2. Un Text de QtQuick con `text: ""` tiene `implicitHeight: 0` (sin
+    //      caracteres, el layout de texto no produce ninguna linea) - por
+    //      eso el `height` fijo de abajo, que no depende del contenido.
+    // Sin los dos, ocultar o vaciar esta linea encogia la columna y, como
+    // ExtrasList esta anclado por el borde inferior en DetailScreen.qml, la
+    // fila de tarjetas de arriba se corria de lugar cada vez que cambiaba
+    // el foco.
     Text {
         text: root._subtituloDe(root.foco)
-        visible: text !== ""
+        height: 14                    // fijo: ver el comentario de arriba
         color: Theme.textFaint
         font.family: Theme.fontMono
         font.pixelSize: Theme.sizeMonoSm
