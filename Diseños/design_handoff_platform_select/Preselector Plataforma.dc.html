@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=Sora:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin:0; padding:0; background:#04050a; }
+  a { color:#19e3e3; text-decoration:none; }
+  a:hover { color:#7ff0f0; }
+  @keyframes scandrift { from { background-position:0 0; } to { background-position:0 6px; } }
+  @keyframes accentpulse { 0%,100% { opacity:.55; } 50% { opacity:.85; } }
+  image-slot { display:block; width:100%; height:100%; color:rgba(233,235,242,.85); }
+</style>
+</helmet>
+<div style="width:100%;height:100dvh;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#04050a;">
+<div ref="{{ stageRef }}" style="--accent:{{ accent }};position:relative;flex:none;width:1280px;height:720px;overflow:hidden;background:#06070c;color:#e9ebf2;font-family:'Sora',sans-serif;transform:{{ stageTransform }};transform-origin:center center;">
+
+  <div style="position:absolute;inset:0;background:radial-gradient(135% 105% at 74% 4%, var(--accent,#19e3e3) 0%, transparent 44%), linear-gradient(180deg,#0a0c12 0%,#06070c 100%);opacity:.5;transition:background .5s;"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(255,255,255,.055) 0px, rgba(255,255,255,.055) 1px, transparent 1px, transparent 3px);mix-blend-mode:screen;opacity:.1;animation:scandrift 1.6s linear infinite;"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, transparent 52%, rgba(3,4,8,.72) 100%);"></div>
+
+  <div style="position:relative;z-index:10;display:flex;align-items:center;gap:18px;padding:22px 48px 0;">
+    <div style="display:flex;align-items:center;gap:11px;">
+      <div style="width:13px;height:13px;border-radius:3px;background:var(--accent,#19e3e3);box-shadow:0 0 14px var(--accent,#19e3e3);"></div>
+      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:.16em;font-size:15px;">SHINBOX <span style="color:#6a7081;font-weight:500;">ARCADE</span></div>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;color:#6a7081;padding-left:16px;border-left:1px solid rgba(255,255,255,.12);">PRESELECTOR DE PLATAFORMA</div>
+    <sc-if value="{{ hasLogo }}" hint-placeholder-val="{{ false }}">
+      <div style="width:104px;height:30px;position:relative;flex:none;overflow:hidden;opacity:.9;">
+        <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ logoId }}" src="{{ logoSrc }}" placeholder="{{ logoPh }}" fit="contain" position="left center" shape="rect" hint-size="104px,30px" style="position:absolute;inset:0;width:100%;height:100%;overflow:hidden;"></x-import>
+      </div>
+    </sc-if>
+    <div style="flex:1;"></div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;color:#8a90a0;">{{ totalTxt }}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7c8294;letter-spacing:.08em;padding-left:14px;border-left:1px solid rgba(255,255,255,.12);">{{ clock }}</div>
+  </div>
+
+  <div style="position:absolute;inset:0;z-index:2;overflow:hidden;background:#0a0c12;">
+    <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg, rgba(6,7,12,.97) 0%, rgba(6,7,12,.9) 30%, rgba(6,7,12,.28) 46%, transparent 58%);"></div>
+    <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg, rgba(4,5,10,.85) 0%, transparent 42%), linear-gradient(180deg, rgba(4,5,10,.85) 0%, transparent 22%);"></div>
+
+    <sc-if value="{{ hasVideo }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:72px;top:190px;width:440px;height:248px;">
+        <video src="{{ vidSrc }}" autoPlay="{{ true }}" muted="{{ true }}" loop="{{ true }}" playsInline="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
+        <div style="position:absolute;inset:-1px;pointer-events:none;box-shadow:inset 0 0 30px 14px #07080d, inset 0 0 78px 34px rgba(7,8,13,.9);background:radial-gradient(118% 122% at 50% 50%, transparent 52%, rgba(7,8,13,.75) 84%, #07080d 100%);"></div>
+      </div>
+    </sc-if>
+
+    <div style="position:absolute;left:38%;right:0;top:0;bottom:0;-webkit-mask-image:radial-gradient(120% 118% at 68% 46%, #000 52%, rgba(0,0,0,.55) 78%, transparent 100%), linear-gradient(90deg, transparent 0%, #000 16%);mask-image:radial-gradient(120% 118% at 68% 46%, #000 52%, rgba(0,0,0,.55) 78%, transparent 100%), linear-gradient(90deg, transparent 0%, #000 16%);-webkit-mask-composite:source-in;mask-composite:intersect;">
+      <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ artId }}" src="{{ artSrc }}" placeholder="{{ artPh }}" fit="contain" position="right center" shape="rect" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%;"></x-import>
+    </div>
+
+
+    <div style="position:absolute;left:0;top:0;bottom:0;width:58%;pointer-events:none;display:flex;flex-direction:column;justify-content:center;padding:0 72px;">
+      <sc-if value="{{ rails }}" hint-placeholder-val="{{ true }}">
+        <div style="width:440px;height:248px;margin-bottom:14px;flex:none;"></div>
+      </sc-if>
+      <div style="font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:52px;line-height:.96;letter-spacing:-.01em;max-width:600px;text-wrap:pretty;text-shadow:0 8px 40px rgba(0,0,0,.6);">{{ platName }}</div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:11px;font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.08em;color:#c2c6d2;">
+        <span style="width:7px;height:7px;background:var(--accent,#19e3e3);transform:rotate(45deg);"></span>
+        <span>{{ countTxt }}</span>
+      </div>
+    </div>
+
+    <button onClick="{{ onPrev }}" style="position:absolute;left:18px;top:50%;margin-top:-60px;width:40px;height:120px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(10,12,18,.5);color:#aeb3c0;font-family:'JetBrains Mono',monospace;font-size:15px;cursor:pointer;" style-hover="background:rgba(255,255,255,.1);color:#e9ebf2;">◄</button>
+    <button onClick="{{ onNext }}" style="position:absolute;right:18px;top:50%;margin-top:-60px;width:40px;height:120px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(10,12,18,.5);color:#aeb3c0;font-family:'JetBrains Mono',monospace;font-size:15px;cursor:pointer;" style-hover="background:rgba(255,255,255,.1);color:#e9ebf2;">►</button>
+  </div>
+
+  <sc-if value="{{ gridOpen }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Catálogo filtrado" style="position:absolute;inset:0;z-index:40;background:rgba(5,6,10,.95);backdrop-filter:blur(14px);display:flex;flex-direction:column;padding:26px 48px 0;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <button onClick="{{ onBack }}" style="display:flex;align-items:center;gap:9px;padding:8px 14px 8px 11px;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(255,255,255,.05);color:#c7cbd6;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;cursor:pointer;">◄ PLATAFORMAS <span style="font-size:9px;font-weight:700;color:#07080c;background:rgba(255,255,255,.6);padding:2px 5px;border-radius:4px;">B</span></button>
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:20px;letter-spacing:.04em;">{{ gridHead }}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:#5b6173;">{{ gridSub }}</div>
+        <div style="flex:1;"></div>
+        <div style="display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--accent,#19e3e3);padding:3px 9px;border:1px solid color-mix(in srgb, var(--accent,#19e3e3) 30%, rgba(255,255,255,.08));border-radius:20px;">{{ filterTxt }}</div>
+      </div>
+
+      <div style="margin-top:24px;display:grid;grid-template-columns:repeat(7, 148px);gap:18px 16px;justify-content:start;">
+        <sc-for list="{{ games }}" as="g" hint-placeholder-count="14">
+          <div style="{{ g.style }}">
+            <div style="position:absolute;inset:0;{{ g.cover }}"></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(0deg, rgba(4,5,10,.92) 0%, rgba(4,5,10,.2) 52%, transparent 100%);"></div>
+            <div style="position:absolute;top:8px;right:9px;font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.62);">{{ g.year }}</div>
+            <div style="position:absolute;left:9px;bottom:9px;right:9px;display:flex;flex-direction:column;gap:5px;">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.04em;color:rgba(255,255,255,.85);background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.22);padding:1px 4px;border-radius:3px;align-self:flex-start;">{{ g.plat }}</span>
+              <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12.5px;line-height:1.08;text-transform:uppercase;letter-spacing:.01em;">{{ g.title }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ emptyOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:26px 28px;border:1px dashed rgba(255,255,255,.14);border-radius:12px;max-width:620px;">
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:17px;letter-spacing:.03em;">SIN JUEGOS EN ESTA PLATAFORMA</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;color:#8a90a0;">La ruta está montada pero vacía. Cargá los ROMs en<br /><span style="color:#8fd6a8;">library/{{ dir }}/&lt;carpeta-juego&gt;/</span><br />y validá con <span style="color:#8fd6a8;">make doctor-lib</span>.</div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ crt }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0;z-index:80;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(0,0,0,.15) 0px, rgba(0,0,0,.15) 1px, transparent 1px, transparent 3px), radial-gradient(120% 120% at 50% 50%, transparent 64%, rgba(0,0,0,.5) 100%);mix-blend-mode:multiply;"></div>
+  </sc-if>
+
+  <sc-if value="{{ showLegend }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;left:0;right:0;bottom:0;z-index:90;display:flex;align-items:center;gap:26px;padding:16px 48px 20px;background:linear-gradient(0deg, rgba(4,5,10,.9) 0%, transparent 100%);">
+      <sc-for list="{{ legend }}" as="lg" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#07080c;background:var(--accent,#19e3e3);padding:3px 8px;border-radius:5px;letter-spacing:.04em;">{{ lg.k }}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#9aa0b0;letter-spacing:.04em;">{{ lg.l }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:720},&quot;crtScanlines&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showLegend&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showVideoRails&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const PLATS = [
+  { ab:'TODAS', name:'Todas las plataformas',            dir:'*',    n:1952, fav:184, h:195, all:true },
+  { ab:'GBA',  name:'Game Boy Advance',                   dir:'gba',  n:312, fav:41, h:285 },
+  { ab:'GBC',  name:'Game Boy Color',                     dir:'gbc',  n:198, fav:22, h:150 },
+  { ab:'GC',   name:'Nintendo GameCube',                  dir:'gc',   n:64,  fav:9,  h:240 },
+  { ab:'NES',  name:'Nintendo Entertainment System',      dir:'nes',  n:421, fav:37, h:20  },
+  { ab:'PS2',  name:'Sony PlayStation 2',                 dir:'ps2',  n:17,  fav:3,  h:195 },
+  { ab:'PSP',  name:'PlayStation Portable',               dir:'psp',  n:0,   fav:0,  h:60  },
+  { ab:'SNES', name:'Super Nintendo Entertainment System', dir:'snes', n:843, fav:55, h:330 },
+  { ab:'WII',  name:'Nintendo Wii',                       dir:'wii',  n:73,  fav:11, h:100 },
+  { ab:'SWITCH', name:'Nintendo Switch',                  dir:'switch', n:24, fav:6, h:170, art:'uploads/114784-mario-super-bros-png-free-photo.png', logo:'uploads/nintendo-switch-seeklogo.png', video:'uploads/videoplayback (13).mp4' }
+];
+const TITLES = ['Neon Circuito','Caverna 9','Sector Delta','Pistola de Luz','Órbita Roja','Torre de Hierro','Karate Dojo','Luna Salvaje','Motor 500','Isla Hundida','Gladiador X','Puente Roto','Zona Cero','Viento Norte','Cristal Azul','Ruta 88'];
+
+class Component extends DCLogic {
+  state = { idx: 0, grid: false, g: 0, clock: '', scale: 1 };
+  stageRef = React.createRef();
+
+  componentDidMount() {
+    this.tickClock();
+    this.clockTimer = setInterval(() => this.tickClock(), 20000);
+    this.onKey = (e) => this.handleKey(e);
+    document.addEventListener('keydown', this.onKey);
+    this.fit();
+    this.onResize = () => this.fit();
+    window.addEventListener('resize', this.onResize);
+  }
+  componentWillUnmount() {
+    clearInterval(this.clockTimer);
+    document.removeEventListener('keydown', this.onKey);
+    window.removeEventListener('resize', this.onResize);
+  }
+  fit() {
+    const el = this.stageRef.current;
+    if (!el || !el.parentElement) return;
+    const r = el.parentElement.getBoundingClientRect();
+    const w = Math.min(r.width || window.innerWidth, window.innerWidth);
+    const h = Math.min(r.height || window.innerHeight, window.innerHeight);
+    if (!w || !h) return;
+    const s = Math.min(w / 1280, h / 720);
+    if (Math.abs(s - this.state.scale) > 0.005) this.setState({ scale: s });
+  }
+  tickClock() {
+    const d = new Date();
+    this.setState({ clock: String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') });
+  }
+  move(step) {
+    const n = PLATS.length;
+    this.setState(s => ({ idx: (s.idx + step + n) % n }));
+  }
+  moveGame(step) {
+    this.setState(s => {
+      const total = Math.min(PLATS[s.idx].n, 14);
+      if (!total) return null;
+      return { g: Math.max(0, Math.min(total - 1, s.g + step)) };
+    });
+  }
+  handleKey(e) {
+    const k = e.key;
+    if (this.state.grid) {
+      if (k === 'ArrowRight') this.moveGame(1);
+      else if (k === 'ArrowLeft') this.moveGame(-1);
+      else if (k === 'ArrowDown') this.moveGame(7);
+      else if (k === 'ArrowUp') this.moveGame(-7);
+      else if (k === 'Escape' || k === 'b' || k === 'B' || k === 'Backspace') this.setState({ grid:false });
+      else return;
+      e.preventDefault();
+      return;
+    }
+    if (k === 'ArrowRight') this.move(1);
+    else if (k === 'ArrowLeft') this.move(-1);
+    else if (k === 'Enter' || k === 'a' || k === 'A') this.setState({ grid:true, g:0 });
+    else if (k === 'x' || k === 'X') this.setState({ idx: Math.floor(Math.random() * PLATS.length) });
+    else return;
+    e.preventDefault();
+  }
+  acc(h) { return 'oklch(0.74 0.16 ' + h + ')'; }
+  cover(acc, i) {
+    return 'background:radial-gradient(140% 120% at ' + (18 + (i % 3) * 28) + '% ' + (14 + (i % 2) * 40) + '%, color-mix(in srgb,' + acc + ' 42%, transparent) 0%, transparent 52%),conic-gradient(from ' + (i * 40) + 'deg at 70% 26%, color-mix(in srgb,' + acc + ' 18%, transparent), transparent 44%),linear-gradient(150deg, color-mix(in srgb,' + acc + ' 12%, transparent) 0%, #0a0b10 64%);';
+  }
+
+  renderVals() {
+    const s = this.state;
+    const p = PLATS[s.idx];
+    const acc = this.acc(p.h);
+    const real = PLATS.filter(x => !x.all);
+    const total = real.reduce((a,x) => a + x.n, 0);
+    const shown = Math.min(p.n, 14);
+    const withGames = real.filter(x => x.n > 0);
+
+    const games = Array.from({ length: shown }, (_, i) => {
+      const f = i === s.g;
+      const src = p.all ? withGames[i % withGames.length] : p;
+      return {
+        title: TITLES[(i + s.idx * 3) % TITLES.length],
+        year: String(1988 + ((i * 3 + s.idx * 5) % 18)),
+        plat: src.ab,
+        cover: this.cover(p.all ? this.acc(src.h) : acc, i + s.idx),
+        style: 'position:relative;width:148px;height:166px;border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .16s, opacity .16s, box-shadow .16s;opacity:' + (f ? '1' : '.66') + ';transform:' + (f ? 'translateY(-10px) scale(1.04)' : 'none') + ';border:1px solid ' + (f ? acc : 'rgba(255,255,255,.08)') + ';box-shadow:' + (f ? '0 14px 30px rgba(0,0,0,.55), 0 0 22px color-mix(in srgb,' + acc + ' 45%, transparent)' : '0 10px 24px rgba(0,0,0,.4)') + ';'
+      };
+    });
+
+    return {
+      accent: acc,
+      stageTransform: 'scale(' + s.scale + ')',
+      stageRef: this.stageRef,
+      clock: s.clock,
+      crt: this.props.crtScanlines !== false,
+      showLegend: this.props.showLegend !== false,
+      ab: p.ab,
+      dir: p.dir,
+      platName: p.name,
+      artId: 'plat-art-' + p.dir,
+      logoId: 'plat-logo-' + p.dir,
+      rails: this.props.showVideoRails !== false,
+      hasVideo: !!p.video,
+      vidSrc: p.video ? encodeURI(p.video) : '',
+      reelA: TITLES[(s.idx * 5 + 1) % TITLES.length],
+      reelB: TITLES[(s.idx * 5 + 6) % TITLES.length],
+      artSrc: p.art || '',
+      artPh: 'emblema ' + p.ab + ' — arrastrá una imagen',
+      hasLogo: !!p.logo,
+      logoSrc: p.logo || '',
+      logoPh: 'logo ' + p.ab,
+      countTxt: (p.n === 0 ? 'SIN ÍTEMS' : p.n + ' ÍTEMS') + ' · ' + (p.all ? real.length + ' PLATAFORMAS' : 'PLATAFORMA ' + s.idx + ' DE ' + real.length),
+      totalTxt: total + ' JUEGOS · ' + real.length + ' PLATAFORMAS',
+      onPrev: () => this.move(-1),
+      onNext: () => this.move(1),
+      onOpen: () => this.setState({ grid:true, g:0 }),
+      onBack: () => this.setState({ grid:false }),
+      onRandom: () => this.setState({ idx: Math.floor(Math.random() * PLATS.length) }),
+      gridOpen: s.grid,
+      emptyOpen: s.grid && p.n === 0,
+      filterTxt: p.all ? 'SIN FILTRO' : 'FILTRO · ' + p.ab,
+      gridHead: 'CATÁLOGO · ' + p.ab,
+      gridSub: p.n === 0 ? '0 juegos' : 'mostrando ' + shown + ' de ' + p.n,
+      games,
+      legend: s.grid
+        ? [{k:'◄ ►',l:'MOVER FOCO'},{k:'A',l:'ABRIR JUEGO'},{k:'B',l:'PLATAFORMAS'}]
+        : [{k:'◄ ►',l:'CAMBIAR PLATAFORMA'},{k:'A',l:'VER LIBRERÍA'},{k:'X',l:'ALEATORIO'},{k:'B',l:'VOLVER'}]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -8,12 +8,15 @@ function catalog(games) {
     const search = vm.createContext({});
     vm.runInContext(fs.readFileSync(path.join(__dirname,
         '../themes/attract/core/Search.js'), 'utf8'), search);
+    const platforms = vm.createContext({});
+    vm.runInContext(fs.readFileSync(path.join(__dirname,
+        '../themes/attract/core/Platforms.js'), 'utf8'), platforms);
     const source = fs.readFileSync(path.join(__dirname,
         '../themes/attract/core/Catalog.qml'), 'utf8');
     const methods = source.match(/^    function [\s\S]*?^    }/gm).join('\n');
-    const context = vm.createContext({Search: search,
+    const context = vm.createContext({Search: search, Platforms: platforms,
         api: {allGames: {toVarArray: () => games}},
-        _juegos: [], _claves: [], _generacion: 0,
+        _juegos: [], _claves: [], _generacion: 0, coleccion: null,
         pestana: 1, modo: 1, criterio: 1, direccion: -1,
         filtro: {campo: 'anio', valor: 1992}});
     vm.runInContext(methods, context);

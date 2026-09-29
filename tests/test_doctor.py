@@ -731,3 +731,146 @@ def test_gallery_mezcla_archivo_y_vacio_es_valido(tmp_path):
     rep = revisar(tmp_path)
     assert rep.ok
     assert "data-contrato" in {h.chequeo for h in rep.avisos}
+
+
+# --- guia (ADR-0037, capas 1+2 de ADR-0036) --------------------------------
+#
+# Nunca nombra un boton fisico ni una tecla de salida - eso lo resuelve
+# 027 localmente. Una clave desconocida es AVISO, no ERROR (ADR-0020).
+
+def _escribir_guia(tmp_path, guia, set_id="x"):
+    d = tmp_path / "media" / set_id
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "data.json").write_text(json.dumps({"guia": guia}), encoding="utf-8")
+    return d
+
+
+def test_guia_sin_campo_es_valido(tmp_path):
+    d = tmp_path / "media" / "x"
+    d.mkdir(parents=True)
+    (d / "data.json").write_text("{}", encoding="utf-8")
+    assert revisar(tmp_path).ok
+
+
+def test_guia_completa_no_reporta_error(tmp_path):
+    _escribir_guia(tmp_path, {
+        "objetivo": "Llegar al final del laberinto.",
+        "acciones": [{"control": "P1_BUTTON1", "action": "Saltar", "color": "Red"}],
+        "primerosPasos": ["Insertá crédito."],
+        "reglasEsenciales": ["No toques a los enemigos."],
+        "multijugador": {"modo": "individual", "jugadores": 1},
+        "perifericos": ["joy"],
+        "fuentes": [{"tipo": "arcadedb", "fecha": "2026-09-28"}],
+        "revision": "revisado",
+    })
+    assert revisar(tmp_path).ok
+
+
+def test_guia_como_string_es_error(tmp_path):
+    _escribir_guia(tmp_path, "no es un objeto")
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_guia_sin_objetivo_es_error(tmp_path):
+    _escribir_guia(tmp_path, {"acciones": []})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_guia_objetivo_vacio_es_error(tmp_path):
+    _escribir_guia(tmp_path, {"objetivo": "   "})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_guia_accion_sin_control_es_error(tmp_path):
+    _escribir_guia(tmp_path, {
+        "objetivo": "x",
+        "acciones": [{"action": "Saltar"}],
+    })
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_guia_accion_sin_action_es_error(tmp_path):
+    _escribir_guia(tmp_path, {
+        "objetivo": "x",
+        "acciones": [{"control": "P1_BUTTON1"}],
+    })
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_guia_acciones_no_es_lista_es_error(tmp_path):
+    _escribir_guia(tmp_path, {"objetivo": "x", "acciones": "no es una lista"})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_guia_primeros_pasos_no_string_es_error(tmp_path):
+    _escribir_guia(tmp_path, {"objetivo": "x", "primerosPasos": [123]})
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_guia_multijugador_jugadores_invalido_es_error(tmp_path):
+    _escribir_guia(tmp_path, {
+        "objetivo": "x",
+        "multijugador": {"modo": "individual", "jugadores": 0},
+    })
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_guia_multijugador_modo_desconocido_es_aviso_no_error(tmp_path):
+    _escribir_guia(tmp_path, {
+        "objetivo": "x",
+        "multijugador": {"modo": "cuatro-jugadores", "jugadores": 4},
+    })
+    rep = revisar(tmp_path)
+    assert rep.ok
+    assert "data-contrato" in {h.chequeo for h in rep.avisos}
+
+
+def test_guia_periferico_desconocido_es_aviso_no_error(tmp_path):
+    _escribir_guia(tmp_path, {
+        "objetivo": "x",
+        "perifericos": ["volante"],
+    })
+    rep = revisar(tmp_path)
+    assert rep.ok
+    assert "data-contrato" in {h.chequeo for h in rep.avisos}
+
+
+def test_guia_fuente_sin_tipo_conocido_es_error(tmp_path):
+    _escribir_guia(tmp_path, {
+        "objetivo": "x",
+        "fuentes": [{"fecha": "2026-09-28"}],
+    })
+    assert "data-contrato" in chequeos(revisar(tmp_path))
+
+
+def test_guia_revision_desconocida_es_aviso_no_error(tmp_path):
+    _escribir_guia(tmp_path, {
+        "objetivo": "x",
+        "revision": "aprobada",
+    })
+    rep = revisar(tmp_path)
+    assert rep.ok
+    assert "data-contrato" in {h.chequeo for h in rep.avisos}
+
+
+def test_guia_clave_desconocida_es_aviso_no_error(tmp_path):
+    _escribir_guia(tmp_path, {
+        "objetivo": "x",
+        "salida": "Esc",
+    })
+    rep = revisar(tmp_path)
+    assert rep.ok
+    assert "data-contrato" in {h.chequeo for h in rep.avisos}
+
+
+def test_guia_nunca_nombra_un_boton_fisico_en_el_contrato():
+    # No es un test de comportamiento (nada rechaza el string): es una
+    # verificacion de diseno, para que un futuro cambio del contrato no
+    # cuele un campo de posicion fisica sin que un test lo note.
+    from attract.doctor import _chk_guia_bloque
+    import inspect
+    fuente = inspect.getsource(_chk_guia_bloque)
+    for prohibido in ("posicion", "fisico", "JOYCODE", "tecla"):
+        assert prohibido not in fuente.lower(), (
+            f"'guia' no puede validar/nombrar {prohibido!r} - eso es capa 3 (ADR-0036)"
+        )

@@ -2,11 +2,50 @@
 
 _Orden y estado de las features. Cada entrada apunta a su carpeta en `../features/`._
 
+## En curso
+
+- [026 · Selector de plataforma](../features/026-selector-plataforma/spec.md):
+  pantalla previa a Home que elige plataforma y abre Home filtrado a esa
+  colección. Assets de plataforma en `library/<coleccion>/_platform/` (ADR-0035).
 ## Implementado, pendiente de verificación visual
 
 - [022 · Catálogo en filas](../features/022-catalogo-en-filas/spec.md): ancho
   adaptable, scroll vertical único y filas virtualizadas. Cuatro pruebas de
   proyección/geometría pasan; falta validar foco y renderizado en Pegasus.
+- [027 · Cómo se juega — datos](../features/027-como-se-juega/spec.md) +
+  [028 · Cómo se juega — theme](../features/028-theme-como-se-juega/spec.md):
+  la guía "Cómo se juega", completa de punta a punta (Etapas A-E). **027**:
+  contrato del bloque `guia` en `data.json` (ADR-0037), perfil físico del
+  gabinete (`themes/attract/core/gabinete.json`), comando `attract
+  controles` y validación en `doctor` (`chk_correspondencia_vencida`) —
+  verificado contra la librería real: `attract controles msdos library` da
+  17/19 verificado (2 excepciones de `mapperfile` propio, tal como predecía
+  el plan), `attract controles arcade library` detectó y permitió corregir
+  que 3 de 5 juegos importados con COINDOOR tenían `x-set:` equivocado
+  (pedido formal a COINDOOR en `pedido-coindoor.md`), y sumó `.conf` a
+  `EXT_TEXTO` de `doctor.py`. **028**: tarjeta (`ExtrasList`), overlay
+  (`GuideOverlay`), diagrama de controles (`ControlDiagram`, con la
+  clasificación "sin uso"/"acción desconocida" extraída a
+  `core/ControlDiagram.js` para poder testearla con `node`) y restauración
+  de contexto completo al volver de JUGAR (ADR-0038). 109+8+24+17+41 tests
+  nuevos entre Python y `node --test` (338 passed, 10 skipped en total);
+  `qmllint` sin errores en las piezas de QML nuevas/tocadas y en el resto
+  del theme. Sigue [`piloto/`](../features/027-como-se-juega/piloto/) como
+  evidencia.
+  **Verificación visual en Pegasus real, parcial (2026-09-29):** la fila de
+  4 tarjetas ya no pisa la columna derecha (145×45px cada una, ajustado en
+  el propio gabinete), y ADR-0038 quedó confirmado con Pacman real — JUGAR
+  desde la guía, `Esc` para salir, y al volver la guía de Pacman reapareció
+  abierta; también el caso "cerrar sin jugar" (salir de la guía, ir a Home,
+  cerrar Pegasus) sin que quede una clave vieja secuestrando la próxima
+  apertura. En el camino se encontró que `api.memory.unset()` no sobrevive
+  un cierre de Pegasus en este binario — se reemplazó por `set(clave,
+  null)` en todo el mecanismo (hecho verificado, ver
+  `docs/plataforma-pegasus.md`). **Falta todavía** el resto del checklist
+  de 028 `tasks.md` §Cierre (fixture `dino` con guía completa, diagrama de
+  0 botones de Pacman, recorrido de foco completo, Hacks-desde-la-guía) y
+  la Etapa F (medición física del panel, sin panel final instalado
+  todavía — no es criterio de aceptación).
 
 ## Hecho ✅
 

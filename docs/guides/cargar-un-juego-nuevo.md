@@ -54,6 +54,70 @@ espacio o punto, todo en NFC).
 (no edita, solo crea), `mame` no lo reconoce, o `mame` no está en el
 `PATH`. Nada se escribe si algo de esto pasa.
 
+## 1b · MS-DOS (`attract import`, no `attract ingest`)
+
+Un juego MS-DOS no llega como ROM para `mame -listxml` — llega como paquete
+COINDOOR (`.zip` con `game.json` + `data.json` + `media/` + el juego), y se
+instala con otro comando:
+
+```bash
+python -m attract.instalar --yes paquete.zip library
+```
+
+Con `game.json` declarando `"system": "msdos"` y `"tratamiento":
+"descomprimir"`, el import hace un paso extra en la misma transacción: **le
+genera la configuración de DOSBox** — `dosbox.conf`, el `launch:` del juego y
+un informe en `media/<juego>/_dosbox.json` — sin ejecutar nada ni preguntar
+nada (`ADR-0032`, [feature 025](../../spec/features/025-dosbox-import/spec.md)).
+
+### Qué status te vas a encontrar en `_dosbox.json`
+
+| `status` | Qué significa | Qué hacer |
+|---|---|---|
+| `perfil-conocido` | Esta copia exacta (por hash) ya está probada/investigada | Nada — ya está listo |
+| `declarado` | El paquete trajo `dosbox: {...}` en `game.json` con el arranque | Nada — confiá en lo que declaró quien armó el paquete |
+| `motor-detectado` | Se reconoció el motor (Sierra AGI/SCI, `ADR-0033`) por sus archivos de datos, config investigada aplicada | Nada — pero es menos confiable que `perfil-conocido`: si algo no anda, ajustá `dosbox.conf` |
+| `provisional` | Un único `.EXE`/`.COM` DOS sin instalador de por medio, config genérica | Jugalo y ajustá `dosbox.conf` si hace falta |
+| `pendiente` | Varios candidatos o ninguno — no se pudo elegir solo | Editá `dosbox.conf` a mano, o declará `dosbox.executable` en `game.json` y reimportá |
+| `aportado` / `conservado` | Ya había un `dosbox.conf` (del paquete o de una instalación anterior) | Nunca se pisa — es tuyo |
+
+Si el juego viene como imágenes de disco (`.img`/`.iso`, floppy o CD) en vez
+de una carpeta con archivos sueltos, no hay forma automática de saber qué
+ejecutable hay adentro — declarar `dosbox.imagenes` (lista de rutas),
+`dosbox.tipo_imagen` (`floppy`/`cdrom`) y `dosbox.executable` en `game.json`
+(`ADR-0034`). Sin eso, el informe avisa explícitamente que encontró imágenes
+sin declarar, en vez de solo decir "no hay arranque único".
+
+El import **nunca se detiene a preguntar** por esto: si el juego queda
+`provisional` o `pendiente`, igual termina de instalarse (vas a ver un aviso
+por consola con la ruta del informe) y lo jugás después para confirmar.
+
+`motor-detectado` es automático — no depende de que el juego esté en ningún
+catálogo por copia, solo de que sus archivos de datos coincidan con un motor
+conocido (Sierra AGI o SCI, por ahora). No hace falta hacer nada para que se
+active.
+
+### Cómo se promueve un juego a `perfil-conocido`
+
+No hace falta jugarlo primero en esta máquina — alcanza con investigar la
+config recomendada para **esa versión puntual** del juego (VOGONS,
+PCGamingWiki, el compat-list de DOSBox, notas de eXoDOS) y cargarla en
+`src/attract/dosbox_profiles.py`, citando la fuente. Lo único que no se
+negocia es la identidad exacta: el hash SHA-256 del ejecutable y sus
+archivos acompañantes, que ya quedó calculado en el `_dosbox.json` de la
+instalación `provisional` anterior (campo `executable_sha256`). Sin eso,
+un juego con el mismo nombre pero otra edición podría heredar una config
+que no le corresponde. Si después de aplicada la config investigada algo no
+anda del todo bien, se ajusta `dosbox.conf` a mano — no bloquea nada
+(`docs/decisiones/2026-09-16.md`).
+
+### Reimportar no te pisa nada
+
+Si ya jugaste el juego y tocaste su `dosbox.conf`, reimportar el mismo
+paquete (por ejemplo para actualizar `data.json` o assets) **conserva ese
+`.conf` tal cual** — ni la extracción ni el resolvedor lo tocan, y el
+`launch:` tampoco cambia.
+
 ## 2 · Las imágenes
 
 Van planas dentro de `library/<sistema>/media/<juego>/`, sin subcarpetas por
@@ -226,6 +290,15 @@ Notas que importan al cargar:
   error ([`ADR-0030`](../../spec/decisions/0030-contrato-gallery-data-json.md)).
 - `accent`/`accent2` son hex `#rrggbb` de 6 dígitos — `attract doctor`
   rechaza formas cortas tipo `#fb0`.
+- `guia` es el bloque de "Cómo se juega": objetivo, acciones, primeros
+  pasos, reglas esenciales, multijugador y periféricos requeridos
+  ([`ADR-0037`](../../spec/decisions/0037-forma-bloque-guia-data-json.md)).
+  **No lo escribas a mano** — lo produce COINDOOR al exportar el paquete;
+  acá solo se importa. Un juego sin `guia` sigue siendo válido: la tarjeta
+  "Cómo se juega" abre igual y muestra la ayuda general del gabinete, con
+  el aviso "Sin guía específica para este juego". El bloque nunca nombra un
+  botón físico del panel — eso lo resuelve `attract controles` (§9), no
+  `data.json`.
 
 ### Los grupos de `cheats` son libres
 
@@ -358,6 +431,36 @@ make theme         # producción
 make theme-debug   # harness de debug (ADR-0001)
 ```
 
+## 9 · Correspondencia de controles (`attract controles`)
+
+No hace falta para cargar un juego suelto — es mantenimiento del gabinete,
+no del catálogo. Corré esto cuando cambia el panel físico o la
+configuración de MAME/DOSBox, para que la guía "Cómo se juega" sepa qué
+botón lógico corresponde a qué posición del panel
+([`ADR-0036`](../../spec/decisions/0036-guia-tres-capas.md)):
+
+```bash
+python -m attract.controles arcade library          # dry-run: solo reporta
+python -m attract.controles arcade library --apply  # escribe el artefacto
+```
+
+Escribe `library/<coleccion>/_controles.json`, uno por colección. Un
+control queda **verificado** solo si toda la cadena se resuelve (perfil
+físico → configuración real de MAME/DOSBox en esta máquina → posición
+medida en el panel) — si falta cualquier eslabón, la guía muestra la
+entrada lógica ("botón 2 del jugador 1") en vez de señalar un botón que
+capaz no es. Correlo de nuevo después de:
+
+- cambiar el mapeo global de MAME (`default.cfg`/`ctrlr/`);
+- instalar o mover un periférico del gabinete;
+- medir una posición nueva en el perfil físico
+  (`themes/attract/core/gabinete.json`) — hoy ninguna posición está
+  medida, así que todo sale como entrada lógica sin verificar.
+
+`attract doctor` avisa si el artefacto quedó desactualizado contra la
+librería (`chk_correspondencia_vencida`), salteando el chequeo si no hay
+MAME/DOSBox reales en esta máquina.
+
 ## Si algo falla
 
 Los tres síntomas más comunes, en orden de frecuencia:
@@ -367,6 +470,7 @@ Los tres síntomas más comunes, en orden de frecuencia:
 | La sinopsis no se ve, aunque el `.json` esté bien | Falta correr `attract synopsis` (§6) — el `.json` es la fuente, no lo que Pegasus lee |
 | Cargaste todo y no aparece nada nuevo | Pegasus lee la librería **al arrancar**: ⌘Q y volver a abrir, no alcanza con volver al menú |
 | `[ERROR] basura-macos` | `.DS_Store` de Finder (§7) |
+| Un juego MS-DOS no arranca / pide "revisar `_dosbox.json`" | Perfil `pendiente` o `provisional` sin ajustar (§1b) — mirá `media/<juego>/_dosbox.json` |
 
 Para el resto, ver [`docs/troubleshooting.md`](../troubleshooting.md). Si el
 síntoma no está ahí, `make doctor-lib` casi siempre dice qué archivo y qué

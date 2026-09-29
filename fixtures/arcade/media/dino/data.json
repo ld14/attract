@@ -74,5 +74,29 @@
       "file": "",
       "label": "Gabinete"
     }
-  ]
+  ],
+  "guia": {
+    "objetivo": "Derrotar a los rivales combinando golpes y patadas hasta agotar su energía.",
+    "acciones": [
+      { "control": "P1_BUTTON1", "action": "Jab Punch", "color": "Blue" },
+      { "control": "P1_BUTTON2", "action": "Strong Punch", "color": "Yellow" },
+      { "control": "P1_BUTTON4", "action": "Short Kick", "color": "Blue" }
+    ],
+    "primerosPasos": [
+      "Insertá crédito y apretá Start.",
+      "Elegí personaje con la palanca y confirmá con cualquier botón.",
+      "Acercate al rival para empezar a golpear."
+    ],
+    "reglasEsenciales": [
+      "Gana la ronda quien deja al rival sin energía.",
+      "Gana el combate quien se lleva dos rondas.",
+      "El modo 3 jugadores se activa desde el test menu."
+    ],
+    "multijugador": { "modo": "cooperativo", "jugadores": 3 },
+    "perifericos": ["joy"],
+    "fuentes": [
+      { "tipo": "arcadedb", "fecha": "2026-09-28", "version": "fixture de prueba" }
+    ],
+    "revision": "revisado"
+  }
 }

@@ -15,7 +15,7 @@ import re
 import sys
 import unicodedata
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 # ---------------------------------------------------------------------------
 # Reglas de Windows. No son opinables: son del sistema operativo.
@@ -32,7 +32,7 @@ WIN_NOMBRES_RESERVADOS = (
 # Basura que macOS siembra y que Pegasus levanta como si fueran juegos
 BASURA_MACOS = re.compile(r"^(\._|\.DS_Store$|\.Spotlight-V100$|\.Trashes$)")
 
-EXT_TEXTO = {".txt", ".qml", ".cfg", ".md", ".json", ".yml", ".yaml"}
+EXT_TEXTO = {".txt", ".qml", ".cfg", ".conf", ".md", ".json", ".yml", ".yaml"}
 
 # Extensiones conocidas de galeria (ADR-0030). El theme no puede dibujar
 # cualquier cosa: una extension fuera de estas se reporta como error.
@@ -127,6 +127,25 @@ def chk_nombre_windows(path: Path, rep: Reporte) -> None:
                 "nombre-windows", path,
                 f"'{parte}' termina en espacio o punto - ilegal en Windows",
             )
+
+
+def chk_ruta_relativa(ruta: str, rep: Reporte) -> None:
+    """Una ruta declarada en un paquete (dosbox.executable, ADR-0032, y
+    similares) nunca puede asumir una unidad fija ni escapar de su carpeta -
+    el mismo espiritu del zip-slip guard de instalar.py, para texto suelto."""
+    if not ruta or ruta.strip() != ruta:
+        rep.error("ruta-relativa", ruta, "ruta vacia o con espacios en los bordes")
+        return
+    if "\\" in ruta:
+        rep.error("ruta-relativa", ruta, "usa '\\\\' - las rutas declaradas van con '/'")
+        return
+    if ":" in ruta or PurePosixPath(ruta).is_absolute():
+        rep.error("ruta-relativa", ruta, "ruta absoluta o con unidad - debe ser relativa")
+        return
+    if ".." in PurePosixPath(ruta).parts:
+        rep.error("ruta-relativa", ruta, "usa '..' - no puede escapar de su carpeta")
+        return
+    chk_nombre_windows(Path(ruta), rep)
 
 
 def chk_nfc_nombre(path: Path, rep: Reporte) -> None:
@@ -261,6 +280,16 @@ REVIEW_CATS_CONOCIDAS = {
     "originalidad", "graficos", "adiccion",
     "sonido", "dificultad", "animacion",
 }
+
+# Vocabulario de `guia` (ADR-0037). GUIA_PERIFERICOS_CONOCIDOS es el mismo
+# que usa `<control type="...">` de mame -listxml, mas mouse/keyboard para
+# DOS - el cruce con el perfil del gabinete es una comparacion de strings,
+# sin traducir vocabularios (confirmado a mano en el piloto, caso Shuffleshot).
+GUIA_MODOS_CONOCIDOS = {"individual", "cooperativo", "versus"}
+GUIA_PERIFERICOS_CONOCIDOS = {
+    "joy", "trackball", "dial", "paddle", "lightgun", "mouse", "keyboard",
+}
+GUIA_FUENTES_TIPOS_CONOCIDOS = {"arcadedb", "web", "manual"}
 
 
 def _chk_manual_doc(doc, i: int, path: Path, falla) -> None:
@@ -494,6 +523,116 @@ def chk_data_contrato(path: Path, rep: Reporte) -> None:
 
             for i, piece in enumerate(gallery):
                 _chk_gallery_piece(piece, i, path, falla, avisa)
+
+    # --- guia (ADR-0037, capas 1+2 de ADR-0036) ---
+    #
+    # Nunca nombra un boton fisico ni una tecla de salida - eso lo resuelve
+    # 027 localmente (perfil + config real de esta maquina), y data.json no
+    # puede saberlo. Una clave de primer nivel desconocida dentro de `guia`
+    # es AVISO, no ERROR (mismo motivo que ADR-0020: que un campo no se
+    # valide no significa que no exista).
+    guia = datos.get("guia")
+    if guia is not None:
+        if not isinstance(guia, dict):
+            falla("guia", "tiene que ser un objeto")
+        else:
+            def avisa_guia(campo: str, motivo: str) -> None:
+                rep.aviso("data-contrato", path, f"'{campo}': {motivo}")
+
+            _chk_guia_bloque(guia, path, falla, avisa_guia)
+
+
+def _chk_guia_bloque(guia: dict, path: Path, falla, avisa) -> None:
+    """El bloque `guia` completo (ADR-0037)."""
+    CLAVES_CONOCIDAS = {
+        "objetivo", "acciones", "primerosPasos", "reglasEsenciales",
+        "multijugador", "perifericos", "fuentes", "revision",
+    }
+    for clave in guia:
+        if clave not in CLAVES_CONOCIDAS:
+            avisa(f"guia.{clave}", "clave desconocida dentro de 'guia'")
+
+    objetivo = guia.get("objetivo")
+    if not isinstance(objetivo, str) or not objetivo.strip():
+        falla("guia.objetivo", "obligatorio, string no vacio")
+
+    acciones = guia.get("acciones")
+    if acciones is not None:
+        if not isinstance(acciones, list):
+            falla("guia.acciones", "tiene que ser una lista")
+        else:
+            for i, accion in enumerate(acciones):
+                prefijo = f"guia.acciones[{i}]"
+                if not isinstance(accion, dict):
+                    falla(prefijo, "tiene que ser un objeto")
+                    continue
+                for campo in ("control", "action"):
+                    if not isinstance(accion.get(campo), str) or not accion[campo].strip():
+                        falla(f"{prefijo}.{campo}", "obligatorio, string no vacio")
+                color = accion.get("color")
+                if color is not None and not isinstance(color, str):
+                    falla(f"{prefijo}.color", "si esta presente, tiene que ser string")
+
+    for campo in ("primerosPasos", "reglasEsenciales"):
+        val = guia.get(campo)
+        if val is not None:
+            if not isinstance(val, list) or not all(isinstance(p, str) for p in val):
+                falla(f"guia.{campo}", "tiene que ser una lista de strings")
+
+    multijugador = guia.get("multijugador")
+    if multijugador is not None:
+        if not isinstance(multijugador, dict):
+            falla("guia.multijugador", "tiene que ser un objeto")
+        else:
+            modo = multijugador.get("modo")
+            if modo is not None and modo not in GUIA_MODOS_CONOCIDOS:
+                # AVISO, no ERROR: el theme degrada a "individual" (ADR-0037).
+                avisa(
+                    "guia.multijugador.modo",
+                    f"'{modo}' no es de los conocidos "
+                    f"({', '.join(sorted(GUIA_MODOS_CONOCIDOS))}) - degrada a 'individual'",
+                )
+            jugadores = multijugador.get("jugadores")
+            if jugadores is not None and (
+                not isinstance(jugadores, int) or isinstance(jugadores, bool) or jugadores < 1
+            ):
+                falla("guia.multijugador.jugadores", "tiene que ser un entero >= 1")
+
+    perifericos = guia.get("perifericos")
+    if perifericos is not None:
+        if not isinstance(perifericos, list):
+            falla("guia.perifericos", "tiene que ser una lista")
+        else:
+            for p in perifericos:
+                if p not in GUIA_PERIFERICOS_CONOCIDOS:
+                    avisa(
+                        "guia.perifericos",
+                        f"'{p}' no es de los conocidos "
+                        f"({', '.join(sorted(GUIA_PERIFERICOS_CONOCIDOS))})",
+                    )
+
+    fuentes = guia.get("fuentes")
+    if fuentes is not None:
+        if not isinstance(fuentes, list):
+            falla("guia.fuentes", "tiene que ser una lista")
+        else:
+            for i, fuente in enumerate(fuentes):
+                prefijo = f"guia.fuentes[{i}]"
+                if not isinstance(fuente, dict):
+                    falla(prefijo, "tiene que ser un objeto")
+                    continue
+                if fuente.get("tipo") not in GUIA_FUENTES_TIPOS_CONOCIDOS:
+                    falla(
+                        f"{prefijo}.tipo",
+                        f"tiene que ser uno de {sorted(GUIA_FUENTES_TIPOS_CONOCIDOS)}",
+                    )
+                if not isinstance(fuente.get("fecha"), str) or not fuente["fecha"].strip():
+                    falla(f"{prefijo}.fecha", "obligatorio, string no vacio")
+
+    revision = guia.get("revision")
+    if revision is not None and revision not in ("borrador", "revisado"):
+        # AVISO, no ERROR: el theme degrada a "borrador" (ADR-0037).
+        avisa("guia.revision", f"'{revision}' no es 'borrador' ni 'revisado' - degrada a 'borrador'")
 
 
 def _chk_gallery_piece(piece, i: int, path: Path, falla, avisa) -> None:
@@ -754,6 +893,50 @@ def chk_magazine_assets(path: Path, rep: Reporte) -> None:
         )
 
 
+def chk_correspondencia_vencida(raiz: Path, rep: Reporte) -> None:
+    """Avisa si <coleccion>/_controles.json quedo desactualizado respecto de
+    la config real de MAME/DOSBox de esta maquina (ADR-0036/0037, spec 027).
+
+    Es estado LOCAL de la maquina, no compatibilidad cross-platform (por eso
+    no va en CHEQUEOS_UNIVERSALES ni corre por archivo). Se saltea en
+    silencio si la coleccion no tiene artefacto (nunca se corrio el comando)
+    o si las fuentes no estan en esta maquina (el Mac sin este MAME
+    instalado, por ejemplo) - ahi ni se puede recalcular ni corresponde
+    reclamar. Jugar un juego (MAME reescribe su .cfg al cerrarlo) no vence
+    la huella, porque esta se calcula sobre las entradas normalizadas, no
+    sobre los archivos crudos - ver `attract.controles.calcular_huella`."""
+    from attract import controles  # import perezoso: evita el ciclo doctor<->controles
+
+    if not raiz.is_dir():
+        return
+
+    for coleccion_dir in sorted(p for p in raiz.iterdir() if p.is_dir()):
+        artefacto_path = coleccion_dir / "_controles.json"
+        if not artefacto_path.is_file():
+            continue
+        try:
+            artefacto = json.loads(artefacto_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            rep.aviso(
+                "correspondencia-vencida", artefacto_path,
+                "JSON invalido, no se puede comparar la huella",
+            )
+            continue
+        if not isinstance(artefacto, dict) or not isinstance(artefacto.get("huella"), str):
+            continue
+
+        huella_actual = controles.calcular_huella_actual(raiz, coleccion_dir.name)
+        if huella_actual is None:
+            continue  # fuentes no disponibles en esta maquina: no se puede juzgar
+
+        if huella_actual != artefacto["huella"]:
+            rep.aviso(
+                "correspondencia-vencida", artefacto_path,
+                "la huella no coincide con la configuracion actual de MAME/DOSBox - "
+                "correr 'attract controles --apply' de nuevo",
+            )
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -820,6 +1003,12 @@ def revisar(raiz: Path, target: str = "windows") -> Reporte:
                 chk_magazine_assets(path, rep)
             except UnicodeDecodeError:
                 pass  # ya lo reporto chk_encoding
+
+    # Chequeo de biblioteca, no de archivo: corre una vez, no por cada
+    # path del rglob de arriba. Estado local de la maquina (spec 027) -
+    # nunca en CHEQUEOS_UNIVERSALES, que es de compatibilidad cross-platform.
+    rep.chequeos_corridos.append("correspondencia-vencida")
+    chk_correspondencia_vencida(raiz, rep)
 
     return rep
 

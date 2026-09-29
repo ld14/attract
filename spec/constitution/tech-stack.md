@@ -23,6 +23,7 @@
 | `src/attract/instalar.py` | Importa paquetes COINDOOR (ADR-0027) — valida en staging con `doctor.py`, instala assets/data/bloque en la librería. Revierte todo lo escrito si falla a mitad de camino (ADR-0028) |
 | `src/attract/rasterize.py` | Convierte el PDF del manual a páginas `p001.jpg…` (ADR-0022). Segunda y última dependencia externa: `pymupdf`, opcional e import perezoso |
 | `src/attract/magazines.py` | `attract mags` — linkea revistas con juegos por coincidencia difusa (`difflib`, umbral 0.85) y escribe `mags[]`. Dry-run por defecto (ADR-0025) |
+| `src/attract/controles.py` | `attract controles` — combina `themes/attract/core/gabinete.json` con la config real de MAME (`-listxml`, `.cfg`) y DOSBox (capas de config) de esta máquina, y escribe `library/<coleccion>/_controles.json`. Dry-run por defecto (ADR-0036/0037) |
 | `tests/test_doctor.py` | 79 tests, cada uno reproduce un bug real ya visto o un caso del contrato |
 | `tests/test_synopsis.py` | 14 tests: merge de campo, idempotencia, casos límite/fallo |
 | `tests/test_mcp_server.py` | 9 tests: aislamiento sin `mcp` instalado, lógica de las tools, registro contra el SDK real (se saltea si `mcp` no está) |
@@ -30,16 +31,25 @@
 | `tests/test_instalar.py` | 19 tests: caso feliz (set nuevo/existente), paquete mínimo, path traversal, campos faltantes, data.json inválido, reimportación idempotente, preservación de mags, sistema inexistente, rollback transaccional |
 | `tests/test_rasterize.py` | 41 tests: contrato de páginas, PDF ausente/corrupto, aislamiento sin `pymupdf` instalado |
 | `tests/test_magazines.py` | 30 tests: umbral de coincidencia difusa, dry-run vs. `--apply`, merge idempotente sobre `mags[]` |
+| `tests/test_controles.py` | 41 tests: parseo de `-listxml`/`.cfg`/`mame.ini`/capas de DOSBox, huella estable, dry-run vs. `--apply`; un puñado corre contra el MAME 0.288 real de esta máquina (por ruta, no por PATH) |
+| `tests/test_gabinete.py` | 8 tests: forma del perfil físico (`themes/attract/core/gabinete.json`), vocabulario de periféricos coincide con ADR-0037 |
 | `tests/test_configure_pegasus_windows.py` | 5 tests de integración PowerShell: fallback/idempotencia, portable, raíz externa y fallos sin escrituras; se saltean fuera de Windows |
 | `tests/test_configure_pegasus_macos.py` | 4 tests de integración Bash: fallback/idempotencia, portable y fallos/dry-run sin escrituras; omiten control de procesos y `open` fuera del Mac real |
 | `tests/test_install_windows.py`, `tests/test_launchers_wsl.py` | Instalación y reparación por PowerShell; argumentos con espacios y propagación de errores en lanzadores WSL |
 | `fixtures/` | ROMs falsas de 0 bytes + `metadata.pegasus.txt` de ejemplo, para validar el doctor sin la librería real |
 | `library/` | Librería real del autor (ROMs, CHDs, assets). Nunca se commitea |
 | `themes/attract/` | Theme de producción (features 005-009, 017-018). Tres capas según quién sabe de qué: `core/` datos y rutas, `ui/` dibuja, `screens/`+`overlays/` componen. Un solo singleton (`Theme`, el archivo es `Tokens.qml` — ver su encabezado) |
+| `themes/attract/core/gabinete.json` | Perfil físico versionado del gabinete: jugadores, botones (con `medido`), periféricos, tecla de salida por emulador. Lo instala `make theme`; lo lee el theme y `attract controles` (ADR-0036/0037) |
+| `themes/attract/core/Gabinete.qml` | Lee `gabinete.json` (XHR + tres estados, mismo patrón que `GameData`). Se instancia una vez en `theme.qml`, no es singleton |
+| `themes/attract/core/Correspondencia.qml` | Lee `<coleccion>/_controles.json` (el artefacto de `attract controles`) y recorta la entrada del juego enfocado |
+| `themes/attract/core/ControlDiagram.js` | Clasificación pura "sin uso"/"acción desconocida" del diagrama de controles (ADR-0037), separada para poder testearla con `node` — mismo criterio que `InputTokens.js` |
+| `themes/attract/ui/ControlDiagram.qml` | Dibuja el diagrama de la guía "Cómo se juega" con `Rectangle`/`Text`/`Repeater` — sin `QtQuick.Shapes` |
+| `themes/attract/overlays/GuideOverlay.qml` | El overlay "Cómo se juega": objetivo, diagrama, primeros pasos, reglas, salida, JUGAR, accesos a Hacks/Manual |
+| `tests/test_control_diagram.cjs` | 17 tests `node --test`: clasificación de botones declarados vs. acciones de la guía, casos reales de SFA2 (6 botones) y Pacman (0 botones) |
 | `themes/attract-debug/` | Theme QML de debug: harness del Bloque 3, dumpea `game.extra`. Es la evidencia viva de ADR-0001 — no se pisa |
 | `themes/experimentos/` | Pruebas de una sola pregunta, archivadas con su resultado. No las instala `make theme` |
 | `docs/plataforma-pegasus.md` | Hechos verificados de Pegasus/Qt, consolidados con puntero a su evidencia. No duplica los ADR: ahí van decisiones, acá qué hace la plataforma |
-| `spec/decisions/` | Decisiones de arquitectura. 0001-0030, 26 vigentes (0008 superseded por 0010, 0016 por 0019, 0015 por 0020, 0010 por 0024) |
+| `spec/decisions/` | Decisiones de arquitectura. 0001-0038, 34 vigentes (0008 superseded por 0010, 0016 por 0019, 0015 por 0020, 0010 por 0024) |
 | `spec/features/001-synopsis/` | Primera feature con spec/plan/tasks — `attract synopsis`, implementada |
 | `spec/features/002-attract-skill/` | `.claude/skills/attract/SKILL.md`, implementada |
 | `spec/features/003-attract-mcp/` | Servidor MCP, implementada |
@@ -54,6 +64,8 @@
 | `spec/features/016-import-coindoor/` | `attract import`. Implementada |
 | `spec/features/017-hero-video-preview/` | Preview de gameplay en el hero de Home. Implementada, falta la verificación visual |
 | `spec/features/018-theme-galeria/` | Galería de piezas multimedia a pantalla completa (ADR-0030). Implementada, falta la verificación visual |
+| `spec/features/027-como-se-juega/` | Contrato de datos de la guía "Cómo se juega": bloque `guia` (ADR-0037), perfil físico, comando `attract controles`, validación en `doctor`. Implementada y verificada contra la librería real; falta la verificación visual del theme (028) |
+| `spec/features/028-theme-como-se-juega/` | Theme de la guía "Cómo se juega": tarjeta, overlay, diagrama de controles, restaurar contexto al volver de jugar (ADR-0038). Implementada (`qmllint`/`node --test` en verde); verificación visual en Pegasus real parcial — tarjetas y ADR-0038 confirmados con Pacman, falta el resto del checklist de `tasks.md` §Cierre |
 
 ## Comandos
 
@@ -65,6 +77,7 @@
 | Doctor (librería real) | `make doctor-lib` |
 | Instalar theme | `make theme` (producción) / `make theme-debug` (harness) |
 | Linkear revistas ↔ juegos | `attract mags library` (dry-run) / `--apply` |
+| Correspondencia física del panel | `attract controles <coleccion> library` (dry-run) / `--apply` |
 | Instalar paquete COINDOOR | `attract import <paquete.zip> [ruta]` |
 | Vaciar Pegasus | `make reset-pegasus` (destructivo) / `DRY=1 bash scripts/reset-pegasus.sh` |
 | Lint | <PENDIENTE: no configurado> |
@@ -102,7 +115,10 @@ Datos ricos que **no** viven en `metadata.pegasus.txt` (ADR-0001):
    └─ media/<set>/
       ├─ boxFront.jpg …     # assets nativos, auto-descubiertos por Pegasus
       ├─ data.json          # accent, cheats, review, manual: [{label?,pages?,file?}],
-      │                     # mags: [{ref: "<rev>-<n>"}], gallery: [{file,type,label?}]
+      │                     # mags: [{ref: "<rev>-<n>"}], gallery: [{file,type,label?}],
+      │                     # guia: {objetivo,acciones[],primerosPasos[],
+      │                     #        reglasEsenciales[],multijugador,perifericos[],
+      │                     #        fuentes[],revision} (ADR-0037)
       ├─ _manual/           # páginas del/los manual(es), PLANO (no lleva pages/)
       │  └─ p001.jpg … pNNN.jpg
       └─ _gallery/          # piezas curadas de la galería (ADR-0030), declaradas en `gallery`

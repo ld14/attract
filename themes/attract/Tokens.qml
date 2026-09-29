@@ -71,6 +71,12 @@ QtObject {
     readonly property color accentNeutro: "#6f7a8d"
     readonly property color accent2Neutro: "#1e232e"
 
+    // El acento de TODAS en el selector de plataforma (feature 026). No es un
+    // dato de la libreria como el de cada plataforma (ADR-0035): TODAS no es
+    // una coleccion y no tiene data.json. Es el --accent por defecto del
+    // prototipo (Preselector Plataforma.dc.html, `var(--accent,#19e3e3)`).
+    readonly property color accentTodas: "#19e3e3"
+
     // -----------------------------------------------------------------
     // Escala de radios y espaciado (handoff #Design Tokens)
     // -----------------------------------------------------------------
@@ -119,6 +125,17 @@ QtObject {
     }
     readonly property FontLoader _mono: FontLoader {
         source: Qt.resolvedUrl("fonts/JetBrainsMono-Regular.ttf")
+    }
+    // Dos caras mas de las MISMAS familias (feature 026): no tienen nombre
+    // propio que usar. Cargarlas las registra en la base de fuentes de Qt, y
+    // desde ahi `font.italic` / `font.bold` sobre fontDisplay / fontMono
+    // eligen la cara real en vez de sintetizarla. Si faltan, Qt vuelve a
+    // sintetizar como antes: nada se rompe.
+    readonly property FontLoader _displayItalic: FontLoader {
+        source: Qt.resolvedUrl("fonts/ChakraPetch-BoldItalic.ttf")
+    }
+    readonly property FontLoader _monoBold: FontLoader {
+        source: Qt.resolvedUrl("fonts/JetBrainsMono-Bold.ttf")
     }
 
     readonly property string fontDisplay: _display.name !== "" ? _display.name : "Helvetica"

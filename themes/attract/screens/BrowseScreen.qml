@@ -22,6 +22,9 @@ import "../ui"
 
 FocusScope {
     id: root
+    // Lo baja theme.qml y es el MISMO que usa el selector de plataforma: una
+    // sola perilla de sonido para todo el theme (feature 026). Esta pantalla
+    // no lo escribe, avisa con alternarSonido().
     property bool sonidoSilenciado: false
 
     property var paths: null
@@ -29,6 +32,11 @@ FocusScope {
     property var catalogo: null
 
     property string wordmark: "SHINBOX"
+
+    // La pill de plataforma de la barra (feature 026): "FILTRO · <AB>" o
+    // "SIN FILTRO". La arma theme.qml con lo que eligio el selector; esta
+    // pantalla no sabe de plataformas, solo la muestra y avisa si la activan.
+    property string filtroPlataforma: ""
 
     // El estante y el juego enfocados, para el hero y para que theme.qml tiña
     // el fondo con el accent del juego.
@@ -48,6 +56,10 @@ FocusScope {
     signal abrirOrden()
     signal cerrarOrden()
     signal abrirBuscar()
+    // Activar la pill de plataforma. B NO vuelve al selector: sigue subiendo
+    // a la barra como siempre (decision del autor, spec 026 §Criterios).
+    signal volverPlataformas()
+    signal alternarSonido()
 
     // El toggle del popover de valor (design_handoff_home/
     // year-letter-picker-spec.md §Barra de controles, boton 3): BrowseScreen
@@ -121,6 +133,50 @@ FocusScope {
             }
 
             Item { width: 8; height: 1 }
+
+            // La plataforma elegida en el selector, y la puerta de vuelta a el:
+            // foco + A, o click. Estilo de la pill de filtro del handoff
+            // (mono 9px, acento, radio 20), con el mismo anillo de foco que las
+            // pestañas. El "◄" dice que lleva hacia atras.
+            Rectangle {
+                id: pillPlataforma
+                anchors.verticalCenter: parent.verticalCenter
+                visible: root.filtroPlataforma !== ""
+                readonly property bool enfocada: barra.focoClamp === barra._indiceDe("plataforma")
+                width: textoPlataforma.implicitWidth + 18        // padding 3px 9px
+                height: textoPlataforma.implicitHeight + 10
+                radius: 20
+                color: enfocada ? Theme.alpha(root.accent, 0.14) : "transparent"
+                border.width: 1
+                border.color: Theme.mix(Theme.alpha(Theme.textBright, 0.08), root.accent, 0.30)
+
+                Rectangle {
+                    anchors { fill: parent; margins: -3 }
+                    radius: 22
+                    color: "transparent"
+                    border.width: 2
+                    border.color: Theme.alpha(Theme.textBright, 0.40)
+                    visible: pillPlataforma.enfocada
+                }
+
+                Text {
+                    id: textoPlataforma
+                    anchors.centerIn: parent
+                    text: "◄ " + root.filtroPlataforma
+                    color: root.accent
+                    font.family: Theme.fontMono
+                    font.pixelSize: 9
+                    font.letterSpacing: 0.1 * 9
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        barra.foco = barra._indiceDe("plataforma");
+                        barra._activar("plataforma");
+                    }
+                }
+            }
 
             // Dos pestañas, no cuatro: TODOS y FAVORITOS es lo que define el
             // handoff; las cuatro que dibujaba LibraryScreen eran del mockup
@@ -416,11 +472,15 @@ FocusScope {
         // engancha en las lecturas de propiedades que pasan por adentro
         // (catalogo.modo, catalogo.filtro, etc.), asi que sigue siendo
         // reactiva donde se la lee desde un binding.
-        property int foco: 0
+        // Con pill, el lugar 0 es ella y el foco arranca en la primera
+        // pestaña (TODOS) como siempre. Es el valor inicial y nada mas: el
+        // primer movimiento lo reemplaza.
+        property int foco: root.filtroPlataforma !== "" ? 1 : 0
         readonly property int focoClamp: Math.max(0, Math.min(foco, _slots().length - 1))
 
         function _slots() {
             var s = [];
+            if (root.filtroPlataforma !== "") s.push("plataforma");
             var np = root.catalogo ? root.catalogo.pestanas.length : 0;
             for (var i = 0; i < np; i++) s.push("tab" + i);
             s.push("modo");
@@ -437,7 +497,8 @@ FocusScope {
 
         function _activar(slot) {
             if (!slot || !root.catalogo) return;
-            if (slot.indexOf("tab") === 0) {
+            if (slot === "plataforma") root.volverPlataformas();
+            else if (slot.indexOf("tab") === 0) {
                 // A sobre una pestaña CONFIRMA y baja a los estantes — el
                 // comportamiento de siempre de la region "tabs" (README:
                 // "▼/Enter baja a los estantes"). Los controles de
@@ -1086,7 +1147,7 @@ FocusScope {
         // Atajo de Home pedido por el usuario; Buscar conserva la S como texto.
         if (event.key === Qt.Key_S
                 && !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) {
-            if (!event.isAutoRepeat) root.sonidoSilenciado = !root.sonidoSilenciado;
+            if (!event.isAutoRepeat) root.alternarSonido();
             event.accepted = true;
             return;
         }

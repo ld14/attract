@@ -11,6 +11,8 @@ incluidas en un proyecto siempre que se acompañe la licencia — de ahí los tr
 | `ChakraPetch-Bold.ttf` | Chakra Petch — títulos y botones | 700 |
 | `Sora-Variable.ttf` | Sora — cuerpo de texto | variable |
 | `JetBrainsMono-Regular.ttf` | JetBrains Mono — etiquetas, chips, HUD | 400 |
+| `ChakraPetch-BoldItalic.ttf` | Chakra Petch — nombre de plataforma (026) | 700 itálica |
+| `JetBrainsMono-Bold.ttf` | JetBrains Mono — teclas de la leyenda (026) | 700 |
 
 ## Por qué Sora es "Variable" y no "Regular"
 
@@ -32,7 +34,8 @@ faltan (`docs/CONVENCION.md` §2.3).
 ## Pesos que faltan
 
 El diseño usa Chakra Petch en 500/600/700, Sora en 300–800 y JetBrains Mono en
-400/500/700. Acá va **un peso por familia**: los demás los sintetiza Qt con
+400/500/700. Acá va **un peso por familia**, más las dos caras que pidió el selector de
+plataforma (026, Chakra Petch itálica y JetBrains Mono Bold): los demás los sintetiza Qt con
 `font.bold` / `font.weight`, y Sora al ser variable cubre su rango entero.
 
 Si al comparar contra el prototipo se nota la diferencia en algún peso
@@ -53,4 +56,9 @@ curl -L -o OFL-JetBrainsMono.txt "$base/jetbrainsmono/OFL.txt"
 # (ahi tambien es variable)
 curl -L -o JetBrainsMono-Regular.ttf \
   https://raw.githubusercontent.com/JetBrains/JetBrainsMono/master/fonts/ttf/JetBrainsMono-Regular.ttf
+
+# Feature 026 (selector de plataforma)
+curl -L -o ChakraPetch-BoldItalic.ttf "$base/chakrapetch/ChakraPetch-BoldItalic.ttf"
+curl -L -o JetBrainsMono-Bold.ttf \
+  https://raw.githubusercontent.com/JetBrains/JetBrainsMono/master/fonts/ttf/JetBrainsMono-Bold.ttf
 ```

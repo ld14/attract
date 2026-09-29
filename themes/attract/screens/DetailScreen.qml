@@ -414,7 +414,8 @@ FocusScope {
         anchors { bottom: parent.bottom; bottomMargin: 72 }
         datos: datos
         accent: root.accent
-        // 0 = JUGAR, 1 = video, 2 = carrusel; de ahi, las tarjetas.
+        // 0 = JUGAR, 1 = video, 2 = carrusel; de ahi, las tarjetas
+        // (0=guia, 1=galeria, 2=cheats, 3=manual dentro de ExtrasList).
         foco: root.foco - 3
         onAbrir: root.abrirExtra(tipo)
     }
@@ -433,15 +434,17 @@ FocusScope {
     // caso especial: el carrusel pasa de pagina con arriba/abajo porque es lo
     // que hace "actuar dentro" de un carrusel.
     //
-    // Orden: [JUGAR] -> [video] -> [carrusel] -> [Galería] -> [Hacks] -> [Manual] -> [Favoritos]. JUGAR
-    // primero aunque el video este arriba en pantalla: la accion principal se
-    // enfoca al entrar, no un control secundario. El orden no es estrictamente
-    // espacial en el prototipo tampoco (el carrusel esta a la izquierda y los
-    // extras a la derecha).
+    // Orden: [JUGAR] -> [video] -> [carrusel] -> [Cómo se juega] -> [Galería]
+    // -> [Hacks] -> [Manual] -> [Favoritos] (feature 028: "Cómo se juega" se
+    // sumo primera entre las tarjetas de contenido extra, corriendo un lugar
+    // a las tres que ya estaban). JUGAR primero aunque el video este arriba
+    // en pantalla: la accion principal se enfoca al entrar, no un control
+    // secundario. El orden no es estrictamente espacial en el prototipo
+    // tampoco (el carrusel esta a la izquierda y los extras a la derecha).
     property int foco: 0
-    readonly property int _targets: 7
+    readonly property int _targets: 8
     onFocoChanged: {
-        if (foco === 6 && derecha) derecha.contentY = Math.max(0, derecha.contentHeight - derecha.height);
+        if (foco === 7 && derecha) derecha.contentY = Math.max(0, derecha.contentHeight - derecha.height);
     }
     onGameChanged: { foco = 0; if (derecha) derecha.contentY = 0; }
 
@@ -471,10 +474,13 @@ FocusScope {
             event.accepted = true;
         } else if (api.keys.isAccept(event)) {
             if (root.foco === 0) root.lanzar(root.game);
-            else if (root.foco === 3 && datos.hayGaleria) root.abrirExtra("galeria");
-            else if (root.foco === 4 && datos.hayCheats) root.abrirExtra("cheats");
-            else if (root.foco === 5 && datos.hayManual) root.abrirExtra("manual");
-            else if (root.foco === 6 && !event.isAutoRepeat) root.alternarFavorito(root.game);
+            // "Cómo se juega" SIEMPRE abre (feature 028): sin guia propia
+            // muestra la ayuda general, nunca queda deshabilitada.
+            else if (root.foco === 3) root.abrirExtra("guia");
+            else if (root.foco === 4 && datos.hayGaleria) root.abrirExtra("galeria");
+            else if (root.foco === 5 && datos.hayCheats) root.abrirExtra("cheats");
+            else if (root.foco === 6 && datos.hayManual) root.abrirExtra("manual");
+            else if (root.foco === 7 && !event.isAutoRepeat) root.alternarFavorito(root.game);
             event.accepted = true;
         }
     }

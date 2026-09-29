@@ -167,7 +167,25 @@ usa siempre `api.keys.*`, nunca una tecla literal.
   lista.
 - Sin medir: objetos anidados, y qué pasa con un corte de luz en vez de una
   salida limpia.
-- Evidencia: `themes/experimentos/memoria.qml`.
+- **`unset()` NO sobrevive con la misma confianza que `set()`.** Medido en el
+  gabinete real el 2026-09-29 depurando [ADR-0038](../spec/decisions/0038-restaurar-contexto-al-volver-de-jugar.md):
+  una clave escrita con `set()` y borrada después con `unset()` volvía a
+  aparecer, con su valor viejo, en la siguiente apertura de Pegasus — como si
+  el `unset()` nunca hubiera pasado. La mitigación fue dejar de usar `unset()`
+  para esto y pisar la clave con `set(clave, null)` en su lugar, que sí se
+  sostuvo. `memoria.qml` (2026-08-05) nunca había medido esto — solo probó
+  que `unset()` **existe** y que sirve para resetear el contador **dentro de
+  la misma sesión**, no que su efecto sobreviva a un reinicio. No es un
+  experimento de una sola pregunta aparte: salió de depurar el mecanismo real
+  en `theme.qml`, no de un archivo dedicado en `themes/experimentos/`.
+- **`Qt.application.aboutToQuit` no se pudo confirmar que dispare** en este
+  binario (mismo día, misma depuración): con o sin un `Connections` escuchando
+  esa señal, el resultado fue idéntico. Se dejó el `Connections` igual, sin
+  costo, por si en algún escenario sin probar sí llega a disparar — pero no
+  se puede afirmar que funcione.
+- Evidencia: `themes/experimentos/memoria.qml` (existencia y persistencia de
+  `set()`/`get()`); `themes/attract/theme.qml` (`_restaurarContexto`,
+  `_guardarContextoAntesDeLanzar`) para lo de `unset()` y `aboutToQuit`.
 
 ### Leer archivos desde el theme
 
@@ -180,6 +198,12 @@ usa siempre `api.keys.*`, nunca una tecla literal.
 ### QtMultimedia
 
 - `loops: MediaPlayer.Infinite` **reengancha solo**.
+- **Con `loops: 1`, el fin del clip SÍ avisa**: `status` pasa a `EndOfMedia`
+  (7) y alcanza para encadenar otro video. Medido en Windows (Qt 5.15.10) el
+  2026-09-22 adelantando el clip a 1.5 s del final con `seek()`: el selector de
+  plataforma pasó solo al siguiente juego. Evidencia:
+  `themes/attract/screens/PlatformSelectScreen.qml` §video,
+  `spec/features/026-selector-plataforma/tasks.md` §Evidencia.
 - **`onStopped` NO se dispara nunca** en un loop continuo. Un contador colgado
   de ahí se queda en cero mientras el video loopea perfecto. Si hace falta
   detectar el reenganche, la señal es que **la posición retroceda** — o el dip

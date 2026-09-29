@@ -16,7 +16,7 @@ no parchearlo otra vez (ADR-0022 §Que habria que revisar).
 """
 import sys
 
-from attract import doctor, ingest, instalar, magazines, mcp_server, rasterize, synopsis
+from attract import controles, doctor, ingest, instalar, magazines, mcp_server, rasterize, synopsis
 
 COMANDOS = {
     "doctor": doctor.main,
@@ -26,6 +26,7 @@ COMANDOS = {
     "import": instalar.main,
     "rasterize": rasterize.main,
     "mags": magazines.main,
+    "controles": controles.main,
 }
 
 
@@ -41,6 +42,7 @@ def main() -> int:
         print("  import <paquete.zip> [ruta]        instala un paquete COINDOOR (ADR-0027)")
         print("  rasterize <set> [ruta]             PDF del manual -> paginas (requiere: pip install pymupdf)")
         print("  mags [ruta] [--apply]              linkea las revistas con los juegos instalados")
+        print("  controles <coleccion> [ruta] [--apply]  correspondencia fisica del panel (ADR-0036/0037)")
         return 0
 
     cmd = sys.argv[1]

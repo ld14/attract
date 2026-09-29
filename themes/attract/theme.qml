@@ -18,6 +18,7 @@ import "core"
 import "screens"
 import "overlays"
 import "ui"
+import "core/Platforms.js" as Platforms
 
 FocusScope {
     id: root
@@ -29,6 +30,10 @@ FocusScope {
     // del que menos se sabe contra este binario (ver plan.md).
     Paths { id: paths }
     Teclas { id: teclas }
+    // Perfil fisico del gabinete (ADR-0036/0037) - un solo archivo, no varia
+    // por juego ni por plataforma. Mismo criterio que Paths/Teclas: no es
+    // singleton (ver comentario de arriba).
+    Gabinete { id: gabinete }
 
     // El catalogo vive ACA y no dentro de la libreria porque Buscar (010) va a
     // recorrer el mismo pool: dos duenos del mismo catalogo serian dos
@@ -49,9 +54,15 @@ FocusScope {
     // no puede pasar, sea cual sea el mecanismo exacto de scoping.
     readonly property var catalogoInstancia: catalogo
     readonly property var teclasInstancia: teclas
+    // Mismo motivo: GuideOverlay tiene propiedades `gabinete`/`correspondencia`
+    // con el mismo nombre que estos `id`, y vive dentro de un
+    // Loader.sourceComponent (el `guia` de mas abajo).
+    readonly property var gabineteInstancia: gabinete
+    readonly property var correspondenciaInstancia: correspondencia
 
-    // "library" | "detail"
-    property string pantalla: "library"
+    // "platforms" | "library" | "detail". Arranca en el selector de plataforma
+    // (feature 026): es la raiz, y Home se abre desde ahi ya filtrado.
+    property string pantalla: "platforms"
 
     // El juego que se esta mirando: el enfocado en la libreria, o el elegido
     // al entrar al detalle.
@@ -59,9 +70,23 @@ FocusScope {
     readonly property var juegoActual: pantalla === "detail" ? juegoDetalle
                                                              : libreria.juego
 
-    // El accent tine el fondo entero y sale de data.json (ADR-0013).
-    readonly property color accent: pantalla === "detail" ? detalle.accent
+    // El accent tine el fondo entero y sale de data.json (ADR-0013). En el
+    // selector es el de la plataforma enfocada (ADR-0035), ya animado.
+    readonly property color accent: pantalla === "platforms" ? selector.acentoFondo
+                                  : pantalla === "detail" ? detalle.accent
                                                           : libreria.accent
+
+    // La perilla de sonido de TODO el theme: el preview de Home y el video del
+    // selector. Vive aca y no en una pantalla porque las dos la comparten —
+    // silenciar en una vale en la otra. La escribe alternarSonido() (tecla S).
+    property bool sonidoSilenciado: false
+
+    // Aceptar en el selector. `clave` y no `nombre`: en TODAS es null, que es
+    // "sin filtro" (Platforms.lista).
+    function elegirPlataforma(p) {
+        catalogo.coleccion = p ? p.clave : null;
+        root.pantalla = "library";
+    }
 
     // Unico interruptor del filtro de tubo (prop `crtScanlines` del handoff,
     // default ON). Solo apaga la CAPA 4: las scanlines de ambiente de la capa 2
@@ -125,12 +150,34 @@ FocusScope {
             accent: root.accent
         }
 
+        // El selector no se destruye al pasar a Home: su `indice` es lo que
+        // hace que volver deje enfocada la misma plataforma.
+        PlatformSelectScreen {
+            id: selector
+            anchors.fill: parent
+            paths: paths
+            teclas: teclas
+            catalogo: catalogo
+            visible: root.pantalla === "platforms"
+            focus: visible
+            enabled: visible
+            encendido: visible
+            silenciado: root.sonidoSilenciado
+            onAceptar: root.elegirPlataforma(plataforma)
+            onAlternarSonido: root.sonidoSilenciado = !root.sonidoSilenciado
+        }
+
         BrowseScreen {
             id: libreria
             anchors.fill: parent
             paths: paths
             teclas: teclas
             catalogo: catalogo
+            filtroPlataforma: Platforms.textoFiltro(selector.abrev,
+                                                    !selector.plataforma || selector.plataforma.todas)
+            onVolverPlataformas: root.pantalla = "platforms"
+            sonidoSilenciado: root.sonidoSilenciado
+            onAlternarSonido: root.sonidoSilenciado = !root.sonidoSilenciado
             // `orden` (el popover de valor) NO va en `visible`: a diferencia
             // de ayuda/trucos/visor —modales de verdad, que tapan la pantalla
             // a proposito— este es un popover flotante, y el spec lo pide
@@ -181,8 +228,8 @@ FocusScope {
             anchors.fill: parent
             paths: paths
             game: root.juegoDetalle
-            visible: root.pantalla === "detail" && !lanzando.active && !ayuda.active && !galeria.active
-            focus: root.pantalla === "detail" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active && !aviso.active && !galeria.active
+            visible: root.pantalla === "detail" && !lanzando.active && !ayuda.active && !galeria.active && !guia.active
+            focus: root.pantalla === "detail" && !lanzando.active && !visor.active && !trucos.active && !ayuda.active && !aviso.active && !galeria.active && !guia.active
             enabled: visible
 
             onVolver: { root.pantalla = "library"; if (buscador.active) buscador.item.enfocar(); }
@@ -190,7 +237,8 @@ FocusScope {
             onLanzar: root.lanzar(game)
             onAbrirRevista: root.abrirRevista(i)
             onAbrirExtra: {
-                if (tipo === "manual") root.abrirManual();
+                if (tipo === "guia") guia.active = true;
+                else if (tipo === "manual") root.abrirManual();
                 else if (tipo === "cheats") trucos.active = true;
                 else if (tipo === "galeria") galeria.active = true;
             }
@@ -207,6 +255,15 @@ FocusScope {
             game: root.juegoDetalle
             paths: paths
             ref: root.refAbierta
+        }
+
+        // La correspondencia fisica del juego enfocado en el detalle
+        // (spec 027, artefacto de `attract controles`). Se instancia una
+        // vez y sigue a root.juegoDetalle, igual que revistaAbierta.
+        Correspondencia {
+            id: correspondencia
+            game: root.juegoDetalle
+            paths: paths
         }
 
         Loader {
@@ -242,7 +299,7 @@ FocusScope {
                 accent: root.accent
                 fondo: detalle
                 focus: true
-                onCerrar: trucos.active = false
+                onCerrar: root.cerrarTrucos()
             }
         }
 
@@ -259,6 +316,30 @@ FocusScope {
                 fondo: detalle
                 focus: true
                 onCerrar: galeria.active = false
+            }
+        }
+
+        // "Cómo se juega" (feature 028). SIEMPRE puede abrirse, con o sin
+        // guia propia (GuideOverlay resuelve la ayuda general internamente).
+        Loader {
+            id: guia
+            anchors.fill: parent
+            active: false
+            focus: active
+
+            sourceComponent: GuideOverlay {
+                datos: detalle.datosDelJuego
+                gabinete: root.gabineteInstancia
+                correspondencia: root.correspondenciaInstancia
+                titulo: root.juegoDetalle ? root.juegoDetalle.title : ""
+                sistema: root.sistemaDe(root.juegoDetalle)
+                accent: root.accent
+                fondo: detalle
+                focus: true
+                onCerrar: guia.active = false
+                onJugar: root.lanzar(root.juegoDetalle)
+                onAbrirHacksDesdeGuia: { root.volverAGuiaAlCerrar = true; guia.active = false; trucos.active = true; }
+                onAbrirManualDesdeGuia: { root.volverAGuiaAlCerrar = true; guia.active = false; root.abrirManual(); }
             }
         }
 
@@ -512,7 +593,29 @@ FocusScope {
         root.refAbierta = "";
         root.articuloAbierto = "";
         root.modeloDoc = null;
+        var eraManualDesdeGuia = root.visorModo === "manual" && root.volverAGuiaAlCerrar;
         root.visorModo = "";
+        root._volverAGuiaSiCorresponde(eraManualDesdeGuia);
+    }
+
+    // --- volver a la guia al cerrar Hacks o Manual abiertos desde ahi ------
+    //
+    // Un solo booleano compartido alcanza porque nunca se abren los dos a la
+    // vez desde la guia (plan.md, riesgo asumido). La tecla que cierra
+    // (isCancel) no dispara nada de la pantalla de abajo porque trucos/visor
+    // se quedan con el foco hasta que termina su propio onCerrar - recien ahi
+    // se reactiva guia, un cuadro despues.
+    property bool volverAGuiaAlCerrar: false
+
+    function cerrarTrucos() {
+        trucos.active = false;
+        root._volverAGuiaSiCorresponde(root.volverAGuiaAlCerrar);
+    }
+
+    function _volverAGuiaSiCorresponde(corresponde) {
+        if (!corresponde) return;
+        root.volverAGuiaAlCerrar = false;
+        guia.active = true;
     }
 
     // Solo para llamar a los constructores; no dibuja nada.
@@ -532,6 +635,131 @@ FocusScope {
         if (!game) return;
         root.juegoLanzado = game;
         lanzando.active = true;
+        root._guardarContextoAntesDeLanzar(game);
         game.launch();
     }
+
+    // --- ADR-0038: restaurar contexto completo al volver de JUGAR --------
+    //
+    // Medido con themes/experimentos/recarga-tras-juego.qml (2026-09-28):
+    // Pegasus recarga el theme entero al volver de un juego. La clave se
+    // escribe ACA, justo antes de game.launch(), y se lee una sola vez en
+    // Component.onCompleted; se borra apenas se usa para que un
+    // Component.onCompleted posterior que no viene de jugar (elegir
+    // "ATTRACT" de nuevo desde el menu de Pegasus) no reabra un contexto
+    // viejo.
+    readonly property string _claveContexto: "como-se-juega-contexto"
+
+    function _tieneApiMemory() {
+        return typeof api.memory === "object" && api.memory !== null
+            && typeof api.memory.get === "function" && typeof api.memory.set === "function";
+    }
+
+    // Ventana de validez de la clave: api.memory PERSISTE entre reinicios de
+    // Pegasus (confirmado con memoria.qml), y el theme no tiene forma de
+    // distinguir "esto es una recarga por volver de jugar" de "esto es
+    // Pegasus abriendose de cero" - las dos disparan Component.onCompleted
+    // igual. Sin este limite, una clave que quedo sin consumir (Pegasus se
+    // cerro entre escribirla y volver del juego, caso real visto el
+    // 2026-09-29) secuestra CADA apertura futura de Pegasus, saltando
+    // siempre el selector de plataforma. 30 minutos alcanza para una partida
+    // real y descarta una clave de una sesion de prueba anterior.
+    readonly property int _contextoValidoMs: 30 * 60 * 1000
+
+    function _guardarContextoAntesDeLanzar(game) {
+        if (!root._tieneApiMemory()) return;
+        api.memory.set(root._claveContexto, {
+            coleccion: catalogo.coleccion,
+            set: paths.setDe(game),
+            detalleAbierto: root.pantalla === "detail",
+            guiaAbierta: guia.active,
+            escritoEn: Date.now()
+        });
+    }
+
+    // "mame" | "dosbox" | "" segun x-formato (declarado en metadata.pegasus.txt
+    // por ATTRACT/COINDOOR). No depende de que `attract controles` haya
+    // corrido - a diferencia de Correspondencia, esto tiene que funcionar
+    // incluso sin ningun artefacto todavia, para poder mostrar la tecla de
+    // salida GENERICA del perfil (Gabinete.teclaSalida).
+    function sistemaDe(game) {
+        if (!game || !game.extra) return "";
+        var f = game.extra["formato"];
+        var formato = (f && f[0]) ? String(f[0]) : "";
+        if (formato === "Arcade") return "mame";
+        if (formato === "Diskette" || formato === "CD") return "dosbox";
+        return "";
+    }
+
+    function _buscarPorSet(set) {
+        if (!set) return null;
+        var gs = api.allGames.toVarArray();
+        for (var i = 0; i < gs.length; i++)
+            if (paths.setDe(gs[i]) === set) return gs[i];
+        return null;
+    }
+
+    function _restaurarContexto() {
+        if (!root._tieneApiMemory()) return;
+        var ctx = api.memory.get(root._claveContexto);
+
+        // Se borra con set(..., null), NO con unset(): encontrado en el
+        // gabinete real el 2026-09-29 que unset() no sobrevive a un cierre
+        // de Pegasus poco despues de llamarlo (la clave volvia igual en la
+        // proxima apertura, aunque la escritura ORIGINAL con set() si habia
+        // persistido) - memoria.qml solo habia verificado que set()/get()
+        // persisten entre reinicios, nunca que el EFECTO de unset() tambien
+        // lo hiciera. set(clave, null) usa la misma operacion ya probada.
+        api.memory.set(root._claveContexto, null);
+
+        if (!ctx || typeof ctx !== "object") return;
+
+        // Clave vieja (Pegasus se cerro sin volver del juego, o quedo de
+        // otra sesion de prueba): se descarta en silencio, no se restaura
+        // nada. Arranca normal, en el selector de plataforma.
+        var edadMs = Date.now() - (ctx.escritoEn || 0);
+        if (!ctx.escritoEn || edadMs > root._contextoValidoMs || edadMs < 0) return;
+
+        var juego = root._buscarPorSet(ctx.set);
+        if (!juego) return;
+
+        catalogo.coleccion = ctx.coleccion || null;
+        root.juegoDetalle = juego;
+        if (ctx.detalleAbierto) root.pantalla = "detail";
+        if (ctx.guiaAbierta) guia.active = true;
+    }
+
+    // Intento MAS PRECISO que la ventana de 30 minutos (pedido del autor,
+    // 2026-09-29): si Qt.application.aboutToQuit existe y dispara en este
+    // binario, cerrar Pegasus del todo (menu o Alt+F4) borra la clave antes
+    // de que quede pendiente para la proxima apertura. Es GENUINAMENTE
+    // DISTINGUIBLE del ciclo normal de jugar-y-volver: ese ciclo recarga el
+    // theme (medido con recarga-tras-juego.qml) pero el PROCESO de Pegasus
+    // nunca se cierra — así que este signal, si existe, solo tendria que
+    // disparar en un cierre de verdad, nunca al volver de una partida.
+    //
+    // SIN VERIFICAR TODAVIA contra este Pegasus/Qt 5.15 en particular: si
+    // `aboutToQuit` no existe o no dispara, esto simplemente no hace nada
+    // (Connections con un signal inexistente avisa por log, no rompe el
+    // theme) y la ventana de 30 minutos de arriba sigue siendo la red de
+    // seguridad real. Anotar el resultado en
+    // themes/experimentos/ si se confirma o se descarta.
+    Connections {
+        target: Qt.application
+        // Sintaxis vieja (`onFoo: expr`), no la funcion nueva de Qt 5.15+:
+        // el theme importa QtQuick 2.0 en todos lados porque es la version
+        // que se sabe que carga contra este binario (ver Seccion.qml) - la
+        // forma con `function onFoo() {}` pide QtQml 2.15 y no se probo aca.
+        //
+        // NO VERIFICADO QUE DISPARE (probado en el gabinete real,
+        // 2026-09-29: el resultado fue igual con o sin este handler) - se
+        // deja igual, sin costo, por si en algun escenario si dispara.
+        // set(..., null) y no unset(): mismo motivo que _restaurarContexto.
+        onAboutToQuit: {
+            if (root._tieneApiMemory())
+                api.memory.set(root._claveContexto, null);
+        }
+    }
+
+    Component.onCompleted: root._restaurarContexto()
 }

@@ -20,6 +20,10 @@ library/**
 # en las dos maquinas. Ver README.md #Runtime.
 pegasus/
 
+# Emulador DOSBox Staging instalado (exe + DLLs + shaders + ROMs MT-32), 105M.
+# Mismo criterio que pegasus/: pesa y no aporta, se instala, no se versiona.
+emulators/
+
 # Artefactos de build: metadata.pegasus.txt lo genera ATTRACT (ver ADR-0002)
 # Excepcion: los de fixtures/ y docs/ NO son artefactos, son entradas de test
 # escritas a mano. Sin ellos "make doctor" no tiene nada que masticar en un

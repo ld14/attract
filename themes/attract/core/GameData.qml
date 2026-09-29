@@ -70,6 +70,38 @@ QtObject {
     readonly property var cheats: (datos && datos.cheats) ? datos.cheats : null
     readonly property var review: (datos && datos.review) ? datos.review : null
 
+    // --- guia (ADR-0037, feature 027/028) ---------------------------------
+    //
+    // `guia` ausente es un juego SIN guia propia, no un error (mismo criterio
+    // que manual/gallery): la tarjeta igual abre y muestra la ayuda general
+    // del gabinete. El tope de 3 en primerosPasos/reglasEsenciales es una
+    // regla de presentacion de esta pantalla, no del contrato (doctor no la
+    // exige) - se corta aca para que ningun overlay tenga que acordarse.
+    readonly property var guia: (datos && datos.guia && typeof datos.guia === "object") ? datos.guia : null
+    readonly property bool hayGuia: guia !== null
+
+    readonly property string guiaObjetivo: (hayGuia && typeof guia.objetivo === "string") ? guia.objetivo : ""
+
+    readonly property var guiaAcciones: (hayGuia && Array.isArray(guia.acciones)) ? guia.acciones : []
+
+    readonly property var guiaPrimerosPasos:
+        (hayGuia && Array.isArray(guia.primerosPasos)) ? guia.primerosPasos.slice(0, 3) : []
+
+    readonly property var guiaReglasEsenciales:
+        (hayGuia && Array.isArray(guia.reglasEsenciales)) ? guia.reglasEsenciales.slice(0, 3) : []
+
+    // "individual" | "cooperativo" | "versus". Un modo que doctor no conoce
+    // (AVISO, no ERROR - ADR-0037) degrada aca mismo a "individual".
+    readonly property string guiaMultijugadorModo: {
+        var m = (hayGuia && guia.multijugador) ? guia.multijugador.modo : "";
+        return (m === "cooperativo" || m === "versus") ? m : "individual";
+    }
+    readonly property int guiaMultijugadorJugadores:
+        (hayGuia && guia.multijugador && typeof guia.multijugador.jugadores === "number")
+            ? guia.multijugador.jugadores : 1
+
+    readonly property var guiaPerifericos: (hayGuia && Array.isArray(guia.perifericos)) ? guia.perifericos : []
+
     // --- "hay algo que mostrar?" -----------------------------------------
     //
     // OJO: estos NO deciden si un bloque se dibuja. CONVENCION #2.3 manda que

@@ -104,6 +104,20 @@ QtObject {
         return base === "" ? "" : base + "magazine.json";
     }
 
+    // <coleccion>/_platform/ — los assets de la plataforma de este juego
+    // (ADR-0035). Viven ADENTRO de la carpeta de la coleccion, al lado de
+    // media/, con "_" porque no son juegos:
+    //
+    //   dirColeccion  ->  /Users/…/library/msdos/
+    //   + _platform/  ->  /Users/…/library/msdos/_platform/
+    //
+    // Vale igual para fixtures/ y para los juegos de DOS cuyo `file:` es una
+    // carpeta: dirColeccionDe corta en la ultima barra de files[0].path.
+    function plataformaDe(game) {
+        var dir = dirColeccionDe(game);
+        return dir === "" ? "" : dir + "_platform/";
+    }
+
     // media/<set>/_manual/ (ADR-0014).
     function manualDe(game) {
         var base = baseDe(game);
@@ -114,6 +128,17 @@ QtObject {
     function galeriaDe(game) {
         var base = baseDe(game);
         return base === "" ? "" : base + "_gallery/";
+    }
+
+    // <coleccion>/_controles.json (spec 027, ADR-0036/0037): el artefacto de
+    // correspondencia generado por `attract controles`. Cuelga de la
+    // coleccion, no de media/<set>/, porque es un archivo por coleccion, no
+    // por juego (un solo comando resuelve todos los juegos de un emulador a
+    // la vez). "" si el juego no vive en el disco - mismo criterio que
+    // plataformaDe.
+    function controlesDe(game) {
+        var dir = dirColeccionDe(game);
+        return dir === "" ? "" : dir + "_controles.json";
     }
 
     // El PDF del manual, listo para abrirAfuera() (ADR-0021). "" si no hay

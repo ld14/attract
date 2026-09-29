@@ -20,6 +20,7 @@
 
 import QtQuick 2.0
 import "Search.js" as Search
+import "Platforms.js" as Platforms
 
 QtObject {
     id: cat
@@ -38,6 +39,12 @@ QtObject {
     property int criterio: 0       // indice en `criterios`
     property int direccion: 1      // 1 ascendente, -1 descendente
     property var filtro: null      // null | { campo: "letra"|"anio", valor }
+
+    // La plataforma elegida en el selector (feature 026): el nombre de una
+    // coleccion de Pegasus, o null para TODAS. A diferencia de `filtro`, que
+    // es solo del estante CATALOGO, este recorta el universo entero — todos
+    // los estantes y todos los conteos de Home. Buscar lo ignora a proposito.
+    property var coleccion: null
 
     readonly property var pestanas: ["TODOS", "FAVORITOS"]
     readonly property var criterios: ["LETRA", "AÑO", "NOTA", "JUGADOS"]
@@ -131,7 +138,11 @@ QtObject {
     // [{ tipo, etiqueta, conteo, juegos: [game] }]
     // tipo ∈ "continuar" | "jugados" | "genero" | "catalogo"
     readonly property var estantes:
-        _armar(pestana, modo, criterio, direccion, filtro, _generacion)
+        _armar(pestana, modo, criterio, direccion, filtro, coleccion, _generacion)
+
+    // [{ todas, clave, nombre, abrev, conteo, muestra, videos }] — TODAS primero.
+    // Sale de las claves ya cargadas: nadie mas recorre api.allGames.
+    readonly property var plataformas: Platforms.lista(_claves, _juegos)
 
     // CATALOGO es siempre el ultimo estante que arma _armar. Lo usa
     // BrowseScreen para el "salto a estante 0, columna 0" del §Reseteo de
@@ -140,10 +151,10 @@ QtObject {
     // resultado del filtro.
     readonly property int indiceCatalogo: estantes.length - 1
 
-    readonly property int totalPestana: _pool(pestana, null).length
+    readonly property int totalPestana: _pool(pestana, null, coleccion).length
 
     function conteoDe(i) {
-        return _pool(i, null).length;
+        return _pool(i, null, coleccion).length;
     }
 
     // Los años que existen de verdad en el catalogo, para la grilla del panel
@@ -192,7 +203,9 @@ QtObject {
                 // NaN es false.
                 ultima: _instante(g.lastPlayed),
                 genero: g.genre || "",
-                fav: g.favorite === true
+                fav: g.favorite === true,
+                colecciones: Platforms.coleccionesDe(g),
+                video: g.assets && g.assets.video ? true : false
             });
         }
 
@@ -231,11 +244,16 @@ QtObject {
         return (c >= "A" && c <= "Z") ? c : "#";
     }
 
-    // Las claves que sobreviven a la pestaña y al filtro.
-    function _pool(pest, filt) {
+    // Las claves que sobreviven a la plataforma, la pestaña y el filtro.
+    // `col` llega por argumento como `pest` y `filt`: quien llama decide, y
+    // _armar(…, col, …) no puede recibir una coleccion y filtrar por otra.
+    // `!= null` y no `!== null`: un undefined tambien es "sin filtro", no una
+    // coleccion que no existe y deja Home vacio.
+    function _pool(pest, filt, col) {
         var out = [];
         for (var i = 0; i < _claves.length; i++) {
             var k = _claves[i];
+            if (col != null && !_enColeccion(k, col)) continue;
             if (pest === 1 && !k.fav) continue;
             if (filt) {
                 if (filt.campo === "letra" && k.inicial !== filt.valor) continue;
@@ -244,6 +262,12 @@ QtObject {
             out.push(k);
         }
         return out;
+    }
+
+    function _enColeccion(k, nombre) {
+        for (var i = 0; i < k.colecciones.length; i++)
+            if (k.colecciones[i].nombre === nombre) return true;
+        return false;
     }
 
     function _ordenar(ks, crit, dir) {
@@ -277,7 +301,7 @@ QtObject {
     // Los argumentos estan de mas para el calculo — todos son propiedades de
     // este objeto — pero hacen que el binding declare sus dependencias en vez
     // de depender de que QML las descubra dentro de las funciones auxiliares.
-    function _armar(pest, mod, crit, dir, filt, gen) {
+    function _armar(pest, mod, crit, dir, filt, col, gen) {
         if (_claves.length === 0) return [];
 
         // DOS pools, no uno. El filtro de SELECCION es puntual de CATALOGO
@@ -287,8 +311,8 @@ QtObject {
         // de la pestaña activa, sin tocar; `poolCatalogo` le suma el filtro
         // solo si el modo es SELECCION (alternarModo() ya lo limpia al
         // volver a ORDEN, pero no se confia en esa invariante desde afuera).
-        var pool = _pool(pest, null);
-        var poolCatalogo = (mod === 1 && filt) ? _pool(pest, filt) : pool;
+        var pool = _pool(pest, null, col);
+        var poolCatalogo = (mod === 1 && filt) ? _pool(pest, filt, col) : pool;
         var sh = [];
 
         // 1. CONTINUAR JUGANDO — lo ultimo que se toco, primero.

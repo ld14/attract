@@ -22,7 +22,7 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from attract import doctor
+from attract import doctor, dosbox
 from attract.synopsis import (
     Bloque,
     _lineas_summary,
@@ -89,6 +89,11 @@ def _leer_game_json(path: Path) -> dict:
             f"game.json: schema_version '{datos['schema_version']}' no soportada "
             f"(soportadas: {sorted(SCHEMA_VERSIONS_SOPORTADAS)})"
         )
+
+    try:
+        dosbox.validar_declaracion(datos)
+    except dosbox.DosboxError as e:
+        raise InstalarError(f"game.json: {e}") from e
 
     fmt = datos.get("format")
     if fmt and fmt not in FORMATOS_CONOCIDOS:
@@ -207,7 +212,8 @@ def mergear_campo_simple(bloque: Bloque, clave: str, valor: str) -> Bloque:
 
 
 def construir_bloque_declarado(
-    game: dict, assets: list[tuple[str, str]], archivo: str | None = None
+    game: dict, assets: list[tuple[str, str]], archivo: str | None = None,
+    *, launch: str | None = None,
 ) -> Bloque:
     """Crea un bloque game: nuevo a partir de identidad DECLARADA (ADR-0026),
     sin pasar por mame -listxml. Mismo espiritu que ingest.construir_bloque.
@@ -221,6 +227,8 @@ def construir_bloque_declarado(
         f"game: {unicodedata.normalize('NFC', game['title'])}",
         f"file: {archivo}",
     ]
+    if launch:
+        lineas.append(f"launch: {launch}")
     for campo_json, campo_txt in (
         ("developer", "developer"),
         ("publisher", "publisher"),
@@ -434,15 +442,47 @@ def _aplicar(paquete: Paquete, raiz: Path, confirmar, undo: _Deshacer) -> str:
             assets.append((origen.stem, f"media/{set_id}/{origen.name}"))
 
     # 3. tratamiento del ROM
+    dosbox_conf_previo: bytes | None = None
     if rom_existe and tratamiento == "copiar":
         destino_rom = sistema_root / archivo_rom
         undo.antes_de_escribir(destino_rom)
         shutil.copy2(rom_staging, destino_rom)
     elif rom_existe and tratamiento == "descomprimir":
         destino_extract = sistema_root / set_id
+        conf_previo_path = destino_extract / "dosbox.conf"
+        if conf_previo_path.exists():
+            dosbox_conf_previo = conf_previo_path.read_bytes()
         undo.antes_de_escribir(destino_extract)
         with zipfile.ZipFile(rom_staging) as zf:
             zf.extractall(destino_extract)
+        if dosbox_conf_previo is not None:
+            # El paquete no trae su propio dosbox.conf, pero por si acaso:
+            # el local existente (ADR-0032) nunca se pisa al reimportar.
+            conf_previo_path.write_bytes(dosbox_conf_previo)
+
+    # 3b. DOSBox (ADR-0032): perfil conocido, declaracion o base provisional.
+    launch_game: str | None = None
+    if tratamiento == "descomprimir" and game.get("system") == "msdos":
+        try:
+            prep = dosbox.preparar(destino_extract, game, conservar=dosbox_conf_previo is not None)
+        except dosbox.DosboxError as e:
+            raise InstalarError(f"dosbox: {e}") from e
+        if prep.config is not None:
+            conf_path = destino_extract / "dosbox.conf"
+            undo.antes_de_escribir(conf_path)
+            conf_path.write_text(prep.config, encoding="utf-8", newline="\n")
+        informe_path = media_dir / "_dosbox.json"
+        undo.antes_de_escribir(informe_path)
+        with informe_path.open("w", encoding="utf-8", newline="\n") as f:
+            json.dump(prep.informe, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        launch_game = prep.launch
+        if prep.informe["status"] not in ("perfil-conocido", "conservado"):
+            print(
+                f"aviso: '{set_id}' - dosbox {prep.informe['status']}, revisar "
+                f"media/{set_id}/_dosbox.json",
+                file=sys.stderr,
+            )
 
     # `file:` apunta a donde quedo el juego en la libreria, no al nombre que
     # traia el paquete: con "descomprimir" el zip ya no existe ahi, y Pegasus
@@ -483,6 +523,8 @@ def _aplicar(paquete: Paquete, raiz: Path, confirmar, undo: _Deshacer) -> str:
         b = bloques[idx]
         if tratamiento:   # sin tratamiento el ROM no se toca: no sabemos donde esta
             b = mergear_campo_simple(b, "file", archivo_juego)
+        if launch_game is not None:   # None = conservar el launch local existente
+            b = mergear_campo_simple(b, "launch", launch_game)
         for campo in _CAMPOS_SIMPLES:
             if game.get(campo) not in (None, ""):
                 b = mergear_campo_simple(b, campo, game[campo])
@@ -496,7 +538,7 @@ def _aplicar(paquete: Paquete, raiz: Path, confirmar, undo: _Deshacer) -> str:
             b = mergear_summary(b, str(game["summary"]))
         bloques[idx] = b
     else:
-        bloques.append(construir_bloque_declarado(game, assets, archivo_juego))
+        bloques.append(construir_bloque_declarado(game, assets, archivo_juego, launch=launch_game))
 
     undo.antes_de_escribir(metadata_path)
     metadata_path.write_text(escribir(bloques), encoding="utf-8", newline="\n")

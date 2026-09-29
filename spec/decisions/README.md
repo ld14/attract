@@ -61,8 +61,15 @@ de seis meses alguien —tú, o Claude— vuelve a proponer justo lo que ya desc
 | [0028](0028-rollback-transaccional-import.md) | `attract import` revierte todo lo escrito si falla a mitad de camino | proposed | 2026-08-22 |
 | [0029](0029-player-nuevo-por-video.md) | Un `MediaPlayer` + `VideoOutput` nuevo por cada archivo de video | proposed | 2026-08-22 |
 | [0030](0030-contrato-gallery-data-json.md) | La galería se compone de los assets nativos del juego más las piezas curadas de `_gallery/`, declaradas como `gallery` en `data.json` | proposed | 2026-08-27 |
+| [0032](0032-perfiles-dosbox-import.md) | Generar la configuración DOSBox durante el import con perfiles locales | accepted | 2026-09-15 |
+| [0033](0033-heuristica-motor-dosbox.md) | Aplicar config de DOSBox por motor detectado cuando no hay perfil ni declaración | accepted | 2026-09-16 |
+| [0034](0034-imagenes-disco-dosbox.md) | Montar imágenes de disco (floppy/CD) declaradas para DOSBox | accepted | 2026-09-17 |
+| [0035](0035-assets-de-plataforma.md) | Leer logo, emblema y acento de cada plataforma desde `library/<coleccion>/_platform/` | accepted | 2026-09-22 |
+| [0036](0036-guia-tres-capas.md) | Separar la guía "Cómo se juega" en contenido editorial (`data.json`), perfil del gabinete (repo) y correspondencia física generada localmente | accepted | 2026-09-24 |
+| [0037](0037-forma-bloque-guia-data-json.md) | Forma del bloque editorial `guia` en data.json: capas 1+2, sin salida ni botón físico | accepted | 2026-09-28 |
+| [0038](0038-restaurar-contexto-al-volver-de-jugar.md) | Al volver de JUGAR se restaura todo el contexto de navegación, no solo la guía | accepted | 2026-09-28 |
 
-**31 ADR en total, 27 vigentes** (0008 quedó superseded por 0010, 0016 por
+**38 ADR en total, 34 vigentes** (0008 quedó superseded por 0010, 0016 por
 0019, 0015 por 0020 y 0010 por 0024 — no se editan, se reemplazan). El razonamiento original de 0006-0009
 está en
 [`docs/decisiones/archivadas/2026-07-23.md`](../../docs/decisiones/archivadas/2026-07-23.md), ya
@@ -117,3 +124,18 @@ arrastraba la geometría del video anterior. La lección que deja no es sobre
 video: cuando el instrumento (el log) no llega a disco a tiempo o mide la cosa
 equivocada, el theme puede dibujar su propio diagnóstico y `grabToImage` puede
 guardarlo en un archivo.
+
+**0036-0038 salieron de un piloto de datos sobre 6 juegos reales, no de
+diseñar en el vacío.** 0036 fija las tres capas de la guía "Cómo se juega"
+(qué hace el jugador, qué entrada lógica lo dispara, qué botón físico la
+genera) y pasa a `accepted` una vez que el piloto (`spec/features/027-como-se-juega/piloto/`)
+confirmó que la separación se sostiene con datos reales. 0037 fija la forma
+exacta del bloque editorial, adoptando el vocabulario que COINDOOR ya usa
+internamente (`cabinet.button_list`) en vez de inventar uno nuevo — el
+piloto encontró que ese dato ya existe y es confiable, y que lo que falla es
+el texto libre generado, no la parte estructurada. 0038 sale de un
+experimento corrido en el gabinete real
+(`themes/experimentos/recarga-tras-juego.qml`, 2026-09-28) que confirmó que
+Pegasus recarga el theme entero al volver de un juego, y fija qué contexto
+de navegación hay que restaurar para que la guía reaparezca sobre una
+pantalla consistente.

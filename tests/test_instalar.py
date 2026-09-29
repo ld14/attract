@@ -505,6 +505,116 @@ def test_rollback_borra_lo_que_creo(tmp_path):
     assert meta.read_text(encoding="utf-8") == antes_meta
 
 
+# ---------------------------------------------------------------------------
+# 19. DOSBox (ADR-0032): generacion de config/launch/informe al importar msdos
+# ---------------------------------------------------------------------------
+
+def _zip_msdos(tmp_path, archivos_exe: dict[str, bytes], *, dosbox_decl=None,
+               nombre="paquete.zip") -> Path:
+    import io
+    rom_zip_io = io.BytesIO()
+    with zipfile.ZipFile(rom_zip_io, "w") as zf:
+        for n, contenido in archivos_exe.items():
+            zf.writestr(n, contenido)
+
+    game = _game_json_minimo(system="msdos", set="dosgame", tratamiento="descomprimir",
+                              file="dosgame.zip")
+    if dosbox_decl is not None:
+        datos = json.loads(game)
+        datos["dosbox"] = dosbox_decl
+        game = json.dumps(datos, ensure_ascii=False)
+
+    return _zip_paquete(tmp_path, {
+        "game.json": game.encode(),
+        "media/dosgame.zip": rom_zip_io.getvalue(),
+    }, nombre=nombre)
+
+
+def test_msdos_genera_conf_launch_e_informe(tmp_path):
+    raiz = _libreria_minima(tmp_path, sistema="msdos")
+    zip_path = _zip_msdos(tmp_path, {"GAME1.EXE": b"exe falso"})
+
+    paq = leer_paquete(zip_path)
+    aplicar(paq, raiz)
+
+    juego_dir = raiz / "msdos" / "dosgame"
+    assert (juego_dir / "dosbox.conf").exists()
+    assert "GAME1.EXE" in (juego_dir / "dosbox.conf").read_text(encoding="utf-8")
+
+    informe = json.loads((raiz / "msdos" / "media" / "dosgame" / "_dosbox.json").read_text())
+    assert informe["status"] == "provisional"
+    assert informe["executable"] == "GAME1.EXE"
+
+    metadata = (raiz / "msdos" / "metadata.pegasus.txt").read_text(encoding="utf-8")
+    assert "launch: " in metadata
+    assert "emulators/dosbox-staging" in metadata
+
+
+def test_msdos_declaracion_invalida_falla_en_preflight(tmp_path):
+    """dosbox con system distinto de msdos falla ANTES de tocar la libreria."""
+    zip_path = _zip_paquete(tmp_path, {
+        "game.json": _game_json_minimo(dosbox={"executable": "A.EXE"}).encode(),
+    })
+    with pytest.raises(InstalarError, match="game.json:"):
+        leer_paquete(zip_path)
+
+
+def test_msdos_ejecutable_declarado_ausente_no_deja_instalacion_parcial(tmp_path):
+    raiz = _libreria_minima(tmp_path, sistema="msdos")
+    zip_path = _zip_msdos(tmp_path, {"GAME1.EXE": b"exe"},
+                           dosbox_decl={"executable": "NOESTA.EXE"})
+
+    paq = leer_paquete(zip_path)
+    with pytest.raises(InstalarError, match="ejecutable DOS declarado ausente"):
+        aplicar(paq, raiz)
+
+    # rollback completo: ni siquiera el directorio media/dosgame queda
+    assert not (raiz / "msdos" / "media" / "dosgame").exists()
+    assert not (raiz / "msdos" / "dosgame").exists()
+    metadata = (raiz / "msdos" / "metadata.pegasus.txt").read_text(encoding="utf-8")
+    assert "game:" not in metadata
+
+
+def test_msdos_reimportar_conserva_dosbox_conf_local(tmp_path):
+    raiz = _libreria_minima(tmp_path, sistema="msdos")
+    zip_path = _zip_msdos(tmp_path, {"GAME1.EXE": b"exe falso"})
+
+    paq1 = leer_paquete(zip_path)
+    aplicar(paq1, raiz)
+
+    conf_path = raiz / "msdos" / "dosgame" / "dosbox.conf"
+    texto_editado = conf_path.read_text(encoding="utf-8") + "; ajustado a mano\n"
+    conf_path.write_text(texto_editado, encoding="utf-8")
+
+    paq2 = leer_paquete(zip_path)
+    aplicar(paq2, raiz)
+
+    assert conf_path.read_text(encoding="utf-8") == texto_editado
+
+    informe = json.loads((raiz / "msdos" / "media" / "dosgame" / "_dosbox.json").read_text())
+    assert informe["status"] == "conservado"
+
+    metadata = (raiz / "msdos" / "metadata.pegasus.txt").read_text(encoding="utf-8")
+    bloque_juego = metadata.split("game:", 1)[1]
+    assert bloque_juego.count("launch:") == 1
+
+
+def test_msdos_multiples_candidatos_queda_pendiente_pero_instala(tmp_path):
+    raiz = _libreria_minima(tmp_path, sistema="msdos")
+    zip_path = _zip_msdos(tmp_path, {"GAME1.EXE": b"a", "GAME2.EXE": b"b"})
+
+    paq = leer_paquete(zip_path)
+    set_id = aplicar(paq, raiz)  # no explota: import nunca bloquea por esto
+
+    assert set_id == "dosgame"
+    informe = json.loads((raiz / "msdos" / "media" / "dosgame" / "_dosbox.json").read_text())
+    assert informe["status"] == "pendiente"
+    assert sorted(informe["candidates"]) == ["GAME1.EXE", "GAME2.EXE"]
+
+    conf = (raiz / "msdos" / "dosgame" / "dosbox.conf").read_text(encoding="utf-8")
+    assert "arranque pendiente" in conf
+
+
 def test_rollback_restaura_lo_que_piso(tmp_path):
     """Reinstalar encima de un juego ya cargado: si falla, vuelve el viejo."""
     raiz = _libreria_con_bloque_roto(tmp_path)

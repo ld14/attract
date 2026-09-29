@@ -1,0 +1,69 @@
+{
+  "revision": 1,
+  "actualizado": "2026-09-24",
+  "jugadores": [
+    {
+      "numero": 1,
+      "instalado": true,
+      "botones": [
+        { "posicion": "superior-1", "medido": false },
+        { "posicion": "superior-2", "medido": false },
+        { "posicion": "superior-3", "medido": false },
+        { "posicion": "superior-4", "medido": false },
+        { "posicion": "inferior-1", "medido": false },
+        { "posicion": "inferior-2", "medido": false },
+        { "posicion": "inferior-3", "medido": false },
+        { "posicion": "inferior-4", "medido": false }
+      ],
+      "start": { "instalado": false },
+      "coin": { "instalado": false }
+    },
+    {
+      "numero": 2,
+      "instalado": false,
+      "botones": [
+        { "posicion": "superior-1", "medido": false },
+        { "posicion": "superior-2", "medido": false },
+        { "posicion": "superior-3", "medido": false },
+        { "posicion": "superior-4", "medido": false },
+        { "posicion": "inferior-1", "medido": false },
+        { "posicion": "inferior-2", "medido": false },
+        { "posicion": "inferior-3", "medido": false },
+        { "posicion": "inferior-4", "medido": false }
+      ],
+      "start": { "instalado": false },
+      "coin": { "instalado": false }
+    }
+  ],
+  "flippers": { "cantidad": 2, "instalado": false },
+  "perifericos": {
+    "keyboard": { "instalado": true },
+    "mouse": { "instalado": true },
+    "trackball": { "instalado": false },
+    "dial": { "instalado": false },
+    "paddle": { "instalado": false },
+    "lightgun": { "instalado": false }
+  },
+  "salida": {
+    "mame": {
+      "tecla": "Esc",
+      "fuente": "mame.ini: confirm_quit=0",
+      "confianza": "extraido-automaticamente"
+    },
+    "dosbox": {
+      "porDefecto": {
+        "tecla": "Ctrl+F9",
+        "fuente": "gabinete real, A2, 2026-09-27",
+        "confianza": "comprobado-en-el-gabinete"
+      },
+      "excepciones": {
+        "fifa-international-soccer": {
+          "motivo": "mapperfile propio (mapper-ECE.map), config de pack, tecla sin confirmar"
+        },
+        "monkey-island": {
+          "motivo": "mapperfile propio (mapper-SVN.map), config de pack, tecla sin confirmar"
+        }
+      }
+    }
+  }
+}
